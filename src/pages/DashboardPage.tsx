@@ -156,6 +156,11 @@ export default function DashboardPage() {
   const d = data?.district ?? null;
   const stats = d?.latest_stats ?? null;
 
+  // 생존율 예측 API는 survival_rate를 비율(0~1)로 반환하지만 latest_stats는 퍼센트(0~100)다.
+  // 단위를 %로 통일한다(비율이면 ×100).
+  const toPct = (v: number | null | undefined): number | null =>
+    v == null ? null : v <= 1 ? v * 100 : v;
+
   const forecastPoints: ForecastPoint[] = useMemo(() => {
     const fc = data?.forecast?.forecast ?? [];
     const pts: ForecastPoint[] = [];
@@ -163,15 +168,20 @@ export default function DashboardPage() {
       pts.push({ label: quarterShort(stats.year_quarter), value: stats.survival_rate, forecast: false });
     }
     fc.forEach((p) => {
-      pts.push({ label: quarterShort(p.year_quarter), value: p.survival_rate, forecast: true });
+      pts.push({
+        label: quarterShort(p.year_quarter),
+        value: p.survival_rate == null ? null : p.survival_rate <= 1 ? p.survival_rate * 100 : p.survival_rate,
+        forecast: true,
+      });
     });
     return pts;
   }, [data, stats]);
 
   const forecastLast = data?.forecast?.forecast?.[data.forecast.forecast.length - 1] ?? null;
+  const forecastNextPct = toPct(forecastLast?.survival_rate ?? null);
   const forecastDelta =
-    stats?.survival_rate != null && forecastLast?.survival_rate != null
-      ? Number((forecastLast.survival_rate - stats.survival_rate).toFixed(1))
+    stats?.survival_rate != null && forecastNextPct != null
+      ? Number((forecastNextPct - stats.survival_rate).toFixed(1))
       : null;
 
   // 연령 분포(실데이터, dimension="age"). 성별 marginal 은 {남성:총,여성:총} 총량뿐이라
@@ -277,7 +287,7 @@ export default function DashboardPage() {
 
         <SurvivalCard
           current={stats?.survival_rate ?? null}
-          forecast={forecastLast?.survival_rate ?? null}
+          forecast={forecastNextPct}
           delta={forecastDelta}
           points={forecastPoints}
           totalBusiness={stats?.total_business ?? null}
@@ -364,7 +374,7 @@ export default function DashboardPage() {
           <div className={styles.modalChart}>
             <SurvivalCard
               current={stats?.survival_rate ?? null}
-              forecast={forecastLast?.survival_rate ?? null}
+              forecast={forecastNextPct}
               delta={forecastDelta}
               points={forecastPoints}
               totalBusiness={stats?.total_business ?? null}
