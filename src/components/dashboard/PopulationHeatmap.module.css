@@ -1,0 +1,60 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.grid {
+  display: grid;
+  gap: 4px;
+  align-items: center;
+}
+.corner {
+  height: 20px;
+}
+.colHead {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-body);
+  text-align: center;
+}
+.rowHead {
+  font-size: 11px;
+  color: var(--color-muted);
+  font-family: var(--font-num);
+  text-align: right;
+  padding-right: 8px;
+  white-space: nowrap;
+}
+.cell {
+  height: 30px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cellVal {
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-num);
+}
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.legendLabel {
+  font-size: 11px;
+  color: var(--color-faint);
+  margin: 0 4px;
+}
+.legendCell {
+  width: 26px;
+  height: 12px;
+  border-radius: 3px;
+}
+.empty {
+  padding: 28px 12px;
+  text-align: center;
+  color: var(--color-muted);
+  font-size: 13px;
+}

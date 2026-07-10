@@ -1,177 +1,156 @@
-import {
-  Area,
-  CartesianGrid,
-  ComposedChart,
-  Legend,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { useId } from "react";
 
-import type { TimeseriesPoint } from "../../types";
-import { formatCurrency, formatPercent } from "../../utils/formatters";
-
-interface Props {
-  history: TimeseriesPoint[];
-  forecast: TimeseriesPoint[];
-  unit: "won" | "ratio";
-  onScenarioClick?: (scenario: "low" | "mid" | "high") => void;
+export interface ForecastPoint {
+  label: string;
+  value: number | null;
+  /** true면 예측 구간(점선). false/undefined면 실적 구간(실선). */
+  forecast?: boolean;
 }
 
-interface Row {
-  quarter: string;
-  actual: number | null;
-  low: number | null;
-  mid: number | null;
-  high: number | null;
-  band: [number, number] | null;
+interface ForecastChartProps {
+  points: ForecastPoint[];
+  width?: number;
+  height?: number;
 }
 
-// NaN 버그 수정: 밴드([low,high] 튜플)를 제외하고 실적/시나리오만 포맷 표시.
-function ForecastTooltip({
-  active,
-  payload,
-  label,
-  formatValue,
-}: {
-  active?: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  payload?: readonly any[];
-  label?: string | number;
-  formatValue: (v: number) => string;
-}) {
-  if (!active || !payload || payload.length === 0) return null;
-  const byKey: Record<string, unknown> = {};
-  for (const p of payload) byKey[p.dataKey] = p.value;
-  const order: [string, string, string][] = [
-    ["actual", "실적", "#111827"],
-    ["mid", "보통 미래(p50)", "#2563eb"],
-    ["low", "안풀린 미래(p10)", "#dc2626"],
-    ["high", "잘풀린 미래(p90)", "#16a34a"],
-  ];
-  const lines = order
-    .map(([key, name, color]) => ({ name, color, value: byKey[key] }))
-    .filter((r) => typeof r.value === "number");
-  if (lines.length === 0) return null;
-  return (
-    <div style={{ background: "#fff", border: "1px solid #e2e5ec", borderRadius: 8, padding: "8px 10px", fontSize: 13 }}>
-      <div style={{ fontWeight: 700, marginBottom: 4 }}>{label}</div>
-      {lines.map((r) => (
-        <div key={r.name} style={{ color: r.color }}>
-          {r.name}: {formatValue(r.value as number)}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-export default function ForecastChart({ history, forecast, unit, onScenarioClick }: Props) {
-  const clickable = !!onScenarioClick;
-
-  const makeDot =
-    (scenario: "low" | "mid" | "high", color: string) =>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (props: any) => {
-      const { cx, cy, value, index } = props;
-      const key = `dot-${scenario}-${index}`;
-      if (cx == null || cy == null || value == null) return <g key={key} />;
-      return (
-        <g key={key} style={{ cursor: "pointer" }} onClick={() => onScenarioClick?.(scenario)}>
-          <circle cx={cx} cy={cy} r={12} fill="transparent" />
-          <circle cx={cx} cy={cy} r={4} fill={color} stroke="#fff" strokeWidth={1} />
-        </g>
-      );
-    };
-
-  const rows: Row[] = [
-    ...history.map((p) => ({
-      quarter: p.year_quarter,
-      actual: p.value,
-      low: null as number | null,
-      mid: null as number | null,
-      high: null as number | null,
-      band: null as [number, number] | null,
-    })),
-    ...forecast.map((p) => {
-      const low = (p.low ?? p.value) as number | null;
-      const mid = (p.mid ?? p.value) as number | null;
-      const high = (p.high ?? p.value) as number | null;
-      return {
-        quarter: p.year_quarter,
-        actual: null as number | null,
-        low,
-        mid,
-        high,
-        band: low != null && high != null ? ([low, high] as [number, number]) : null,
-      };
-    }),
-  ];
-
-  // 경계 연결: 마지막 과거점이 세 시나리오·밴드의 시작점.
-  if (history.length > 0 && forecast.length > 0) {
-    const b = rows[history.length - 1];
-    const a = b.actual;
-    b.low = a;
-    b.mid = a;
-    b.high = a;
-    b.band = a != null ? [a, a] : null;
+/**
+ * 생존율 예측 라인차트(SVG 직접 구현).
+ * 실적 구간은 실선, 예측 구간은 점선으로 그린다.
+ * 예측 구간에는 부드러운 신뢰밴드(면적)를 채운다.
+ */
+export default function ForecastChart({ points, width = 560, height = 220 }: ForecastChartProps) {
+  const gradId = useId();
+  const valid = points.filter((p): p is ForecastPoint & { value: number } => p.value != null);
+  if (valid.length < 2) {
+    return null;
   }
 
-  const formatValue = (v: number) => (unit === "won" ? formatCurrency(v) : formatPercent(v));
-  const formatAxis = (v: number) =>
-    unit === "won" ? `${Math.round(v / 1e8)}억` : `${Math.round(v * 100)}%`;
+  const padL = 12;
+  const padR = 12;
+  const padT = 18;
+  const padB = 28;
+  const innerW = width - padL - padR;
+  const innerH = height - padT - padB;
+
+  const values = points.map((p) => p.value).filter((v): v is number => v != null);
+  const rawMin = Math.min(...values);
+  const rawMax = Math.max(...values);
+  const span = rawMax - rawMin || 1;
+  const min = rawMin - span * 0.25;
+  const max = rawMax + span * 0.25;
+
+  const x = (i: number) => padL + (points.length === 1 ? innerW / 2 : (i / (points.length - 1)) * innerW);
+  const y = (v: number) => padT + innerH - ((v - min) / (max - min)) * innerH;
+
+  // 실적/예측 경계 인덱스를 찾아 두 개의 폴리라인으로 분할.
+  const coords = points.map((p, i) => ({ i, v: p.value, forecast: !!p.forecast }));
+  const actualPts = coords.filter((c) => c.v != null && !c.forecast);
+  const firstForecastIdx = coords.findIndex((c) => c.forecast);
+  // 예측 라인은 실적 마지막 점부터 이어지도록 경계점을 포함시킨다.
+  const forecastStart = firstForecastIdx > 0 ? firstForecastIdx - 1 : firstForecastIdx;
+  const forecastPts =
+    firstForecastIdx === -1
+      ? []
+      : coords.slice(forecastStart).filter((c) => c.v != null);
+
+  const toPath = (arr: Array<{ i: number; v: number | null }>) =>
+    arr
+      .filter((c) => c.v != null)
+      .map((c, k) => `${k === 0 ? "M" : "L"}${x(c.i).toFixed(1)},${y(c.v as number).toFixed(1)}`)
+      .join(" ");
+
+  const actualPath = toPath(actualPts);
+  const forecastPath = toPath(forecastPts);
+
+  // 예측 신뢰밴드(면적): 예측 구간 위/아래로 약간의 폭.
+  const bandPad = span * 0.12;
+  const bandTop = forecastPts.map((c) => `${x(c.i).toFixed(1)},${y((c.v as number) + bandPad).toFixed(1)}`);
+  const bandBottom = forecastPts
+    .map((c) => `${x(c.i).toFixed(1)},${y((c.v as number) - bandPad).toFixed(1)}`)
+    .reverse();
+  const bandPath =
+    forecastPts.length >= 2 ? `M${bandTop.join(" L")} L${bandBottom.join(" L")} Z` : "";
+
+  const lastPt = valid[valid.length - 1];
+  const lastIdx = points.indexOf(lastPt as ForecastPoint);
 
   return (
-    <ResponsiveContainer width="100%" height={380}>
-      <ComposedChart data={rows} margin={{ top: 16, right: 24, bottom: 8, left: 8 }}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="quarter" tick={{ fontSize: 12 }} />
-        <YAxis tickFormatter={formatAxis} width={64} tick={{ fontSize: 12 }} />
-        <Tooltip content={(props) => <ForecastTooltip {...props} formatValue={formatValue} />} />
-        <Legend />
-        <Area
-          dataKey="band"
-          name="예측 범위"
-          stroke="none"
-          fill="#6366f1"
-          fillOpacity={0.12}
-          connectNulls
-          legendType="none"
-        />
-        <Line type="monotone" dataKey="actual" name="실적" stroke="#111827" strokeWidth={2} dot={false} connectNulls />
-        <Line
-          type="monotone"
-          dataKey="high"
-          name="잘풀린 미래(p90)"
-          stroke="#16a34a"
-          strokeWidth={clickable ? 2.5 : 1.5}
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      width="100%"
+      role="img"
+      aria-label="생존율 예측 추이"
+      style={{ display: "block", overflow: "visible" }}
+    >
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.16" />
+          <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      {/* 신뢰밴드 */}
+      {bandPath && <path d={bandPath} fill={`url(#${gradId})`} stroke="none" />}
+
+      {/* 실적 실선 */}
+      {actualPath && (
+        <path d={actualPath} fill="none" stroke="var(--color-primary)" strokeWidth="2.5" strokeLinecap="round" />
+      )}
+      {/* 예측 점선 */}
+      {forecastPath && (
+        <path
+          d={forecastPath}
+          fill="none"
+          stroke="var(--color-primary)"
+          strokeWidth="2.5"
           strokeDasharray="5 5"
-          dot={clickable ? makeDot("high", "#16a34a") : false}
-          connectNulls
+          strokeLinecap="round"
         />
-        <Line
-          type="monotone"
-          dataKey="mid"
-          name="보통 미래(p50)"
-          stroke="#2563eb"
-          strokeWidth={clickable ? 3 : 2}
-          strokeDasharray="5 5"
-          dot={clickable ? makeDot("mid", "#2563eb") : { r: 2 }}
-          connectNulls
-        />
-        <Line
-          type="monotone"
-          dataKey="low"
-          name="안풀린 미래(p10)"
-          stroke="#dc2626"
-          strokeWidth={clickable ? 2.5 : 1.5}
-          strokeDasharray="5 5"
-          dot={clickable ? makeDot("low", "#dc2626") : false}
-          connectNulls
-        />
-      </ComposedChart>
-    </ResponsiveContainer>
+      )}
+
+      {/* 데이터 포인트 */}
+      {points.map((p, i) =>
+        p.value == null ? null : (
+          <circle
+            key={i}
+            cx={x(i)}
+            cy={y(p.value)}
+            r={i === lastIdx ? 4.5 : 3}
+            fill="var(--color-surface)"
+            stroke="var(--color-primary)"
+            strokeWidth="2"
+          />
+        ),
+      )}
+
+      {/* 마지막 값 라벨 */}
+      {lastPt && (
+        <text
+          x={Math.min(x(lastIdx) + 6, width - 2)}
+          y={y(lastPt.value) - 8}
+          fontSize="12"
+          fontWeight="700"
+          fill="var(--color-primary)"
+          textAnchor="end"
+          fontFamily="var(--font-num)"
+        >
+          {`${lastPt.value.toFixed(0)}%`}
+        </text>
+      )}
+
+      {/* X축 라벨 */}
+      {points.map((p, i) => (
+        <text
+          key={`lbl-${i}`}
+          x={x(i)}
+          y={height - 8}
+          fontSize="10"
+          fill="var(--color-faint)"
+          textAnchor="middle"
+        >
+          {p.label}
+        </text>
+      ))}
+    </svg>
   );
 }
