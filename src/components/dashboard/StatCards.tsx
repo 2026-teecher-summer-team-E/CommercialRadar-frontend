@@ -1,9 +1,22 @@
 import styles from "./StatCards.module.css";
 
-/** 낮 vs 밤 매출 카드(placeholder — 백엔드 API 없음). */
-export function DayNightCard({ dayPct = 54, nightPct = 46 }: { dayPct?: number; nightPct?: number }) {
-  const bars = [12, 20, 100, 55, 40, 30]; // 시간대별 매출 구성 목업(11~14 피크)
+/** 낮 vs 밤 매출 카드. sales-time-bands API 실데이터(낮=06~17, 밤=17~06). */
+export function DayNightCard({
+  dayPct = null,
+  nightPct = null,
+  bands = null,
+}: {
+  dayPct?: number | null;
+  nightPct?: number | null;
+  bands?: Record<string, number> | null;
+}) {
   const slots = ["00~06", "06~11", "11~14", "14~17", "17~21", "21~24"];
+  const bandKeys = ["00_06", "06_11", "11_14", "14_17", "17_21", "21_24"];
+  const hasData = dayPct != null && nightPct != null;
+  // 실제 밴드 매출이 있으면 그 비율로 미니 막대, 없으면 정적 플레이스홀더 막대.
+  const rawBars = bands ? bandKeys.map((k) => bands[k] ?? 0) : null;
+  const maxBar = rawBars ? Math.max(...rawBars, 1) : 1;
+  const bars = rawBars ? rawBars.map((v) => Math.round((v / maxBar) * 100)) : [12, 20, 100, 55, 40, 30];
   return (
     <div className={styles.card}>
       <div className={styles.head}>
@@ -11,17 +24,16 @@ export function DayNightCard({ dayPct = 54, nightPct = 46 }: { dayPct?: number; 
         <p className={styles.sub}>시간대 매출 구성</p>
       </div>
       <div className={styles.dnHero}>
-        <span className={styles.dnBig}>낮 {dayPct}%</span>
-        <span className={styles.dnBig}>밤 {nightPct}%</span>
+        <span className={styles.dnBig}>낮 {hasData ? `${dayPct}%` : "—"}</span>
+        <span className={styles.dnBig}>밤 {hasData ? `${nightPct}%` : "—"}</span>
       </div>
       <div className={styles.dnBar}>
-        <span className={styles.dnFill} style={{ width: `${dayPct}%` }} />
+        <span className={styles.dnFill} style={{ width: `${hasData ? dayPct : 50}%` }} />
       </div>
       <div className={styles.dnLegend}>
-        <span>낮 {dayPct}%</span>
-        <span>밤 {nightPct}%</span>
+        <span>낮 {hasData ? `${dayPct}%` : "—"}</span>
+        <span>밤 {hasData ? `${nightPct}%` : "—"}</span>
       </div>
-      <p className={styles.note}>오피스형 평균 38% 대비 +8%p</p>
       <p className={styles.miniLabel}>시간대별 매출 구성</p>
       <div className={styles.miniBars}>
         {bars.map((h, i) => (
@@ -96,15 +108,15 @@ export function PerCapitaCard({ manValue = 4.7, onExpand }: { manValue?: number;
   );
 }
 
-/** 주말 비중 카드(placeholder). */
-export function WeekendCard({ pct = 38.2, onExpand }: { pct?: number; onExpand?: () => void }) {
+/** 주말 비중 카드. population-ratios API 실데이터(주말 유동인구 비중). */
+export function WeekendCard({ pct = null, onExpand }: { pct?: number | null; onExpand?: () => void }) {
   const bars = [40, 50, 45, 60, 100, 70];
   return (
     <div className={styles.card}>
       <div className={styles.head}>
         <div>
           <h3 className={styles.title}>주말 비중 ⓘ</h3>
-          <p className={styles.sub}>전체 매출 중 토·일 비중</p>
+          <p className={styles.sub}>유동인구 중 토·일 비중</p>
         </div>
         {onExpand && (
           <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="주말 비중 확대">
@@ -112,9 +124,9 @@ export function WeekendCard({ pct = 38.2, onExpand }: { pct?: number; onExpand?:
           </button>
         )}
       </div>
-      <span className={styles.deltaTagBlue}>주말 집중</span>
+      <span className={styles.deltaTagBlue}>{pct != null && pct >= 28.6 ? "주말 집중" : "주중 우위"}</span>
       <div className={styles.weekendRow}>
-        <span className={styles.bigNum}>{pct}%</span>
+        <span className={styles.bigNum}>{pct != null ? `${pct}%` : "—"}</span>
         <div className={styles.miniBars}>
           {bars.map((h, i) => (
             <div key={i} className={styles.miniCol}>

@@ -74,6 +74,25 @@ interface ForeignRatioResponse {
   total_count: number | null;
 }
 
+/** 주말/낮밤 유동인구 비중(GET /api/commercial-districts/{id}/population-ratios). */
+interface PopulationRatiosResponse {
+  district_id: number;
+  weekend_pct: number | null;
+  daytime_pct: number | null;
+  nighttime_pct: number | null;
+}
+
+/** 시간대별 매출 낮/밤(GET /api/commercial-districts/{id}/sales-time-bands). */
+interface SalesTimeBandsResponse {
+  district_id: number;
+  year_quarter: string | null;
+  daytime_sales: number | null;
+  nighttime_sales: number | null;
+  daytime_pct: number | null;
+  nighttime_pct: number | null;
+  bands: Record<string, number> | null;
+}
+
 interface DashboardData {
   district: DistrictDetail | null;
   heatmap: PopulationHeatmapResponse | null;
@@ -83,6 +102,8 @@ interface DashboardData {
   rent: RentResponse | null;
   buzz: BuzzGapResponse | null;
   foreign: ForeignRatioResponse | null;
+  popRatios: PopulationRatiosResponse | null;
+  salesBands: SalesTimeBandsResponse | null;
 }
 
 /** allSettled 결과에서 값만 안전 추출. */
@@ -131,10 +152,13 @@ export default function DashboardPage() {
       apiClient.get<RentResponse>(`/api/commercial-districts/${id}/rent`),
       apiClient.get<BuzzGapResponse>("/api/buzz-gap"),
       apiClient.get<ForeignRatioResponse>(`/api/commercial-districts/${id}/foreign-ratio`),
+      apiClient.get<PopulationRatiosResponse>(`/api/commercial-districts/${id}/population-ratios`),
+      apiClient.get<SalesTimeBandsResponse>(`/api/commercial-districts/${id}/sales-time-bands`),
     ])
       .then((results) => {
         if (!alive) return;
-        const [districtR, heatmapR, tsAgeR, tsGenderR, forecastR, rentR, buzzR, foreignR] = results;
+        const [districtR, heatmapR, tsAgeR, tsGenderR, forecastR, rentR, buzzR, foreignR, popRatiosR, salesBandsR] =
+          results;
         const district = pick<DistrictDetail>(districtR);
         if (!district) {
           setError(true);
@@ -149,6 +173,8 @@ export default function DashboardPage() {
           rent: pick<RentResponse>(rentR),
           buzz: pick<BuzzGapResponse>(buzzR),
           foreign: pick<ForeignRatioResponse>(foreignR),
+          popRatios: pick<PopulationRatiosResponse>(popRatiosR),
+          salesBands: pick<SalesTimeBandsResponse>(salesBandsR),
         });
       })
       .catch(() => {
@@ -338,7 +364,11 @@ export default function DashboardPage() {
 
         <div className={styles.trioGrid}>
           <AgeGenderCard ageFemale={femaleDist} ageMale={maleDist} />
-          <DayNightCard />
+          <DayNightCard
+            dayPct={data.salesBands?.daytime_pct ?? null}
+            nightPct={data.salesBands?.nighttime_pct ?? null}
+            bands={data.salesBands?.bands ?? null}
+          />
           <ForeignCard pct={data.foreign?.foreigner_pct ?? null} />
         </div>
       </section>
@@ -348,7 +378,7 @@ export default function DashboardPage() {
         <SectionTitle title="매출·소비" subtitle="고객은 얼마나, 어떻게 지갑을 여는가" />
         <div className={styles.duoGrid}>
           <PerCapitaCard />
-          <WeekendCard />
+          <WeekendCard pct={data.popRatios?.weekend_pct ?? null} />
         </div>
       </section>
 
