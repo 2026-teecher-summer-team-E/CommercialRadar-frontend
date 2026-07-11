@@ -93,6 +93,15 @@ interface SalesTimeBandsResponse {
   bands: Record<string, number> | null;
 }
 
+/** 인당매출(GET /api/commercial-districts/{id}/per-capita-sales). */
+interface PerCapitaSalesResponse {
+  district_id: number;
+  year_quarter: string | null;
+  total_sales: number | null;
+  population: number | null;
+  per_capita_sales: number | null;
+}
+
 interface DashboardData {
   district: DistrictDetail | null;
   heatmap: PopulationHeatmapResponse | null;
@@ -104,6 +113,7 @@ interface DashboardData {
   foreign: ForeignRatioResponse | null;
   popRatios: PopulationRatiosResponse | null;
   salesBands: SalesTimeBandsResponse | null;
+  perCapita: PerCapitaSalesResponse | null;
 }
 
 /** allSettled 결과에서 값만 안전 추출. */
@@ -154,11 +164,23 @@ export default function DashboardPage() {
       apiClient.get<ForeignRatioResponse>(`/api/commercial-districts/${id}/foreign-ratio`),
       apiClient.get<PopulationRatiosResponse>(`/api/commercial-districts/${id}/population-ratios`),
       apiClient.get<SalesTimeBandsResponse>(`/api/commercial-districts/${id}/sales-time-bands`),
+      apiClient.get<PerCapitaSalesResponse>(`/api/commercial-districts/${id}/per-capita-sales`),
     ])
       .then((results) => {
         if (!alive) return;
-        const [districtR, heatmapR, tsAgeR, tsGenderR, forecastR, rentR, buzzR, foreignR, popRatiosR, salesBandsR] =
-          results;
+        const [
+          districtR,
+          heatmapR,
+          tsAgeR,
+          tsGenderR,
+          forecastR,
+          rentR,
+          buzzR,
+          foreignR,
+          popRatiosR,
+          salesBandsR,
+          perCapitaR,
+        ] = results;
         const district = pick<DistrictDetail>(districtR);
         if (!district) {
           setError(true);
@@ -175,6 +197,7 @@ export default function DashboardPage() {
           foreign: pick<ForeignRatioResponse>(foreignR),
           popRatios: pick<PopulationRatiosResponse>(popRatiosR),
           salesBands: pick<SalesTimeBandsResponse>(salesBandsR),
+          perCapita: pick<PerCapitaSalesResponse>(perCapitaR),
         });
       })
       .catch(() => {
@@ -377,7 +400,7 @@ export default function DashboardPage() {
       <section className={styles.section}>
         <SectionTitle title="매출·소비" subtitle="고객은 얼마나, 어떻게 지갑을 여는가" />
         <div className={styles.duoGrid}>
-          <PerCapitaCard />
+          <PerCapitaCard wonValue={data.perCapita?.per_capita_sales ?? null} />
           <WeekendCard pct={data.popRatios?.weekend_pct ?? null} />
         </div>
       </section>

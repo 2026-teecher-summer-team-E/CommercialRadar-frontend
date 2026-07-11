@@ -85,13 +85,15 @@ export function ForeignCard({ pct = null, onExpand }: { pct?: number | null; onE
 }
 
 /** 인당 소비 카드(placeholder). */
-export function PerCapitaCard({ manValue = 4.7, onExpand }: { manValue?: number; onExpand?: () => void }) {
+export function PerCapitaCard({ wonValue = null, onExpand }: { wonValue?: number | null; onExpand?: () => void }) {
+  // 인당매출(원) → 만원 1자리. 데이터 없으면 "—".
+  const manText = wonValue != null ? `${(wonValue / 10000).toFixed(1)}만` : "—";
   return (
     <div className={styles.card}>
       <div className={styles.head}>
         <div>
           <h3 className={styles.title}>인당 소비 ⓘ</h3>
-          <p className={styles.sub}>1회 평균 결제금액</p>
+          <p className={styles.sub}>방문 1인당 매출(분기)</p>
         </div>
         {onExpand && (
           <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="인당 소비 확대">
@@ -99,11 +101,10 @@ export function PerCapitaCard({ manValue = 4.7, onExpand }: { manValue?: number;
           </button>
         )}
       </div>
-      <span className={styles.deltaTag}>+6% 전분기</span>
       <div className={styles.big}>
-        <span className={styles.bigNum}>{manValue}만</span>
+        <span className={styles.bigNum}>{manText}</span>
       </div>
-      <p className={styles.note}>오피스형 평균 3.9만 · 상위 22%</p>
+      <p className={styles.note}>총매출 ÷ 유동인구</p>
     </div>
   );
 }
