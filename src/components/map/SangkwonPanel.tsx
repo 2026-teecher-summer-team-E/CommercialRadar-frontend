@@ -47,10 +47,10 @@ export default function SangkwonPanel({
   const score = toScore(stats?.district_score ?? radarAvg);
   const grade = scoreGrade(score);
 
-  // 월평균매출: timeSeries 최신 분기 sales.
-  const latestSales = summary?.timeSeries?.data?.length
-    ? summary.timeSeries.data[summary.timeSeries.data.length - 1].sales
-    : null;
+  // 월평균매출: 매출이 있는 최신 분기 sales.
+  // (마지막 행은 유동인구만 있는 미래 분기일 수 있어 sales가 null → 매출 있는 최신 행을 고른다.)
+  const salesRows = summary?.timeSeries?.data?.filter((r) => r.sales != null) ?? [];
+  const latestSales = salesRows.length ? salesRows[salesRows.length - 1].sales : null;
 
   const population = detail?.avg_population ?? null;
 
