@@ -73,7 +73,9 @@ export interface CategoryRankingResponse {
 // ── 생존율 예측 (GET /api/commercial-districts/{id}/survival-forecast) ──
 export interface SurvivalForecastPoint {
   year_quarter: string;
-  survival_rate: number | null;
+  survival_rate: number | null; // 대표값 = 중앙값(P50), 0~1 비율
+  low: number | null; // 비관 시나리오 P10 (없으면 대표값)
+  high: number | null; // 낙관 시나리오 P90 (없으면 대표값)
   confidence: number | null;
 }
 export interface SurvivalForecastResponse {

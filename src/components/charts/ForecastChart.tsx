@@ -2,7 +2,12 @@ import { useId } from "react";
 
 export interface ForecastPoint {
   label: string;
+  /** 대표값(기본 시나리오 = 중앙값 P50). */
   value: number | null;
+  /** 비관 시나리오(P10). 예측 구간에만 존재. 없으면 value로 폴백. */
+  low?: number | null;
+  /** 낙관 시나리오(P90). 예측 구간에만 존재. 없으면 value로 폴백. */
+  high?: number | null;
   /** true면 예측 구간(점선). false/undefined면 실적 구간(실선). */
   forecast?: boolean;
 }
@@ -32,7 +37,10 @@ export default function ForecastChart({ points, width = 560, height = 220 }: For
   const innerW = width - padL - padR;
   const innerH = height - padT - padB;
 
-  const values = points.map((p) => p.value).filter((v): v is number => v != null);
+  // y축 범위는 대표값뿐 아니라 비관/낙관 밴드까지 포함해 잘리지 않게 한다.
+  const values = points
+    .flatMap((p) => [p.value, p.low ?? null, p.high ?? null])
+    .filter((v): v is number => v != null);
   const rawMin = Math.min(...values);
   const rawMax = Math.max(...values);
   const span = rawMax - rawMin || 1;
@@ -43,7 +51,14 @@ export default function ForecastChart({ points, width = 560, height = 220 }: For
   const y = (v: number) => padT + innerH - ((v - min) / (max - min)) * innerH;
 
   // 실적/예측 경계 인덱스를 찾아 두 개의 폴리라인으로 분할.
-  const coords = points.map((p, i) => ({ i, v: p.value, forecast: !!p.forecast }));
+  const coords = points.map((p, i) => ({
+    i,
+    v: p.value,
+    // 밴드는 경계(실적 마지막)점에서 대표값으로 수렴하도록 low/high 폴백.
+    low: p.low ?? p.value,
+    high: p.high ?? p.value,
+    forecast: !!p.forecast,
+  }));
   const actualPts = coords.filter((c) => c.v != null && !c.forecast);
   const firstForecastIdx = coords.findIndex((c) => c.forecast);
   // 예측 라인은 실적 마지막 점부터 이어지도록 경계점을 포함시킨다.
@@ -62,14 +77,16 @@ export default function ForecastChart({ points, width = 560, height = 220 }: For
   const actualPath = toPath(actualPts);
   const forecastPath = toPath(forecastPts);
 
-  // 예측 신뢰밴드(면적): 예측 구간 위/아래로 약간의 폭.
-  const bandPad = span * 0.12;
-  const bandTop = forecastPts.map((c) => `${x(c.i).toFixed(1)},${y((c.v as number) + bandPad).toFixed(1)}`);
+  // 3가지 미래: 비관(P10)~낙관(P90) 실제 시나리오로 신뢰밴드(면적)를 그린다.
+  const bandTop = forecastPts.map((c) => `${x(c.i).toFixed(1)},${y((c.high ?? c.v) as number).toFixed(1)}`);
   const bandBottom = forecastPts
-    .map((c) => `${x(c.i).toFixed(1)},${y((c.v as number) - bandPad).toFixed(1)}`)
+    .map((c) => `${x(c.i).toFixed(1)},${y((c.low ?? c.v) as number).toFixed(1)}`)
     .reverse();
   const bandPath =
     forecastPts.length >= 2 ? `M${bandTop.join(" L")} L${bandBottom.join(" L")} Z` : "";
+  // 밴드 경계선(낙관/비관)을 얇은 점선으로 명시.
+  const highPath = toPath(forecastPts.map((c) => ({ i: c.i, v: c.high })));
+  const lowPath = toPath(forecastPts.map((c) => ({ i: c.i, v: c.low })));
 
   const lastPt = valid[valid.length - 1];
   const lastIdx = points.indexOf(lastPt as ForecastPoint);
@@ -89,8 +106,16 @@ export default function ForecastChart({ points, width = 560, height = 220 }: For
         </linearGradient>
       </defs>
 
-      {/* 신뢰밴드 */}
+      {/* 신뢰밴드 (비관 P10 ~ 낙관 P90) */}
       {bandPath && <path d={bandPath} fill={`url(#${gradId})`} stroke="none" />}
+
+      {/* 낙관/비관 경계선 (얇은 점선) */}
+      {highPath && (
+        <path d={highPath} fill="none" stroke="var(--color-primary)" strokeWidth="1" strokeOpacity="0.45" strokeDasharray="2 3" />
+      )}
+      {lowPath && (
+        <path d={lowPath} fill="none" stroke="var(--color-primary)" strokeWidth="1" strokeOpacity="0.45" strokeDasharray="2 3" />
+      )}
 
       {/* 실적 실선 */}
       {actualPath && (

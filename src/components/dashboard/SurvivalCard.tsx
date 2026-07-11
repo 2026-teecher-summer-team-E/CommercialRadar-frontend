@@ -80,7 +80,10 @@ export default function SurvivalCard({
           <ForecastChart points={points} width={560} height={200} />
           <div className={styles.chartLegend}>
             <span className={styles.legendSolid}>실적</span>
-            <span className={styles.legendDashed}>예측</span>
+            <span className={styles.legendDashed}>예측(기본·P50)</span>
+            <span className={styles.legendDashed} style={{ opacity: 0.6 }}>
+              비관·낙관 범위(P10~P90)
+            </span>
           </div>
         </div>
       ) : (

@@ -170,7 +170,9 @@ export default function DashboardPage() {
     fc.forEach((p) => {
       pts.push({
         label: quarterShort(p.year_quarter),
-        value: p.survival_rate == null ? null : p.survival_rate <= 1 ? p.survival_rate * 100 : p.survival_rate,
+        value: toPct(p.survival_rate), // 기본(P50)
+        low: toPct(p.low), // 비관(P10)
+        high: toPct(p.high), // 낙관(P90)
         forecast: true,
       });
     });
