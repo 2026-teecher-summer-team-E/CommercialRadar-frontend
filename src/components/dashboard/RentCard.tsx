@@ -37,8 +37,7 @@ export default function RentCard({ perSqm, floorLabel, bars }: RentCardProps) {
         <span className={styles.unit}>만/㎡</span>
       </div>
 
-      <span className={styles.tag}>서울 상위 11%</span>
-      <p className={styles.note}>매출 대비 임대료 부담률 8.9% · 오피스형 평균 7.4%</p>
+      <p className={styles.note}>한국부동산원 R-ONE · 권리금 포함</p>
 
       {hasBars && (
         <>

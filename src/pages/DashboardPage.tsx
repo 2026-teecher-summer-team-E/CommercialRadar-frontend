@@ -39,7 +39,7 @@ interface DistrictDetail {
   latest_stats: DistrictLatestStats | null;
 }
 
-/** 임대료 응답(전용 서비스 없음). avg_rent_per_sqm 는 원 단위. */
+/** 임대료 응답(전용 서비스 없음). avg_rent_per_sqm 는 천원/㎡ 단위(R-ONE 원본). */
 interface RentStat {
   floor_type: string | null;
   avg_rent_per_sqm: number | null;
@@ -261,9 +261,13 @@ export default function DashboardPage() {
   }, [ageDist, genderDist]);
 
   // 임대료 대표값 + 층별 막대.
+  // avg_rent_per_sqm은 천원/㎡ 단위(R-ONE 원본). RentCard는 원/㎡를 기대하므로 ×1000.
   const rentBars: RentBar[] = useMemo(() => {
     const rows = data?.rent?.rent_stats ?? [];
-    return rows.map((r) => ({ label: r.floor_type ?? "—", value: r.avg_rent_per_sqm }));
+    return rows.map((r) => ({
+      label: r.floor_type ?? "—",
+      value: r.avg_rent_per_sqm == null ? null : r.avg_rent_per_sqm * 1000,
+    }));
   }, [data]);
   const rentRep = useMemo<RentStat | null>(() => {
     const rows = data?.rent?.rent_stats ?? [];
@@ -410,7 +414,7 @@ export default function DashboardPage() {
         <SectionTitle title="비용·리스크" subtitle="창업 전 반드시 확인할 비용과 신호" />
         <div className={styles.duoGrid}>
           <RentCard
-            perSqm={rentRep?.avg_rent_per_sqm ?? null}
+            perSqm={rentRep?.avg_rent_per_sqm != null ? rentRep.avg_rent_per_sqm * 1000 : null}
             floorLabel={rentRep?.floor_type ?? null}
             bars={rentBars}
           />
