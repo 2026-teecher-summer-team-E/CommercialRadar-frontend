@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import AtmosphereSimulation, {
   type AtmoScenario,
 } from "../components/charts/AtmosphereSimulation";
-import ForecastChart from "../components/charts/ForecastChart";
+import ForecastChart from "../components/charts/GangnamForecastChart";
 import { useTimeseries } from "../hooks/useTimeseries";
 import { forecastApi } from "../services/forecastApi";
 import type { AgeSlice } from "../types";
