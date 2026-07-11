@@ -38,8 +38,8 @@ export function DayNightCard({ dayPct = 54, nightPct = 46 }: { dayPct?: number; 
   );
 }
 
-/** 외국인 비중 카드(placeholder). */
-export function ForeignCard({ pct = 21.3, onExpand }: { pct?: number; onExpand?: () => void }) {
+/** 외국인 비중 카드. pct는 foreign-ratio API 실데이터(생활인구 중 외국인 %). */
+export function ForeignCard({ pct = null, onExpand }: { pct?: number | null; onExpand?: () => void }) {
   const bars = [30, 45, 55, 70, 85, 100];
   return (
     <div className={styles.card}>
@@ -54,9 +54,8 @@ export function ForeignCard({ pct = 21.3, onExpand }: { pct?: number; onExpand?:
           </button>
         )}
       </div>
-      <span className={styles.deltaTag}>+2.1%p 전분기</span>
       <div className={styles.foreignRow}>
-        <span className={styles.bigNum}>{pct}%</span>
+        <span className={styles.bigNum}>{pct != null ? `${pct}%` : "—"}</span>
         <div className={styles.miniBars}>
           {bars.map((h, i) => (
             <div key={i} className={styles.miniCol}>
@@ -68,7 +67,7 @@ export function ForeignCard({ pct = 21.3, onExpand }: { pct?: number; onExpand?:
           ))}
         </div>
       </div>
-      <p className={styles.note}>서울 평균 8.4% · 강남구 상위 15%</p>
+      <p className={styles.note}>서울 평균 8.4%</p>
     </div>
   );
 }

@@ -66,6 +66,14 @@ interface BuzzGapResponse {
   items: BuzzGapItem[];
 }
 
+/** 외국인 비중 응답(GET /api/commercial-districts/{id}/foreign-ratio). */
+interface ForeignRatioResponse {
+  district_id: number;
+  foreigner_pct: number | null;
+  foreigner_count: number | null;
+  total_count: number | null;
+}
+
 interface DashboardData {
   district: DistrictDetail | null;
   heatmap: PopulationHeatmapResponse | null;
@@ -74,6 +82,7 @@ interface DashboardData {
   forecast: SurvivalForecastResponse | null;
   rent: RentResponse | null;
   buzz: BuzzGapResponse | null;
+  foreign: ForeignRatioResponse | null;
 }
 
 /** allSettled 결과에서 값만 안전 추출. */
@@ -121,10 +130,11 @@ export default function DashboardPage() {
       mlApi.survivalForecast(id),
       apiClient.get<RentResponse>(`/api/commercial-districts/${id}/rent`),
       apiClient.get<BuzzGapResponse>("/api/buzz-gap"),
+      apiClient.get<ForeignRatioResponse>(`/api/commercial-districts/${id}/foreign-ratio`),
     ])
       .then((results) => {
         if (!alive) return;
-        const [districtR, heatmapR, tsAgeR, tsGenderR, forecastR, rentR, buzzR] = results;
+        const [districtR, heatmapR, tsAgeR, tsGenderR, forecastR, rentR, buzzR, foreignR] = results;
         const district = pick<DistrictDetail>(districtR);
         if (!district) {
           setError(true);
@@ -138,6 +148,7 @@ export default function DashboardPage() {
           forecast: pick<SurvivalForecastResponse>(forecastR),
           rent: pick<RentResponse>(rentR),
           buzz: pick<BuzzGapResponse>(buzzR),
+          foreign: pick<ForeignRatioResponse>(foreignR),
         });
       })
       .catch(() => {
@@ -328,7 +339,7 @@ export default function DashboardPage() {
         <div className={styles.trioGrid}>
           <AgeGenderCard ageFemale={femaleDist} ageMale={maleDist} />
           <DayNightCard />
-          <ForeignCard />
+          <ForeignCard pct={data.foreign?.foreigner_pct ?? null} />
         </div>
       </section>
 
