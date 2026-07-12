@@ -262,15 +262,15 @@
   border-radius: 3px;
   background: var(--color-chip);
 }
+/* 4단계 혼잡도 색상: 균등한 명도 단계로 확실히 구분되게(기존엔 40+/65+가 거의 같은 색이었음). */
 .heat_0 {
-  background: var(--color-chip);
+  background: #eef1f8;
 }
 .heat_1 {
-  background: var(--color-primary-soft);
+  background: #aabfec;
 }
 .heat_2 {
-  background: var(--color-primary-soft);
-  filter: saturate(1.4) brightness(0.95);
+  background: #7592e0;
 }
 .heat_3 {
   background: var(--color-primary);
