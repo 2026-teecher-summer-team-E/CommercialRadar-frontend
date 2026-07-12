@@ -57,27 +57,78 @@
   gap: 12px;
   padding: 16px;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
 }
 
-.selectRow {
+/* 현재 위치(제목+구·동)와 업종 필터를 아예 다른 줄로 분리 — 폭을 다투지 않으니 지역명이 잘릴 일이 없다. */
+.headerRow {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 10px;
   padding: 10px 12px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-surface);
 }
-.locationLabel {
-  flex: 1;
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow: hidden;
+}
+.locationTitle {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+.locationSub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.locationSubText {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.districtTypeChip {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-chip);
+  color: var(--color-text-body);
+  font-size: 11px;
   font-weight: 600;
-  color: var(--color-text);
+}
+
+.categoryRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+}
+.categoryLabel {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-muted);
+  flex: none;
 }
 
 .panelState {
@@ -87,29 +138,13 @@
   text-align: center;
 }
 
-/* 상권명 헤더 */
-.districtHead {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 4px;
-}
-.districtPin {
-  color: var(--color-primary);
-  font-size: 14px;
-}
-.districtName {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--color-text);
-}
-.districtType {
-  margin-left: auto;
+/* 큰 점수 */
+.scoreLabel {
+  margin: 0;
   font-size: 12px;
+  font-weight: 600;
   color: var(--color-muted);
 }
-
-/* 큰 점수 */
 .scoreBlock {
   display: flex;
   align-items: baseline;
