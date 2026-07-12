@@ -200,19 +200,6 @@
   color: var(--color-green);
   font-weight: 700;
 }
-.bestTag {
-  display: inline-block;
-  margin-left: 6px;
-  padding: 1px 6px;
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--color-surface);
-  background: var(--color-green);
-  border-radius: var(--radius-pill);
-  font-family: var(--font-sans);
-  vertical-align: middle;
-}
-
 /* 차트 2열 */
 .chartsGrid {
   display: grid;
