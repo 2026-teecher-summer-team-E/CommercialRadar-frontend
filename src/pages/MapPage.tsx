@@ -157,23 +157,6 @@ export default function MapPage() {
     };
   }, [query]);
 
-  // 좌측 패널 드롭다운은 '현재 선택 상권'만 표시(검색·선택은 상단 검색바가 담당).
-  const panelOptions = useMemo<DistrictSearchResult[]>(() => {
-    if (summary?.detail) {
-      const d = summary.detail;
-      return [
-        {
-          id: d.id,
-          district_name: d.district_name,
-          type_name: d.type_name,
-          gu_name: d.gu_name,
-          dong_name: d.dong_name,
-        },
-      ];
-    }
-    return [];
-  }, [summary]);
-
   // 검색 결과 클릭 → 실제 상권 선택(selectedId 변경) + 검색 초기화.
   const handlePickSearch = (id: number) => {
     setSelectedId(id);
@@ -273,9 +256,6 @@ export default function MapPage() {
           summary={summary}
           loading={loading}
           error={error}
-          options={panelOptions}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
           onOpenProfile={openProfile}
           availableCategories={availableCategories}
           categoryFilter={categoryFilter}
