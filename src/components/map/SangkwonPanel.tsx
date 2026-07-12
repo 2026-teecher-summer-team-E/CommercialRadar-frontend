@@ -13,7 +13,6 @@ import {
   fmtSales,
   scoreGrade,
   toScore,
-  type DistrictSearchResult,
   type DistrictSummary,
 } from "./mapData";
 
@@ -21,10 +20,6 @@ interface SangkwonPanelProps {
   summary: DistrictSummary | null;
   loading: boolean;
   error: boolean;
-  /** 위치 선택 드롭다운 옵션(검색 결과 또는 기본 목록). */
-  options: DistrictSearchResult[];
-  selectedId: number;
-  onSelect: (id: number) => void;
   /** 상권 프로필(대시보드)로 이동. */
   onOpenProfile: (id: number) => void;
   /** 선택 상권에 실재하는 업종 목록(해당 상권 category-stats 전체 조회 결과). */
@@ -34,14 +29,11 @@ interface SangkwonPanelProps {
   onCategoryFilterChange: (v: string | null) => void;
 }
 
-/** 지도 페이지 좌측 콘텐츠 패널: 위치 선택 + 업종 필터 + 점수 + 지표 2x2 + 시간대별 혼잡도. */
+/** 지도 페이지 좌측 콘텐츠 패널: 현재 위치 표시 + 업종 필터 + 점수 + 지표 2x2 + 시간대별 혼잡도. */
 export default function SangkwonPanel({
   summary,
   loading,
   error,
-  options,
-  selectedId,
-  onSelect,
   onOpenProfile,
   availableCategories,
   categoryFilter,
@@ -94,28 +86,11 @@ export default function SangkwonPanel({
 
   return (
     <aside className={styles.panel}>
-      {/* 위치 선택 드롭다운 */}
+      {/* 현재 위치 표시(선택은 상단 검색바가 담당) */}
       <div className={styles.selectRow}>
-        <span className={styles.pinIcon} aria-hidden>
-          ◎
+        <span className={styles.locationLabel}>
+          {detail ? [detail.gu_name, detail.district_name].filter(Boolean).join(" ") : ""}
         </span>
-        <select
-          className={styles.select}
-          value={selectedId}
-          onChange={(e) => onSelect(Number(e.target.value))}
-          aria-label="상권 위치 선택"
-        >
-          {options.length === 0 && detail && (
-            <option value={detail.id}>
-              {[detail.gu_name, detail.district_name].filter(Boolean).join(" ")}
-            </option>
-          )}
-          {options.map((o) => (
-            <option key={o.id} value={o.id}>
-              {[o.gu_name, o.district_name].filter(Boolean).join(" ")}
-            </option>
-          ))}
-        </select>
       </div>
 
       {/* 업종 필터: 이 상권에 실재하는 업종만 대분류→소분류 드릴다운으로 선택. */}
