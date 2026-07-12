@@ -349,7 +349,6 @@ function MetricsTable({ districts }: { districts: DistrictCompareResponse["distr
             {row.cells.map((cell, i) => (
               <td key={i} className={`${styles.numCell} ${i === row.best ? styles.bestCell : ""}`}>
                 {cell}
-                {i === row.best && <span className={styles.bestTag}>1위</span>}
               </td>
             ))}
           </tr>
