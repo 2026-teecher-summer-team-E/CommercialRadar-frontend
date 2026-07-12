@@ -180,7 +180,7 @@ export default function LeafletMap({
       });
       const sel = markersRef.current.get(selectedId);
       if (sel) {
-        map.panTo(sel.getLatLng());
+        map.flyTo(sel.getLatLng(), Math.max(map.getZoom(), 16), { duration: 0.8 });
         sel.bindPopup(buildPopup(), { closeButton: true, minWidth: 170 }).openPopup();
       }
     } else {
@@ -192,7 +192,7 @@ export default function LeafletMap({
       });
       const sel = polysRef.current.get(selectedId) as L.Polygon | undefined;
       if (sel && typeof sel.getBounds === "function") {
-        map.panTo(sel.getBounds().getCenter());
+        map.flyToBounds(sel.getBounds(), { padding: [80, 80], maxZoom: 17, duration: 0.8 });
         sel.bindPopup(buildPopup(), { closeButton: true, minWidth: 170 }).openPopup();
       }
     }
