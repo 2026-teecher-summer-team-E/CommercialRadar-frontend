@@ -17,13 +17,13 @@ interface Props {
 const Y_TICKS = 4;
 
 /** 다중 상권 오버레이 라인 차트(순수 SVG). Y축은 0~100 고정(생존율 %). */
-export default function LineChartSvg({ labels, series, width = 520, height = 260 }: Props) {
+export default function LineChartSvg({ labels, series, width = 900, height = 450 }: Props) {
   if (labels.length === 0) return null;
 
-  const padL = 36;
-  const padR = 12;
-  const padT = 12;
-  const padB = 28;
+  const padL = 32;
+  const padR = 10;
+  const padT = 10;
+  const padB = 36;
   const plotW = width - padL - padR;
   const plotH = height - padT - padB;
 
@@ -41,6 +41,7 @@ export default function LineChartSvg({ labels, series, width = 520, height = 260
       className={styles.svg}
       viewBox={`0 0 ${width} ${height}`}
       width="100%"
+      style={{ maxWidth: width }}
       role="img"
       aria-label="분기별 생존율 추이 차트"
     >
@@ -56,17 +57,22 @@ export default function LineChartSvg({ labels, series, width = 520, height = 260
         );
       })}
 
-      {labels.map((label, i) => (
-        <text
-          key={`xt-${i}`}
-          className={styles.axisLabel}
-          x={xAt(i)}
-          y={height - padB + 16}
-          textAnchor="middle"
-        >
-          {label}
-        </text>
-      ))}
+      {labels.map((label, i) => {
+        const x = xAt(i);
+        const y = height - padB + 14;
+        return (
+          <text
+            key={`xt-${i}`}
+            className={styles.axisLabel}
+            x={x}
+            y={y}
+            textAnchor="end"
+            transform={`rotate(-40 ${x} ${y})`}
+          >
+            {label}
+          </text>
+        );
+      })}
 
       {series.map((s, si) => {
         const color = seriesColor(si);
