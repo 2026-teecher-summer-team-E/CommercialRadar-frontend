@@ -3,6 +3,7 @@ import type {
   DistrictCompareResponse,
   DistrictTimeSeriesResponse,
   CategoryRankingResponse,
+  DistrictCategoryStatsResponse,
   RadarResponse,
   PopulationHeatmapResponse,
   DistrictGeo,
@@ -25,6 +26,12 @@ export const commercialApi = {
 
   categoryRanking: (id: number | string, params?: QP) =>
     apiClient.get<CategoryRankingResponse>(`/api/commercial-districts/${id}/category-ranking`, { params }),
+
+  /** 상권 1개 + 특정 업종 하나의 생존율/폐업률/매출/점수. 업종 필터 선택 시 좌측 패널 갱신용. */
+  categoryStats: (id: number | string, params?: { year_quarter?: string; category_name?: string }) =>
+    apiClient.get<DistrictCategoryStatsResponse>(`/api/commercial-districts/${id}/category-stats`, {
+      params: params as QP,
+    }),
 
   /** [신규] 5축 정규화 레이더 */
   radar: (id: number | string, params?: QP) =>

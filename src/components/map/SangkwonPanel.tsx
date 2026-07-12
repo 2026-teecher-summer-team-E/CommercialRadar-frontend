@@ -1,4 +1,8 @@
+import { useMemo } from "react";
 import styles from "../../pages/MapPage.module.css";
+import type { CategoryStat } from "../../types";
+import CategoryPicker from "./CategoryPicker";
+import { CATEGORY_GROUPS } from "./categoryList";
 import {
   DAY_LABELS,
   buildCongestionGrid,
@@ -23,11 +27,14 @@ interface SangkwonPanelProps {
   onSelect: (id: number) => void;
   /** 상권 프로필(대시보드)로 이동. */
   onOpenProfile: (id: number) => void;
+  /** 선택 상권에 실재하는 업종 목록(해당 상권 category-stats 전체 조회 결과). */
+  availableCategories: CategoryStat[];
+  /** 선택된 업종. null이면 전체 업종. */
+  categoryFilter: string | null;
+  onCategoryFilterChange: (v: string | null) => void;
 }
 
-const FILTER_TYPES = ["전체", "한식", "카페", "편의점", "의류"] as const;
-
-/** 지도 페이지 좌측 콘텐츠 패널: 위치 선택 + 필터 + 점수 + 지표 2x2 + 시간대별 혼잡도. */
+/** 지도 페이지 좌측 콘텐츠 패널: 위치 선택 + 업종 필터 + 점수 + 지표 2x2 + 시간대별 혼잡도. */
 export default function SangkwonPanel({
   summary,
   loading,
@@ -36,21 +43,46 @@ export default function SangkwonPanel({
   selectedId,
   onSelect,
   onOpenProfile,
+  availableCategories,
+  categoryFilter,
+  onCategoryFilterChange,
 }: SangkwonPanelProps) {
   const detail = summary?.detail ?? null;
   const stats = detail?.latest_stats ?? null;
+  const hasCategoryFilter = categoryFilter != null;
+  const categoryOverride = hasCategoryFilter
+    ? (availableCategories.find((c) => c.category_name === categoryFilter) ?? null)
+    : undefined;
+  const categoryEmpty = hasCategoryFilter && categoryOverride === null;
 
-  // 점수: latest_stats.district_score 우선, 없으면 radar 축 평균 대용.
+  // 대분류 그룹 중 이 상권에 실재하는 업종만 남긴 목록(빈 그룹은 제거).
+  const availableGroups = useMemo(() => {
+    const names = new Set(availableCategories.map((c) => c.category_name));
+    return CATEGORY_GROUPS.map((g) => ({ group: g.group, items: g.items.filter((i) => names.has(i)) })).filter(
+      (g) => g.items.length > 0,
+    );
+  }, [availableCategories]);
+
+  // 점수: 업종 필터 적용 시 해당 업종 점수, 아니면 latest_stats.district_score, 없으면 radar 축 평균 대용.
   const radarAvg = summary?.radar
     ? summary.radar.axes.reduce((a, x) => a + x.value, 0) / (summary.radar.axes.length || 1)
     : null;
-  const score = toScore(stats?.district_score ?? radarAvg);
+  const score = hasCategoryFilter
+    ? toScore(categoryOverride?.district_score ?? null)
+    : toScore(stats?.district_score ?? radarAvg);
   const grade = scoreGrade(score);
 
-  // 월평균매출: 매출이 있는 최신 분기 sales.
+  const survivalRate = hasCategoryFilter ? categoryOverride?.survival_rate ?? null : stats?.survival_rate;
+  const closureRate = hasCategoryFilter ? categoryOverride?.closure_rate ?? null : stats?.closure_rate;
+
+  // 월평균매출: 업종 필터 적용 시 해당 업종 매출 합계, 아니면 매출이 있는 최신 분기 sales.
   // (마지막 행은 유동인구만 있는 미래 분기일 수 있어 sales가 null → 매출 있는 최신 행을 고른다.)
   const salesRows = summary?.timeSeries?.data?.filter((r) => r.sales != null) ?? [];
-  const latestSales = salesRows.length ? salesRows[salesRows.length - 1].sales : null;
+  const latestSales = hasCategoryFilter
+    ? categoryOverride?.total_sales ?? null
+    : salesRows.length
+      ? salesRows[salesRows.length - 1].sales
+      : null;
 
   const population = detail?.avg_population ?? null;
 
@@ -86,28 +118,8 @@ export default function SangkwonPanel({
         </select>
       </div>
 
-      {/* 업종 필터(정적 칩) */}
-      <div className={styles.filterRow}>
-        <span className={styles.filterIcon} aria-hidden>
-          ⚑
-        </span>
-        <span className={styles.filterLabel}>
-          {detail?.type_name ?? "한식"}
-        </span>
-      </div>
-
-      <div className={styles.filterChips}>
-        {FILTER_TYPES.map((t) => (
-          <span
-            key={t}
-            className={`${styles.filterChip} ${
-              (detail?.type_name ?? "한식") === t ? styles.filterChipActive : ""
-            }`}
-          >
-            {t}
-          </span>
-        ))}
-      </div>
+      {/* 업종 필터: 이 상권에 실재하는 업종만 대분류→소분류 드릴다운으로 선택. */}
+      <CategoryPicker groups={availableGroups} value={categoryFilter} onChange={onCategoryFilterChange} />
 
       {loading && <div className={styles.panelState}>불러오는 중…</div>}
       {error && !loading && (
@@ -125,7 +137,14 @@ export default function SangkwonPanel({
             {detail.type_name && (
               <span className={styles.districtType}>{detail.type_name}</span>
             )}
+            {hasCategoryFilter && categoryOverride && (
+              <span className={styles.districtType}>{categoryOverride.category_name} 기준</span>
+            )}
           </div>
+
+          {categoryEmpty && (
+            <div className={styles.panelState}>이 상권엔 선택한 업종 데이터가 없습니다.</div>
+          )}
 
           <div className={styles.scoreBlock}>
             <span className={styles.scoreNum}>{score ?? "-"}</span>
@@ -159,8 +178,8 @@ export default function SangkwonPanel({
 
           {/* 지표 2x2 */}
           <div className={styles.metricGrid}>
-            <Metric label="생존율" value={fmtPct(stats?.survival_rate)} />
-            <Metric label="폐업위험" value={closureRiskLabel(stats?.closure_rate)} />
+            <Metric label="생존율" value={fmtPct(survivalRate)} />
+            <Metric label="폐업위험" value={closureRiskLabel(closureRate)} />
             <Metric label="월평균매출" value={fmtSales(latestSales)} />
             <Metric label="유동인구" value={fmtPopulation(population)} />
           </div>

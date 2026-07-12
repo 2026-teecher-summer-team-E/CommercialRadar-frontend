@@ -63,8 +63,7 @@
   box-shadow: var(--shadow-card);
 }
 
-.selectRow,
-.filterRow {
+.selectRow {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -73,8 +72,7 @@
   border-radius: var(--radius);
   background: var(--color-surface);
 }
-.pinIcon,
-.filterIcon {
+.pinIcon {
   color: var(--color-primary);
   font-size: 14px;
 }
@@ -88,30 +86,6 @@
   font-weight: 600;
   color: var(--color-text);
   cursor: pointer;
-}
-.filterLabel {
-  flex: 1;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.filterChips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.filterChip {
-  padding: 5px 12px;
-  border-radius: var(--radius-pill);
-  background: var(--color-chip);
-  color: var(--color-muted);
-  font-size: 12px;
-  font-weight: 600;
-}
-.filterChipActive {
-  background: var(--color-primary-light);
-  color: var(--color-primary);
 }
 
 .panelState {
