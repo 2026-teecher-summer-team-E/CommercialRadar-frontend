@@ -1,0 +1,125 @@
+.bar {
+  flex: none;
+  display: flex;
+  gap: 8px;
+}
+
+.pillWrap {
+  position: relative;
+}
+
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pillActive {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.pillOpen {
+  border-color: var(--color-primary);
+}
+
+.pillCaret {
+  font-size: 10px;
+  color: var(--color-faint);
+}
+
+.pillActive .pillCaret {
+  color: var(--color-primary);
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 140px;
+  max-width: 220px;
+  padding: 6px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-pop);
+}
+
+.dropdownScroll {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.groupOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.groupOption:hover {
+  background: var(--color-chip);
+}
+
+.backOption {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.option {
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.option:hover {
+  background: var(--color-chip);
+}
+
+.optionActive {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-weight: 700;
+}

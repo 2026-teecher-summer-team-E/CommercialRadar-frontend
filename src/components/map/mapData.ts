@@ -160,3 +160,50 @@ export function congestionLevel(intensity: number): 0 | 1 | 2 | 3 {
   if (intensity >= 0.4) return 1;
   return 0;
 }
+
+/** 상권유형 필터 항목("전체" + commercial_district.type_name 실측값 4종). */
+export const TYPE_FILTER_OPTIONS = ["전체", "골목상권", "발달상권", "전통시장", "관광특구"] as const;
+
+/** 자치구 필터 항목("전체" + commercial_district.gu_name 실측값 25개, 상권 수 내림차순). */
+export const GU_FILTER_OPTIONS = [
+  "전체",
+  "강남구",
+  "영등포구",
+  "동대문구",
+  "마포구",
+  "성북구",
+  "관악구",
+  "서초구",
+  "종로구",
+  "송파구",
+  "강서구",
+  "중구",
+  "은평구",
+  "강북구",
+  "서대문구",
+  "광진구",
+  "중랑구",
+  "구로구",
+  "강동구",
+  "동작구",
+  "용산구",
+  "양천구",
+  "성동구",
+  "금천구",
+  "도봉구",
+  "노원구",
+] as const;
+
+/** 유동인구 등급 경계값(명). 적음: 30만 미만, 보통: 30만~80만, 많음: 80만 이상. */
+export const POPULATION_THRESHOLDS = { low: 300_000, high: 800_000 } as const;
+
+export const POPULATION_FILTER_OPTIONS = ["전체", "적음", "보통", "많음"] as const;
+export type PopulationBucket = (typeof POPULATION_FILTER_OPTIONS)[number];
+
+/** 유동인구 값 → 많음/보통/적음 등급. 값이 없으면 null(필터 시 제외). */
+export function populationBucket(value: number | null | undefined): Exclude<PopulationBucket, "전체"> | null {
+  if (value == null) return null;
+  if (value < POPULATION_THRESHOLDS.low) return "적음";
+  if (value < POPULATION_THRESHOLDS.high) return "보통";
+  return "많음";
+}

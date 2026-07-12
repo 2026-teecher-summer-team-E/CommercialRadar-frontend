@@ -117,6 +117,25 @@ export interface DistrictGeo {
   gu_name: string | null;
   lat: number;
   lng: number;
+  population: number | null;
+}
+
+// ── 업종별 현황 (GET /api/commercial-districts/{id}/category-stats) ──
+export interface CategoryStat {
+  category_name: string;
+  survival_rate: number | null;
+  closure_rate: number | null;
+  open_rate: number | null;
+  total_business: number | null;
+  total_sales: number | null;
+  tx_count: number | null;
+  district_score: number | null;
+}
+
+export interface DistrictCategoryStatsResponse {
+  district_id: number;
+  year_quarter: string | null;
+  categories: CategoryStat[];
 }
 
 // ── 유저 (GET /api/users/me, /api/users/me/stats) [신규] ──
