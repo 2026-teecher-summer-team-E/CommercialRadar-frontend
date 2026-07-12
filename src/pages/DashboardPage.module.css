@@ -43,6 +43,11 @@
   justify-content: space-between;
   gap: 16px;
 }
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .title {
   margin: 0;
   font-size: 24px;

@@ -23,6 +23,8 @@ import BuzzGapCard from "../components/dashboard/BuzzGapCard";
 import { DayNightCard, ForeignCard, PerCapitaCard, WeekendCard } from "../components/dashboard/StatCards";
 import ExpandModal from "../components/dashboard/ExpandModal";
 import { quarterShort } from "../components/dashboard/format";
+import { useFavoriteDistrict } from "../hooks/useFavoriteDistrict";
+import FavoriteStar from "../components/common/FavoriteStar";
 import styles from "./DashboardPage.module.css";
 
 /** getDistrict 응답(서비스가 제네릭 없이 any 반환) — 페이지 내부 로컬 타입. */
@@ -425,7 +427,7 @@ export default function DashboardPage() {
   return (
     <div className={styles.page}>
       <PageNav />
-      <Header name={d.district_name} region={region} typeName={d.type_name} />
+      <Header name={d.district_name} region={region} typeName={d.type_name} districtId={d.id} />
 
       {/* 상단 2열: 종합점수 + 생존율 예측 */}
       <section className={styles.topGrid}>
@@ -589,15 +591,23 @@ function Header({
   name,
   region,
   typeName,
+  districtId,
 }: {
   name: string | null;
   region: string | null;
   typeName: string | null;
+  districtId?: number;
 }) {
+  const { isFavorite, toggle, pending } = useFavoriteDistrict();
   return (
     <div className={styles.header}>
       <div>
-        <h1 className={styles.title}>{name ?? "상권 프로필"}</h1>
+        <div className={styles.titleRow}>
+          <h1 className={styles.title}>{name ?? "상권 프로필"}</h1>
+          {districtId != null && (
+            <FavoriteStar active={isFavorite(districtId)} disabled={pending} onToggle={() => toggle(districtId)} />
+          )}
+        </div>
         <p className={styles.subtitle}>
           {[region, typeName].filter(Boolean).join(" · ") || "상권 종합 리포트"}
         </p>
