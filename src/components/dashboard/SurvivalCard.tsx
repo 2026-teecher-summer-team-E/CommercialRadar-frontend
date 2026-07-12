@@ -1,5 +1,6 @@
-import ForecastChart from "../charts/ForecastChart";
+import GangnamForecastChart from "../charts/GangnamForecastChart";
 import type { ForecastPoint } from "../charts/ForecastChart";
+import type { TimeseriesPoint } from "../../types";
 import { fmtPct, fmtInt } from "./format";
 import styles from "./SurvivalCard.module.css";
 
@@ -10,7 +11,14 @@ interface SurvivalCardProps {
   forecast: number | null;
   /** Δ %p (전망 - 현재). */
   delta: number | null;
-  points: ForecastPoint[];
+  /** 레거시 prop(미사용). 시그니처 호환용. */
+  points?: ForecastPoint[];
+  /** 실적 시계열(0~1 스케일). */
+  history?: TimeseriesPoint[];
+  /** 예측 시계열(0~1 스케일). */
+  forecastSeries?: TimeseriesPoint[];
+  /** 시나리오 선(low/mid/high) 클릭 콜백. */
+  onScenarioClick?: (s: "low" | "mid" | "high") => void;
   totalBusiness: number | null;
   closureRate: number | null;
   onExpand?: () => void;
@@ -21,12 +29,16 @@ export default function SurvivalCard({
   current,
   forecast,
   delta,
-  points,
+  history,
+  forecastSeries,
+  onScenarioClick,
   totalBusiness,
   closureRate,
   onExpand,
 }: SurvivalCardProps) {
-  const hasChart = points.filter((p) => p.value != null).length >= 2;
+  const hist = history ?? [];
+  const fc = forecastSeries ?? [];
+  const hasChart = hist.length + fc.length >= 2;
   const deltaUp = (delta ?? 0) >= 0;
 
   return (
@@ -77,14 +89,12 @@ export default function SurvivalCard({
 
       {hasChart ? (
         <div className={styles.chart}>
-          <ForecastChart points={points} width={560} height={200} />
-          <div className={styles.chartLegend}>
-            <span className={styles.legendSolid}>실적</span>
-            <span className={styles.legendDashed}>예측(기본·P50)</span>
-            <span className={styles.legendDashed} style={{ opacity: 0.6 }}>
-              비관·낙관 범위(P10~P90)
-            </span>
-          </div>
+          <GangnamForecastChart
+            history={hist}
+            forecast={fc}
+            unit="ratio"
+            onScenarioClick={onScenarioClick}
+          />
         </div>
       ) : (
         <div className={styles.empty}>예측 데이터가 없어요.</div>

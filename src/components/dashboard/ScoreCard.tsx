@@ -17,10 +17,10 @@ interface ScoreCardProps {
   survivalRate: number | null;
   closureRate: number | null;
   avgPopulation: number | null;
-  /** 유출 비율(주중) 0~100. */
-  weekdayPct: number;
-  /** 유입 비율(주말) 0~100. */
-  weekendPct: number;
+  /** 유출 비율(주중) 0~100. 실데이터 없으면 null → 지표없음. */
+  weekdayPct: number | null;
+  /** 유입 비율(주말) 0~100. 실데이터 없으면 null → 지표없음. */
+  weekendPct: number | null;
   onExpand?: () => void;
 }
 
@@ -47,8 +47,6 @@ export default function ScoreCard({
   weekendPct,
   onExpand,
 }: ScoreCardProps) {
-  const topPct = score != null ? Math.max(1, Math.round(100 - score)) : null;
-
   return (
     <div className={styles.card}>
       <div className={styles.head}>
@@ -65,14 +63,22 @@ export default function ScoreCard({
           <span className={styles.scoreNum}>{score != null ? Math.round(score) : "—"}</span>
           <span className={styles.scoreDenom}>/100</span>
         </div>
-        {topPct != null && <span className={styles.topPill}>상위 {topPct}%</span>}
+        <span className={`${styles.topPill} ${styles.topPillEmpty}`}>순위 지표없음</span>
       </div>
 
       <span className={styles.constructLabel}>점수 구성</span>
       <div className={styles.badgeRow}>
         {badges.map((b) => (
           <span key={b.label} className={styles.badge}>
-            {b.label} <strong>{b.value != null ? Math.round(b.value) : "—"}</strong>
+            {b.value != null ? (
+              <>
+                {b.label} <strong>{Math.round(b.value)}</strong>
+              </>
+            ) : (
+              <>
+                {b.label} <span className={styles.badgeEmpty}>지표없음</span>
+              </>
+            )}
           </span>
         ))}
       </div>
@@ -111,16 +117,24 @@ export default function ScoreCard({
 
       <div className={styles.growthRow}>
         <span className={styles.growthTag}>{typeName ?? "상권"}</span>
-        <span className={styles.peakTag}>피크 11~14시</span>
+        <span className={styles.peakTag}>피크 지표없음</span>
       </div>
 
-      <div className={styles.flowLabels}>
-        <span>주중 {Math.round(weekdayPct)}%</span>
-        <span>주말 {Math.round(weekendPct)}%</span>
-      </div>
-      <div className={styles.flowBar}>
-        <span className={styles.flowFill} style={{ width: `${weekdayPct}%` }} />
-      </div>
+      {weekdayPct != null && weekendPct != null ? (
+        <>
+          <div className={styles.flowLabels}>
+            <span>주중 {Math.round(weekdayPct)}%</span>
+            <span>주말 {Math.round(weekendPct)}%</span>
+          </div>
+          <div className={styles.flowBar}>
+            <span className={styles.flowFill} style={{ width: `${weekdayPct}%` }} />
+          </div>
+        </>
+      ) : (
+        <div className={styles.flowLabels}>
+          <span className={styles.badgeEmpty}>주중/주말 지표없음</span>
+        </div>
+      )}
     </div>
   );
 }
