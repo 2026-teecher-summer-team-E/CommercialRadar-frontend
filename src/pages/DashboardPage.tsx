@@ -250,28 +250,33 @@ export default function DashboardPage() {
 
   // GangnamForecastChart용 시계열(unit="ratio" → 0~1 스케일 필수).
   // latest_stats.survival_rate는 0~100 이므로 /100. forecast는 이미 0~1.
-  const survivalHistory: TimeseriesPoint[] = useMemo(() => {
-    if (stats?.survival_rate == null || !stats.year_quarter) return [];
-    return [{ year_quarter: stats.year_quarter, value: stats.survival_rate / 100 }];
-  }, [stats]);
+  // 누적 생존율: 창업 시점=100%, 분기별 생존율(0~1)을 복리로 곱해 점점 감소.
+  // 낙관(high)·비관(low) 밴드도 각각 누적해 시간이 갈수록 벌어진다.
+  const survivalCum = useMemo(() => {
+    const fc = data?.forecast?.forecast ?? [];
+    const anchorQ = stats?.year_quarter ?? null;
+    const history: TimeseriesPoint[] = anchorQ ? [{ year_quarter: anchorQ, value: 1 }] : [];
+    let cv = 1;
+    let cl = 1;
+    let ch = 1;
+    const forecast: TimeseriesPoint[] = fc.map((p) => {
+      const r = p.survival_rate ?? 1;
+      cv *= r;
+      cl *= p.low ?? r;
+      ch *= p.high ?? r;
+      return { year_quarter: p.year_quarter, value: cv, low: cl, mid: cv, high: ch };
+    });
+    return { history, forecast, finalPct: forecast.length > 0 ? cv * 100 : null };
+  }, [data, stats]);
+  const survivalHistory = survivalCum.history;
+  const survivalForecast = survivalCum.forecast;
 
-  const survivalForecast: TimeseriesPoint[] = useMemo(
-    () =>
-      (data?.forecast?.forecast ?? []).map((p) => ({
-        year_quarter: p.year_quarter,
-        value: p.survival_rate,
-        low: p.low,
-        mid: p.survival_rate,
-        high: p.high,
-      })),
-    [data],
-  );
-
-  const forecastLast = data?.forecast?.forecast?.[data.forecast.forecast.length - 1] ?? null;
-  const forecastNextPct = toPct(forecastLast?.survival_rate ?? null);
+  // 카드 헤로: 창업 시점 100% → 4분기 후 누적 생존율.
+  const survivalStartPct = survivalHistory.length > 0 ? 100 : null;
+  const forecastNextPct = survivalCum.finalPct;
   const forecastDelta =
-    stats?.survival_rate != null && forecastNextPct != null
-      ? Number((forecastNextPct - stats.survival_rate).toFixed(1))
+    survivalStartPct != null && forecastNextPct != null
+      ? Number((forecastNextPct - survivalStartPct).toFixed(1))
       : null;
 
   // 연령 분포(실데이터, dimension="age"). 성별 marginal 은 {남성:총,여성:총} 총량뿐이라
@@ -393,7 +398,7 @@ export default function DashboardPage() {
         />
 
         <SurvivalCard
-          current={stats?.survival_rate ?? null}
+          current={survivalStartPct}
           forecast={forecastNextPct}
           delta={forecastDelta}
           points={forecastPoints}
@@ -487,7 +492,7 @@ export default function DashboardPage() {
         >
           <div className={styles.modalChart}>
             <SurvivalCard
-              current={stats?.survival_rate ?? null}
+              current={survivalStartPct}
               forecast={forecastNextPct}
               delta={forecastDelta}
               points={forecastPoints}
