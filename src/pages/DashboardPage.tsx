@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { apiClient } from "../lib/apiClient";
 import { commercialApi } from "../services/commercialApi";
 import { mlApi } from "../services/mlApi";
@@ -390,6 +390,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className={styles.page}>
+        <PageNav />
         <Header name={null} region={null} typeName={null} />
         <div className={styles.skeletonWrap}>
           <div className={styles.skeleton} />
@@ -403,6 +404,7 @@ export default function DashboardPage() {
   if (error || !data || !d) {
     return (
       <div className={styles.page}>
+        <PageNav />
         <Header name={null} region={null} typeName={null} />
         <div className={styles.empty}>대시보드 데이터를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</div>
       </div>
@@ -422,6 +424,7 @@ export default function DashboardPage() {
 
   return (
     <div className={styles.page}>
+      <PageNav />
       <Header name={d.district_name} region={region} typeName={d.type_name} />
 
       {/* 상단 2열: 종합점수 + 생존율 예측 */}
@@ -565,6 +568,19 @@ export default function DashboardPage() {
           onClose={() => setSim(null)}
         />
       )}
+    </div>
+  );
+}
+
+/** 대시보드 상단 위치 표시줄: 어디서 왔고, 지금 어떤 페이지인지 보여준다. */
+function PageNav() {
+  return (
+    <div className={styles.pageNav}>
+      <Link to="/" className={styles.pageNavBack}>
+        ← 지역 분석
+      </Link>
+      <span className={styles.pageNavDivider} />
+      <span className={styles.pageNavActive}>상세 분석 보기</span>
     </div>
   );
 }

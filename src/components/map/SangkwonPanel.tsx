@@ -152,7 +152,7 @@ export default function SangkwonPanel({
               cursor: "pointer",
             }}
           >
-            상세 프로필 보기 →
+            상세 분석 보기
           </button>
 
           <div className={styles.divider} />
