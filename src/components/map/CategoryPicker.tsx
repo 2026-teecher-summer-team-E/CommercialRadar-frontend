@@ -7,10 +7,18 @@ interface CategoryPickerProps {
   value: string | null;
   onChange: (v: string | null) => void;
   placeholder?: string;
+  /** 좁은 자리(SangkwonPanel)용 축소 스타일. */
+  compact?: boolean;
 }
 
 /** 대분류 → 소분류 드릴다운 업종 선택기(pill + dropdown). FilterBar/SangkwonPanel 공용. */
-export default function CategoryPicker({ groups, value, onChange, placeholder = "전체" }: CategoryPickerProps) {
+export default function CategoryPicker({
+  groups,
+  value,
+  onChange,
+  placeholder = "전체",
+  compact = false,
+}: CategoryPickerProps) {
   const [open, setOpen] = useState(false);
   const [activeGroupName, setActiveGroupName] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -36,7 +44,7 @@ export default function CategoryPicker({ groups, value, onChange, placeholder = 
     <div className={styles.pillWrap} ref={rootRef}>
       <button
         type="button"
-        className={`${styles.pill} ${isDefault ? "" : styles.pillActive} ${open ? styles.pillOpen : ""}`}
+        className={`${styles.pill} ${compact ? styles.pillCompact : ""} ${isDefault ? "" : styles.pillActive} ${open ? styles.pillOpen : ""}`}
         onClick={toggle}
       >
         {isDefault ? placeholder : value}

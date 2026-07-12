@@ -86,15 +86,32 @@ export default function SangkwonPanel({
 
   return (
     <aside className={styles.panel}>
-      {/* 현재 위치 표시(선택은 상단 검색바가 담당) */}
-      <div className={styles.selectRow}>
-        <span className={styles.locationLabel}>
-          {detail ? [detail.gu_name, detail.district_name].filter(Boolean).join(" ") : ""}
-        </span>
+      {/* 현재 위치(선택은 상단 검색바가 담당) + 업종 필터를 한 줄에 배치. */}
+      <div className={styles.headerRow}>
+        <div className={styles.headerInfo}>
+          <span className={styles.locationTitle}>{detail?.district_name}</span>
+          {detail && (
+            <span className={styles.locationSub}>
+              <span className={styles.locationSubText}>{locationLabel}</span>
+              {detail.type_name && (
+                <span className={styles.districtTypeChip}>{detail.type_name}</span>
+              )}
+              {hasCategoryFilter && categoryOverride && (
+                <span className={styles.districtTypeChip}>{categoryOverride.category_name} 기준</span>
+              )}
+            </span>
+          )}
+        </div>
+        <div className={styles.categoryRow}>
+          <span className={styles.categoryLabel}>업종</span>
+          <CategoryPicker
+            groups={availableGroups}
+            value={categoryFilter}
+            onChange={onCategoryFilterChange}
+            compact
+          />
+        </div>
       </div>
-
-      {/* 업종 필터: 이 상권에 실재하는 업종만 대분류→소분류 드릴다운으로 선택. */}
-      <CategoryPicker groups={availableGroups} value={categoryFilter} onChange={onCategoryFilterChange} />
 
       {loading && <div className={styles.panelState}>불러오는 중…</div>}
       {error && !loading && (
@@ -103,24 +120,11 @@ export default function SangkwonPanel({
 
       {!loading && !error && detail && (
         <>
-          {/* 상권명 + 점수 */}
-          <div className={styles.districtHead}>
-            <span className={styles.districtPin} aria-hidden>
-              ◎
-            </span>
-            <span className={styles.districtName}>{locationLabel}</span>
-            {detail.type_name && (
-              <span className={styles.districtType}>{detail.type_name}</span>
-            )}
-            {hasCategoryFilter && categoryOverride && (
-              <span className={styles.districtType}>{categoryOverride.category_name} 기준</span>
-            )}
-          </div>
-
           {categoryEmpty && (
             <div className={styles.panelState}>이 상권엔 선택한 업종 데이터가 없습니다.</div>
           )}
 
+          <p className={styles.scoreLabel}>상권 종합 점수</p>
           <div className={styles.scoreBlock}>
             <span className={styles.scoreNum}>{score ?? "-"}</span>
             <span className={styles.scoreUnit}>점</span>
