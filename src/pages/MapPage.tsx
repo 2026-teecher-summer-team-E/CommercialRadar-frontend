@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { apiClient } from "../lib/apiClient";
 import { commercialApi } from "../services/commercialApi";
 import { useRecentSearches, type RecentSearchItem } from "../hooks/useRecentSearches";
@@ -23,7 +23,29 @@ export default function MapPage() {
   const navigate = useNavigate();
   const openProfile = useCallback((id: number) => navigate(`/dashboard/${id}`), [navigate]);
 
-  const [selectedId, setSelectedId] = useState<number>(DEFAULT_DISTRICT_ID);
+  // 다른 페이지(랭킹 등)에서 ?district=<id> 로 진입하면 그 상권을 선택된 상태로 연다.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const districtParam = Number(searchParams.get("district"));
+  const initialDistrictId =
+    Number.isFinite(districtParam) && districtParam > 0 ? districtParam : DEFAULT_DISTRICT_ID;
+
+  const [selectedId, setSelectedId] = useState<number>(initialDistrictId);
+  // 마운트 시점 값을 기억해 두고, 실제로 그 값에서 벗어날 때만 URL에 반영한다.
+  // (boolean 플래그로 "최초 1회"를 가리면 StrictMode의 effect 이중 실행에서 깨지므로 값 비교로 판단)
+  const lastSyncedIdRef = useRef(initialDistrictId);
+
+  // 사용자가 실제로 상권을 바꿀 때만 URL에 반영(진입 시 기본값으로 URL을 건드리지 않음). 히스토리 스팸 방지를 위해 replace 사용.
+  useEffect(() => {
+    if (selectedId === lastSyncedIdRef.current) return;
+    lastSyncedIdRef.current = selectedId;
+    setSearchParams(
+      (prev) => {
+        prev.set("district", String(selectedId));
+        return prev;
+      },
+      { replace: true },
+    );
+  }, [selectedId, setSearchParams]);
   const [summary, setSummary] = useState<DistrictSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
