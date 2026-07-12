@@ -4,13 +4,17 @@ import { apiClient } from "../lib/apiClient";
 import { commercialApi } from "../services/commercialApi";
 import { mlApi } from "../services/mlApi";
 import type {
+  RadarResponse,
   PopulationHeatmapResponse,
   DistrictTimeSeriesResponse,
   SurvivalForecastResponse,
+  TimeseriesPoint,
+  AgeSlice,
 } from "../types";
 import type { ForecastPoint } from "../components/charts/ForecastChart";
 import ScoreCard from "../components/dashboard/ScoreCard";
 import SurvivalCard from "../components/dashboard/SurvivalCard";
+import AtmosphereSimulation from "../components/charts/AtmosphereSimulation";
 import PopulationHeatmap from "../components/dashboard/PopulationHeatmap";
 import AgeGenderCard from "../components/dashboard/AgeGenderCard";
 import RentCard from "../components/dashboard/RentCard";
@@ -104,6 +108,7 @@ interface PerCapitaSalesResponse {
 
 interface DashboardData {
   district: DistrictDetail | null;
+  radar: RadarResponse | null;
   heatmap: PopulationHeatmapResponse | null;
   tsAge: DistrictTimeSeriesResponse | null;
   tsGender: DistrictTimeSeriesResponse | null;
@@ -147,6 +152,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [modal, setModal] = useState<"forecast" | "heatmap" | null>(null);
+  const [sim, setSim] = useState<"low" | "mid" | "high" | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -155,6 +161,7 @@ export default function DashboardPage() {
 
     Promise.allSettled([
       commercialApi.getDistrict(id),
+      commercialApi.radar(id),
       commercialApi.heatmap(id),
       commercialApi.timeSeries(id, { metrics: "population", breakdown: "age" }),
       commercialApi.timeSeries(id, { metrics: "population", breakdown: "gender" }),
@@ -170,6 +177,7 @@ export default function DashboardPage() {
         if (!alive) return;
         const [
           districtR,
+          radarR,
           heatmapR,
           tsAgeR,
           tsGenderR,
@@ -188,6 +196,7 @@ export default function DashboardPage() {
         }
         setData({
           district,
+          radar: pick<RadarResponse>(radarR),
           heatmap: pick<PopulationHeatmapResponse>(heatmapR),
           tsAge: pick<DistrictTimeSeriesResponse>(tsAgeR),
           tsGender: pick<DistrictTimeSeriesResponse>(tsGenderR),
@@ -239,16 +248,59 @@ export default function DashboardPage() {
     return pts;
   }, [data, stats]);
 
-  const forecastLast = data?.forecast?.forecast?.[data.forecast.forecast.length - 1] ?? null;
-  const forecastNextPct = toPct(forecastLast?.survival_rate ?? null);
+  // GangnamForecastChart용 시계열(unit="ratio" → 0~1 스케일 필수).
+  // latest_stats.survival_rate는 0~100 이므로 /100. forecast는 이미 0~1.
+  // 누적 생존율: 창업 시점=100%, 분기별 생존율(0~1)을 복리로 곱해 점점 감소.
+  // 낙관(high)·비관(low) 밴드도 각각 누적해 시간이 갈수록 벌어진다.
+  const survivalCum = useMemo(() => {
+    const fc = data?.forecast?.forecast ?? [];
+    const anchorQ = stats?.year_quarter ?? null;
+    const history: TimeseriesPoint[] = anchorQ ? [{ year_quarter: anchorQ, value: 1 }] : [];
+    let cv = 1;
+    let cl = 1;
+    let ch = 1;
+    const forecast: TimeseriesPoint[] = fc.map((p) => {
+      const r = p.survival_rate ?? 1;
+      cv *= r;
+      cl *= p.low ?? r;
+      ch *= p.high ?? r;
+      return { year_quarter: p.year_quarter, value: cv, low: cl, mid: cv, high: ch };
+    });
+    return { history, forecast, finalPct: forecast.length > 0 ? cv * 100 : null };
+  }, [data, stats]);
+  const survivalHistory = survivalCum.history;
+  const survivalForecast = survivalCum.forecast;
+
+  // 카드 헤로: 창업 시점 100% → 4분기 후 누적 생존율.
+  const survivalStartPct = survivalHistory.length > 0 ? 100 : null;
+  const forecastNextPct = survivalCum.finalPct;
   const forecastDelta =
-    stats?.survival_rate != null && forecastNextPct != null
-      ? Number((forecastNextPct - stats.survival_rate).toFixed(1))
+    survivalStartPct != null && forecastNextPct != null
+      ? Number((forecastNextPct - survivalStartPct).toFixed(1))
       : null;
 
   // 연령 분포(실데이터, dimension="age"). 성별 marginal 은 {남성:총,여성:총} 총량뿐이라
   // 연령×성별 세부는 DB 에 없다. 연령 막대는 성별 비율로 스케일해 토글을 표현한다.
   const ageDist = useMemo(() => lastBreakdown(data?.tsAge ?? null, "age") ?? null, [data]);
+
+  // AtmosphereSimulation용 연령 구성비(라벨명 유지 — "60대이상" 색 지원됨).
+  const ageSlices: AgeSlice[] = useMemo(() => {
+    if (!ageDist) return [];
+    const total = Object.values(ageDist).reduce((s, v) => s + v, 0);
+    if (total <= 0) return [];
+    return Object.entries(ageDist).map(([name, v]) => ({ name, pct: Math.round((v / total) * 100) }));
+  }, [ageDist]);
+
+  // 시나리오별 최종 누적 생존율 %(low/mid/high) — AtmosphereSimulation 점포 불빛 실데이터.
+  const survivalScenarioPct = useMemo(() => {
+    const last = survivalForecast[survivalForecast.length - 1];
+    if (!last) return null;
+    return {
+      low: (last.low ?? last.value ?? 0) * 100,
+      mid: (last.value ?? 0) * 100,
+      high: (last.high ?? last.value ?? 0) * 100,
+    };
+  }, [survivalForecast]);
   const genderDist = useMemo(() => lastBreakdown(data?.tsGender ?? null, "gender") ?? null, [data]);
   const { femaleDist, maleDist } = useMemo(() => {
     if (!ageDist) return { femaleDist: null, maleDist: null };
@@ -281,10 +333,10 @@ export default function DashboardPage() {
     return items.find((it) => it.district_name === d.district_name) ?? null;
   }, [data, d]);
 
-  // 유출/유입 진행바: 요일 주변분포 주중/주말 합으로 근사(없으면 74/26 목업).
-  const flow = useMemo(() => {
+  // 유출/유입 진행바: 요일 주변분포 주중/주말 합으로 근사(실데이터 없으면 지표없음).
+  const flow = useMemo<{ weekday: number; weekend: number } | null>(() => {
     const byDay = data?.heatmap?.by_day ?? [];
-    if (byDay.length === 0) return { weekday: 74, weekend: 26 };
+    if (byDay.length === 0) return null;
     const weekdayKeys = new Set(["월", "화", "수", "목", "금"]);
     let wk = 0;
     let we = 0;
@@ -326,10 +378,15 @@ export default function DashboardPage() {
     );
   }
 
+  // 점수 구성 배지: radar 5축 중 생존율·유동인구·매출 실측 정규화 점수(0~100). 없으면 지표없음.
+  const radarValue = (key: string): number | null => {
+    const ax = data?.radar?.axes?.find((a) => a.key === key);
+    return ax?.value ?? null;
+  };
   const scoreBadges = [
-    { label: "생존율", value: stats?.survival_rate != null ? Math.round(stats.survival_rate * 0.46) : 38 },
-    { label: "유동인구", value: 27 },
-    { label: "매출", value: 22 },
+    { label: "생존율", value: radarValue("survival") },
+    { label: "유동인구", value: radarValue("population") },
+    { label: "매출", value: radarValue("sales") },
   ];
 
   return (
@@ -347,15 +404,18 @@ export default function DashboardPage() {
           survivalRate={stats?.survival_rate ?? null}
           closureRate={stats?.closure_rate ?? null}
           avgPopulation={d.avg_population}
-          weekdayPct={flow.weekday}
-          weekendPct={flow.weekend}
+          weekdayPct={flow?.weekday ?? null}
+          weekendPct={flow?.weekend ?? null}
         />
 
         <SurvivalCard
-          current={stats?.survival_rate ?? null}
+          current={survivalStartPct}
           forecast={forecastNextPct}
           delta={forecastDelta}
           points={forecastPoints}
+          history={survivalHistory}
+          forecastSeries={survivalForecast}
+          onScenarioClick={setSim}
           totalBusiness={stats?.total_business ?? null}
           closureRate={stats?.closure_rate ?? null}
           onExpand={() => setModal("forecast")}
@@ -405,7 +465,7 @@ export default function DashboardPage() {
         <SectionTitle title="매출·소비" subtitle="고객은 얼마나, 어떻게 지갑을 여는가" />
         <div className={styles.duoGrid}>
           <PerCapitaCard wonValue={data.perCapita?.per_capita_sales ?? null} />
-          <WeekendCard pct={data.popRatios?.weekend_pct ?? null} />
+          <WeekendCard pct={data.popRatios?.weekend_pct ?? null} days={data.heatmap?.by_day ?? null} />
         </div>
       </section>
 
@@ -443,10 +503,13 @@ export default function DashboardPage() {
         >
           <div className={styles.modalChart}>
             <SurvivalCard
-              current={stats?.survival_rate ?? null}
+              current={survivalStartPct}
               forecast={forecastNextPct}
               delta={forecastDelta}
               points={forecastPoints}
+              history={survivalHistory}
+              forecastSeries={survivalForecast}
+              onScenarioClick={setSim}
               totalBusiness={stats?.total_business ?? null}
               closureRate={stats?.closure_rate ?? null}
             />
@@ -463,6 +526,17 @@ export default function DashboardPage() {
         >
           <PopulationHeatmap byTime={data.heatmap.by_time} byDay={data.heatmap.by_day} showValues />
         </ExpandModal>
+      )}
+
+      {/* 상권 분위기 시뮬레이션: 생존율 예측 시나리오 선 클릭 시 */}
+      {sim && (
+        <AtmosphereSimulation
+          scenario={sim}
+          ageDistribution={ageSlices}
+          survivalPct={survivalScenarioPct ? survivalScenarioPct[sim] : null}
+          footTraffic={d.avg_population ?? null}
+          onClose={() => setSim(null)}
+        />
       )}
     </div>
   );

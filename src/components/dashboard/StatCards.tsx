@@ -13,10 +13,10 @@ export function DayNightCard({
   const slots = ["00~06", "06~11", "11~14", "14~17", "17~21", "21~24"];
   const bandKeys = ["00_06", "06_11", "11_14", "14_17", "17_21", "21_24"];
   const hasData = dayPct != null && nightPct != null;
-  // 실제 밴드 매출이 있으면 그 비율로 미니 막대, 없으면 정적 플레이스홀더 막대.
+  // 실제 밴드 매출이 있으면 그 비율로 미니 막대, 없으면 지표없음.
   const rawBars = bands ? bandKeys.map((k) => bands[k] ?? 0) : null;
   const maxBar = rawBars ? Math.max(...rawBars, 1) : 1;
-  const bars = rawBars ? rawBars.map((v) => Math.round((v / maxBar) * 100)) : [12, 20, 100, 55, 40, 30];
+  const bars = rawBars ? rawBars.map((v) => Math.round((v / maxBar) * 100)) : null;
   return (
     <div className={styles.card}>
       <div className={styles.head}>
@@ -35,24 +35,27 @@ export function DayNightCard({
         <span>밤 {hasData ? `${nightPct}%` : "—"}</span>
       </div>
       <p className={styles.miniLabel}>시간대별 매출 구성</p>
-      <div className={styles.miniBars}>
-        {bars.map((h, i) => (
-          <div key={slots[i]} className={styles.miniCol}>
-            <span
-              className={h >= 100 ? styles.miniBarTop : styles.miniBar}
-              style={{ height: `${Math.max(10, h)}%` }}
-            />
-            <span className={styles.miniSlot}>{slots[i]}</span>
-          </div>
-        ))}
-      </div>
+      {bars ? (
+        <div className={styles.miniBars}>
+          {bars.map((h, i) => (
+            <div key={slots[i]} className={styles.miniCol}>
+              <span
+                className={h >= 100 ? styles.miniBarTop : styles.miniBar}
+                style={{ height: `${Math.max(10, h)}%` }}
+              />
+              <span className={styles.miniSlot}>{slots[i]}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className={styles.miniEmpty}>지표없음</div>
+      )}
     </div>
   );
 }
 
 /** 외국인 비중 카드. pct는 foreign-ratio API 실데이터(생활인구 중 외국인 %). */
 export function ForeignCard({ pct = null, onExpand }: { pct?: number | null; onExpand?: () => void }) {
-  const bars = [30, 45, 55, 70, 85, 100];
   return (
     <div className={styles.card}>
       <div className={styles.head}>
@@ -68,18 +71,9 @@ export function ForeignCard({ pct = null, onExpand }: { pct?: number | null; onE
       </div>
       <div className={styles.foreignRow}>
         <span className={styles.bigNum}>{pct != null ? `${pct}%` : "—"}</span>
-        <div className={styles.miniBars}>
-          {bars.map((h, i) => (
-            <div key={i} className={styles.miniCol}>
-              <span
-                className={h >= 100 ? styles.miniBarTop : styles.miniBar}
-                style={{ height: `${h}%` }}
-              />
-            </div>
-          ))}
-        </div>
+        <div className={styles.miniEmpty}>지표없음</div>
       </div>
-      <p className={styles.note}>서울 평균 8.4%</p>
+      <p className={styles.note}>서울 평균 지표없음</p>
     </div>
   );
 }
@@ -92,7 +86,7 @@ export function PerCapitaCard({ wonValue = null, onExpand }: { wonValue?: number
     <div className={styles.card}>
       <div className={styles.head}>
         <div>
-          <h3 className={styles.title}>인당 소비 ⓘ</h3>
+          <h3 className={styles.title}>인당 소비</h3>
           <p className={styles.sub}>방문 1인당 매출(분기)</p>
         </div>
         {onExpand && (
@@ -109,14 +103,25 @@ export function PerCapitaCard({ wonValue = null, onExpand }: { wonValue?: number
   );
 }
 
-/** 주말 비중 카드. population-ratios API 실데이터(주말 유동인구 비중). */
-export function WeekendCard({ pct = null, onExpand }: { pct?: number | null; onExpand?: () => void }) {
-  const bars = [40, 50, 45, 60, 100, 70];
+/** 주말 비중 카드. pct=population-ratios 실데이터, 미니막대=heatmap by_day(요일별 유동인구) 실데이터. */
+export function WeekendCard({
+  pct = null,
+  days = null,
+  onExpand,
+}: {
+  pct?: number | null;
+  days?: { slot: string; avg_population: number | null }[] | null;
+  onExpand?: () => void;
+}) {
+  // 요일별 유동인구를 최댓값 대비 비율(%) 막대로. 데이터 없으면 지표없음.
+  const vals = days && days.length > 0 ? days.map((d) => d.avg_population ?? 0) : null;
+  const maxBar = vals ? Math.max(...vals, 1) : 1;
+  const bars = vals ? vals.map((v) => Math.round((v / maxBar) * 100)) : null;
   return (
     <div className={styles.card}>
       <div className={styles.head}>
         <div>
-          <h3 className={styles.title}>주말 비중 ⓘ</h3>
+          <h3 className={styles.title}>주말 비중</h3>
           <p className={styles.sub}>유동인구 중 토·일 비중</p>
         </div>
         {onExpand && (
@@ -128,16 +133,21 @@ export function WeekendCard({ pct = null, onExpand }: { pct?: number | null; onE
       <span className={styles.deltaTagBlue}>{pct != null && pct >= 28.6 ? "주말 집중" : "주중 우위"}</span>
       <div className={styles.weekendRow}>
         <span className={styles.bigNum}>{pct != null ? `${pct}%` : "—"}</span>
-        <div className={styles.miniBars}>
-          {bars.map((h, i) => (
-            <div key={i} className={styles.miniCol}>
-              <span
-                className={h >= 100 ? styles.miniBarTop : styles.miniBar}
-                style={{ height: `${h}%` }}
-              />
-            </div>
-          ))}
-        </div>
+        {bars ? (
+          <div className={styles.miniBars}>
+            {bars.map((h, i) => (
+              <div key={days![i].slot} className={styles.miniCol}>
+                <span
+                  className={h >= 100 ? styles.miniBarTop : styles.miniBar}
+                  style={{ height: `${Math.max(10, h)}%` }}
+                />
+                <span className={styles.miniSlot}>{days![i].slot}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className={styles.miniEmpty}>지표없음</div>
+        )}
       </div>
       <p className={styles.note}>전체 상권 평균 28.4%</p>
     </div>

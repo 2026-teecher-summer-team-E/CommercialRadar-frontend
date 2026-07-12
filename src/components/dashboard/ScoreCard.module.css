@@ -66,6 +66,11 @@
   font-weight: 700;
   font-family: var(--font-num);
 }
+.topPillEmpty {
+  background: var(--color-bg-subtle, #f1f5f9);
+  color: var(--color-muted);
+  font-weight: 600;
+}
 
 .constructLabel {
   font-size: 12px;
@@ -89,6 +94,11 @@
 .badge strong {
   font-family: var(--font-num);
   font-weight: 700;
+}
+
+.badgeEmpty {
+  font-weight: 600;
+  color: var(--color-muted);
 }
 
 .identity {

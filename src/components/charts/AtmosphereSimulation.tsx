@@ -7,6 +7,10 @@ export type AtmoScenario = "low" | "mid" | "high";
 interface Props {
   scenario: AtmoScenario;
   ageDistribution?: AgeSlice[];
+  /** 클릭한 시나리오의 누적 생존율 %(실데이터). 점포 불빛 비율에 사용. */
+  survivalPct?: number | null;
+  /** 평균 유동인구(avg_population, 실데이터). 등장 인원 수에 사용. */
+  footTraffic?: number | null;
   onClose: () => void;
 }
 
@@ -44,8 +48,17 @@ interface Person {
   row: number;
 }
 
-export default function AtmosphereSimulation({ scenario, ageDistribution, onClose }: Props) {
+export default function AtmosphereSimulation({ scenario, ageDistribution, survivalPct, footTraffic, onClose }: Props) {
   const cfg = SCENARIO[scenario];
+
+  // 실데이터 연동: 점포 불빛=누적 생존율, 인원 수=평균 유동인구(로그 스케일)×생존율.
+  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+  const litRatio = survivalPct != null ? clamp(survivalPct / 100, 0.05, 1) : cfg.lit;
+  const count =
+    footTraffic != null && footTraffic > 0
+      ? clamp(Math.round((Math.log10(footTraffic) - 4) * 4 * litRatio), 3, 20)
+      : cfg.count;
+  const realBased = survivalPct != null || (footTraffic != null && footTraffic > 0);
   const [playing, setPlaying] = useState(true);
   const [xs, setXs] = useState<number[]>([]);
   const timer = useRef<number | null>(null);
@@ -71,13 +84,13 @@ export default function AtmosphereSimulation({ scenario, ageDistribution, onClos
 
   const people = useMemo<Person[]>(() => {
     const out: Person[] = [];
-    for (let i = 0; i < cfg.count; i++) {
+    for (let i = 0; i < count; i++) {
       const r = ((i * 9301 + 49297) % 233280) / 233280;
       const r2 = ((i * 4021 + 3571) % 100) / 100;
       out.push({ id: i, color: weightedAge(r), bag: r2 > 0.55, row: (i % 5) / 4 });
     }
     return out;
-  }, [cfg.count, weightedAge]);
+  }, [count, weightedAge]);
 
   useEffect(() => {
     setXs(people.map((_, i) => 6 + ((i * 37) % 88)));
@@ -141,7 +154,7 @@ export default function AtmosphereSimulation({ scenario, ageDistribution, onClos
           <div style={{ position: "absolute", inset: 0, height: "45%", background: "linear-gradient(#141d30,#0f1626)" }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(9,1fr)", gap: 10, padding: "16px 18px" }}>
               {windows.map((_, i) => {
-                const on = ((i * 7 + 3) % 100) / 100 < cfg.lit;
+                const on = ((i * 7 + 3) % 100) / 100 < litRatio;
                 return (
                   <div key={i} style={{ height: 20, borderRadius: 5, background: on ? "#d9c26a" : "#1b2740", opacity: on ? 0.85 : 0.5, animation: on ? `atmo-glow ${2 + (i % 4)}s ease-in-out ${i * 0.1}s infinite` : "none", animationPlayState: playState }} />
                 );
@@ -187,11 +200,17 @@ export default function AtmosphereSimulation({ scenario, ageDistribution, onClos
             ))}
           </div>
           <div style={{ fontSize: 11, color: "#a2a7b5", marginTop: 6 }}>
-            {isReal ? "최근 관측 구성비 기준 (총 유동인구만 예측)" : "※ 예시 구성비 (관측 데이터 없음)"}
+            {isReal ? "연령 구성비 · 최근 관측 실데이터" : "※ 연령 구성비 · 예시(관측 데이터 없음)"}
           </div>
         </div>
 
         <div style={{ fontSize: 12, color: "#8b90a0", marginTop: 10 }}>{cfg.desc}</div>
+        {realBased && (
+          <div style={{ fontSize: 11, color: "#a2a7b5", marginTop: 4 }}>
+            점포 불빛{survivalPct != null ? ` = 누적 생존율 ${Math.round(survivalPct)}%` : ""}
+            {footTraffic != null && footTraffic > 0 ? " · 인원 = 평균 유동인구 기반" : ""}
+          </div>
+        )}
       </div>
     </div>
   );

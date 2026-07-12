@@ -18,6 +18,10 @@ interface Props {
   forecast: TimeseriesPoint[];
   unit: "won" | "ratio";
   onScenarioClick?: (scenario: "low" | "mid" | "high") => void;
+  /** 차트 높이(px). 기본 380. */
+  height?: number;
+  /** Y축 도메인(예: [0.8, 1]). 미지정 시 recharts 자동. */
+  yDomain?: [number, number];
 }
 
 interface Row {
@@ -67,7 +71,7 @@ function ForecastTooltip({
   );
 }
 
-export default function ForecastChart({ history, forecast, unit, onScenarioClick }: Props) {
+export default function ForecastChart({ history, forecast, unit, onScenarioClick, height = 380, yDomain }: Props) {
   const clickable = !!onScenarioClick;
 
   const makeDot =
@@ -124,11 +128,17 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
     unit === "won" ? `${Math.round(v / 1e8)}억` : `${Math.round(v * 100)}%`;
 
   return (
-    <ResponsiveContainer width="100%" height={380}>
+    <ResponsiveContainer width="100%" height={height}>
       <ComposedChart data={rows} margin={{ top: 16, right: 24, bottom: 8, left: 8 }}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="quarter" tick={{ fontSize: 12 }} />
-        <YAxis tickFormatter={formatAxis} width={64} tick={{ fontSize: 12 }} />
+        <YAxis
+          tickFormatter={formatAxis}
+          width={64}
+          tick={{ fontSize: 12 }}
+          domain={yDomain ?? ["auto", "auto"]}
+          allowDataOverflow={!!yDomain}
+        />
         <Tooltip content={(props) => <ForecastTooltip {...props} formatValue={formatValue} />} />
         <Legend />
         <Area

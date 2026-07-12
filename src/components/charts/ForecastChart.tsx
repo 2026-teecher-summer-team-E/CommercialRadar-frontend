@@ -30,7 +30,7 @@ export default function ForecastChart({ points, width = 560, height = 220 }: For
     return null;
   }
 
-  const padL = 12;
+  const padL = 40;
   const padR = 12;
   const padT = 18;
   const padB = 28;
@@ -49,6 +49,11 @@ export default function ForecastChart({ points, width = 560, height = 220 }: For
 
   const x = (i: number) => padL + (points.length === 1 ? innerW / 2 : (i / (points.length - 1)) * innerW);
   const y = (v: number) => padT + innerH - ((v - min) / (max - min)) * innerH;
+
+  // Y축 눈금: 데이터 범위(rawMin~rawMax)에 균등 배치. 값이 촘촘하면 소수 1자리로.
+  const TICK_COUNT = 4;
+  const tickDecimals = span >= 8 ? 0 : 1;
+  const yTicks = Array.from({ length: TICK_COUNT }, (_, k) => rawMin + (span * k) / (TICK_COUNT - 1));
 
   // 실적/예측 경계 인덱스를 찾아 두 개의 폴리라인으로 분할.
   const coords = points.map((p, i) => ({
@@ -105,6 +110,30 @@ export default function ForecastChart({ points, width = 560, height = 220 }: For
           <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
         </linearGradient>
       </defs>
+
+      {/* Y축 그리드선 + 눈금값 */}
+      {yTicks.map((t, k) => (
+        <g key={`yt-${k}`}>
+          <line
+            x1={padL}
+            y1={y(t)}
+            x2={width - padR}
+            y2={y(t)}
+            stroke="var(--color-line)"
+            strokeWidth="1"
+          />
+          <text
+            x={padL - 8}
+            y={y(t) + 3}
+            fontSize="10"
+            fill="var(--color-faint)"
+            textAnchor="end"
+            fontFamily="var(--font-num)"
+          >
+            {`${t.toFixed(tickDecimals)}%`}
+          </text>
+        </g>
+      ))}
 
       {/* 신뢰밴드 (비관 P10 ~ 낙관 P90) */}
       {bandPath && <path d={bandPath} fill={`url(#${gradId})`} stroke="none" />}

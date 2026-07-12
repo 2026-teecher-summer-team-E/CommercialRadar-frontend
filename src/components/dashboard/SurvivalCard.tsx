@@ -1,5 +1,6 @@
-import ForecastChart from "../charts/ForecastChart";
+import GangnamForecastChart from "../charts/GangnamForecastChart";
 import type { ForecastPoint } from "../charts/ForecastChart";
+import type { TimeseriesPoint } from "../../types";
 import { fmtPct, fmtInt } from "./format";
 import styles from "./SurvivalCard.module.css";
 
@@ -10,10 +11,24 @@ interface SurvivalCardProps {
   forecast: number | null;
   /** Δ %p (전망 - 현재). */
   delta: number | null;
-  points: ForecastPoint[];
+  /** 레거시 prop(미사용). 시그니처 호환용. */
+  points?: ForecastPoint[];
+  /** 실적 시계열(0~1 스케일). */
+  history?: TimeseriesPoint[];
+  /** 예측 시계열(0~1 스케일). */
+  forecastSeries?: TimeseriesPoint[];
+  /** 시나리오 선(low/mid/high) 클릭 콜백. */
+  onScenarioClick?: (s: "low" | "mid" | "high") => void;
   totalBusiness: number | null;
   closureRate: number | null;
   onExpand?: () => void;
+}
+
+/** "2025-Q4" → "2025년 4분기". 파싱 실패 시 원본 반환. */
+function fmtQuarter(q?: string | null): string | null {
+  if (!q) return null;
+  const m = q.match(/(\d{4})[-\s]?Q?([1-4])/i);
+  return m ? `${m[1]}년 ${m[2]}분기` : q;
 }
 
 /** 생존율 예측 카드. Figma 2262:3603 재현. */
@@ -21,20 +36,40 @@ export default function SurvivalCard({
   current,
   forecast,
   delta,
-  points,
+  history,
+  forecastSeries,
+  onScenarioClick,
   totalBusiness,
   closureRate,
   onExpand,
 }: SurvivalCardProps) {
-  const hasChart = points.filter((p) => p.value != null).length >= 2;
+  const hist = history ?? [];
+  const fc = forecastSeries ?? [];
+  const hasChart = hist.length + fc.length >= 2;
   const deltaUp = (delta ?? 0) >= 0;
+
+  // 용어 없이 이해되는 부제: "2025년 4분기에 창업하면 2026년 4분기엔 100곳 중 88곳이 남아요".
+  const startLabel = fmtQuarter(hist[0]?.year_quarter);
+  const endLabel = fmtQuarter(fc[fc.length - 1]?.year_quarter);
+  const survivors = forecast != null ? Math.round(forecast) : null;
+  const subtitle =
+    startLabel && endLabel && survivors != null
+      ? `${startLabel}에 창업하면 ${endLabel}엔 100곳 중 ${survivors}곳이 남아요`
+      : "창업 시점 대비 살아남는 점포 비율(ML 예측)";
+
+  // Y축을 데이터 범위(최저값~100%)로 좁혀 곡선이 눌리지 않게. 최저값을 0.05 단위로 내림.
+  const vals = [...hist, ...fc]
+    .flatMap((p) => [p.value, p.low ?? null, p.high ?? null])
+    .filter((v): v is number => v != null);
+  const yDomain: [number, number] | undefined =
+    vals.length > 0 ? [Math.max(0, Math.floor(Math.min(...vals) * 20) / 20), 1] : undefined;
 
   return (
     <div className={styles.card}>
       <div className={styles.head}>
         <div>
           <h3 className={styles.title}>생존율 예측</h3>
-          <p className={styles.sub}>ML 향후 4분기 전망</p>
+          <p className={styles.sub}>{subtitle}</p>
         </div>
         {onExpand && hasChart && (
           <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="생존율 예측 확대">
@@ -77,14 +112,14 @@ export default function SurvivalCard({
 
       {hasChart ? (
         <div className={styles.chart}>
-          <ForecastChart points={points} width={560} height={200} />
-          <div className={styles.chartLegend}>
-            <span className={styles.legendSolid}>실적</span>
-            <span className={styles.legendDashed}>예측(기본·P50)</span>
-            <span className={styles.legendDashed} style={{ opacity: 0.6 }}>
-              비관·낙관 범위(P10~P90)
-            </span>
-          </div>
+          <GangnamForecastChart
+            history={hist}
+            forecast={fc}
+            unit="ratio"
+            onScenarioClick={onScenarioClick}
+            height={240}
+            yDomain={yDomain}
+          />
         </div>
       ) : (
         <div className={styles.empty}>예측 데이터가 없어요.</div>
