@@ -1,0 +1,25 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-faint);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.btn:hover {
+  background: var(--color-chip);
+}
+.btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.active {
+  color: var(--color-orange);
+}

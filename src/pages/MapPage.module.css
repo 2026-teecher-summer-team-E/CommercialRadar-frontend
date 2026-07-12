@@ -81,11 +81,18 @@
   min-width: 0;
   overflow: hidden;
 }
+.locationTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
 .locationTitle {
   display: block;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  min-width: 0;
   font-family: var(--font-sans);
   font-size: 17px;
   font-weight: 800;
