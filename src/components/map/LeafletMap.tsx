@@ -54,6 +54,12 @@ export default function LeafletMap({
   onSelectRef.current = onSelect;
   onOpenRef.current = onOpenProfile;
 
+  // 방금 이 (selectedId, mode) 조합으로 카메라 이동을 이미 했는지 추적.
+  // points/geojson이 뒤늦게 로드돼 selectedId의 마커가 나중에야 생기는 경우를 다시 시도하기 위해
+  // 이 값들도 effect 4의 의존성에 포함하는데, 그 재실행이 필터 변경처럼 선택과 무관한 이유일 때는
+  // 카메라를 또 움직이지 않도록 이 ref로 "이미 이동했음"을 구분한다.
+  const flownRef = useRef<{ id: number; mode: MapMode } | null>(null);
+
   // 선택 상권 팝업 DOM(이름/유형/점수 + 프로필 버튼).
   const buildPopup = () => {
     const el = document.createElement("div");
@@ -172,6 +178,8 @@ export default function LeafletMap({
     const map = mapRef.current;
     if (!map) return;
 
+    const isNewSelection = !(flownRef.current && flownRef.current.id === selectedId && flownRef.current.mode === mode);
+
     if (mode === "pins") {
       markersRef.current.forEach((m, id) => {
         const sel = id === selectedId;
@@ -180,8 +188,13 @@ export default function LeafletMap({
       });
       const sel = markersRef.current.get(selectedId);
       if (sel) {
-        map.flyTo(sel.getLatLng(), Math.max(map.getZoom(), 16), { duration: 0.8 });
-        sel.bindPopup(buildPopup(), { closeButton: true, minWidth: 170 }).openPopup();
+        const wasOpen = sel.isPopupOpen();
+        if (isNewSelection) {
+          flownRef.current = { id: selectedId, mode };
+          map.flyTo(sel.getLatLng(), Math.max(map.getZoom(), 16), { duration: 0.8 });
+        }
+        sel.bindPopup(buildPopup(), { closeButton: true, minWidth: 170 });
+        if (isNewSelection || wasOpen) sel.openPopup();
       }
     } else {
       polysRef.current.forEach((lyr, id) => {
@@ -192,11 +205,17 @@ export default function LeafletMap({
       });
       const sel = polysRef.current.get(selectedId) as L.Polygon | undefined;
       if (sel && typeof sel.getBounds === "function") {
-        map.flyToBounds(sel.getBounds(), { padding: [80, 80], maxZoom: 17, duration: 0.8 });
-        sel.bindPopup(buildPopup(), { closeButton: true, minWidth: 170 }).openPopup();
+        const wasOpen = sel.isPopupOpen();
+        if (isNewSelection) {
+          flownRef.current = { id: selectedId, mode };
+          map.flyToBounds(sel.getBounds(), { padding: [80, 80], maxZoom: 17, duration: 0.8 });
+        }
+        sel.bindPopup(buildPopup(), { closeButton: true, minWidth: 170 });
+        if (isNewSelection || wasOpen) sel.openPopup();
       }
     }
-  }, [selectedId, mode, activeName, activeType, activeScore]); // eslint-disable-line react-hooks/exhaustive-deps
+    // points/geojson도 의존성에 포함: 데이터가 늦게 도착해 selectedId의 마커/구역이 뒤늦게 생기는 경우를 다시 시도한다.
+  }, [selectedId, mode, activeName, activeType, activeScore, points, geojson]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div ref={containerRef} className={styles.map} aria-label="상권 지도" />;
 }
