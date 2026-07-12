@@ -24,7 +24,7 @@ export function DayNightCard({
   return (
     <div className={styles.card}>
       <div className={styles.head}>
-        <h3 className={styles.title}>밤 vs 낮 매출</h3>
+        <h3 className={styles.title}>낮 vs 밤 매출</h3>
         <p className={styles.sub}>시간대 매출 구성</p>
       </div>
       <div className={styles.dnHero}>
@@ -65,11 +65,11 @@ export function ForeignCard({ pct = null, onExpand }: { pct?: number | null; onE
     <div className={styles.card}>
       <div className={styles.head}>
         <div>
-          <h3 className={styles.title}>외국인 비중</h3>
+          <h3 className={styles.title}>외국인</h3>
           <p className={styles.sub}>생활인구 중 외국인 비중</p>
         </div>
         {onExpand && (
-          <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="외국인 비중 확대">
+          <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="외국인 확대">
             ⤢
           </button>
         )}
@@ -128,11 +128,11 @@ export function WeekendCard({
     <div className={styles.card}>
       <div className={styles.head}>
         <div>
-          <h3 className={styles.title}>주말 비중</h3>
+          <h3 className={styles.title}>요일별 매출</h3>
           <p className={styles.sub}>유동인구 중 토·일 비중</p>
         </div>
         {onExpand && (
-          <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="주말 비중 확대">
+          <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="요일별 매출 확대">
             ⤢
           </button>
         )}
