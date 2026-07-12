@@ -178,7 +178,7 @@
   font-family: var(--font-num);
 }
 .leftCell {
-  text-align: left;
+  text-align: center;
 }
 .rankCol {
   text-align: center;

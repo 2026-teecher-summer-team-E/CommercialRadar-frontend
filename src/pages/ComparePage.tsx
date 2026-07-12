@@ -178,6 +178,22 @@ export default function ComparePage() {
         </div>
 
         <div className={styles.card}>
+          <div style={{ marginBottom: 12 }}>
+            <SectionTitle
+              title="업종별 추천 순위"
+              subtitle={
+                districts[0] ? `${districts[0].district_name} 기준 상위 업종` : "선택 상권 기준 상위 업종"
+              }
+              showAccent={false}
+            />
+          </div>
+          <RankingTable ranking={data.ranking} />
+        </div>
+      </section>
+
+      {/* 분기별 생존율 추이: 그래프가 길쭉해서 2열보단 전체 폭 차지가 낫다. */}
+      <section className={styles.section}>
+        <div className={styles.card}>
           <ChartHeader title="분기별 생존율 추이" onExpand={() => setModal("trend")} />
           {trendLabels.length > 0 ? (
             <div className={styles.chartBody}>
@@ -187,19 +203,6 @@ export default function ComparePage() {
             <div className={styles.empty}>추이 데이터가 없어요.</div>
           )}
           <Legend names={names} />
-        </div>
-      </section>
-
-      {/* 업종별 추천 순위표 */}
-      <section className={styles.section}>
-        <SectionTitle
-          title="업종별 추천 순위"
-          subtitle={
-            districts[0] ? `${districts[0].district_name} 기준 상위 업종` : "선택 상권 기준 상위 업종"
-          }
-        />
-        <div className={styles.card}>
-          <RankingTable ranking={data.ranking} />
         </div>
       </section>
 
@@ -225,7 +228,7 @@ export default function ComparePage() {
           onClose={() => setModal(null)}
         >
           <div className={styles.modalChartWide}>
-            <LineChartSvg labels={trendLabels} series={trendSeries} width={760} height={360} />
+            <LineChartSvg labels={trendLabels} series={trendSeries} width={560} height={280} />
             <Legend names={names} />
           </div>
         </ExpandModal>
@@ -248,10 +251,18 @@ function Header() {
   );
 }
 
-function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
+function SectionTitle({
+  title,
+  subtitle,
+  showAccent = true,
+}: {
+  title: string;
+  subtitle?: string;
+  showAccent?: boolean;
+}) {
   return (
     <div className={styles.sectionTitle}>
-      <span className={styles.accentBar} />
+      {showAccent && <span className={styles.accentBar} />}
       <div>
         <h2 className={styles.sectionHeading}>{title}</h2>
         {subtitle && <p className={styles.sectionSub}>{subtitle}</p>}
