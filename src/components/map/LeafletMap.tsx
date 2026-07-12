@@ -70,7 +70,7 @@ export default function LeafletMap({
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = styles.popupBtn;
-    btn.textContent = "상세 프로필 보기 →";
+    btn.textContent = "상세 분석 보기";
     btn.addEventListener("click", () => onOpenRef.current(selectedId));
     el.appendChild(btn);
     return el;
