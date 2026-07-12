@@ -119,6 +119,7 @@ export default function SurvivalCard({
             onScenarioClick={onScenarioClick}
             height={240}
             yDomain={yDomain}
+            endLabels
           />
         </div>
       ) : (

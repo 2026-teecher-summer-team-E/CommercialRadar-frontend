@@ -162,6 +162,13 @@
   color: var(--color-faint);
   white-space: nowrap;
 }
+.miniVal {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--color-faint);
+  line-height: 1;
+  text-align: center;
+}
 
 .foreignRow,
 .weekendRow {
