@@ -290,6 +290,17 @@ export default function DashboardPage() {
     if (total <= 0) return [];
     return Object.entries(ageDist).map(([name, v]) => ({ name, pct: Math.round((v / total) * 100) }));
   }, [ageDist]);
+
+  // 시나리오별 최종 누적 생존율 %(low/mid/high) — AtmosphereSimulation 점포 불빛 실데이터.
+  const survivalScenarioPct = useMemo(() => {
+    const last = survivalForecast[survivalForecast.length - 1];
+    if (!last) return null;
+    return {
+      low: (last.low ?? last.value ?? 0) * 100,
+      mid: (last.value ?? 0) * 100,
+      high: (last.high ?? last.value ?? 0) * 100,
+    };
+  }, [survivalForecast]);
   const genderDist = useMemo(() => lastBreakdown(data?.tsGender ?? null, "gender") ?? null, [data]);
   const { femaleDist, maleDist } = useMemo(() => {
     if (!ageDist) return { femaleDist: null, maleDist: null };
@@ -519,7 +530,13 @@ export default function DashboardPage() {
 
       {/* 상권 분위기 시뮬레이션: 생존율 예측 시나리오 선 클릭 시 */}
       {sim && (
-        <AtmosphereSimulation scenario={sim} ageDistribution={ageSlices} onClose={() => setSim(null)} />
+        <AtmosphereSimulation
+          scenario={sim}
+          ageDistribution={ageSlices}
+          survivalPct={survivalScenarioPct ? survivalScenarioPct[sim] : null}
+          footTraffic={d.avg_population ?? null}
+          onClose={() => setSim(null)}
+        />
       )}
     </div>
   );
