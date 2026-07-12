@@ -9,8 +9,12 @@ interface Props {
   ageDistribution?: AgeSlice[];
   /** 클릭한 시나리오의 누적 생존율 %(실데이터). 점포 불빛 비율에 사용. */
   survivalPct?: number | null;
-  /** 평균 유동인구(avg_population, 실데이터). 등장 인원 수에 사용. */
+  /** 유동인구(실데이터). 등장 인원 수에 사용. dayDominant 지정 시 해당 시간대 평균. */
   footTraffic?: number | null;
+  /** true=낮 테마, false=밤 테마(기존), null/undefined=밤 테마(칩 미표시). */
+  dayDominant?: boolean | null;
+  /** 유리한 쪽 매출 비중 %(낮 유리면 낮 비중, 밤 유리면 밤 비중). 칩 문구용. */
+  daySalesPct?: number | null;
   onClose: () => void;
 }
 
@@ -48,16 +52,18 @@ interface Person {
   row: number;
 }
 
-export default function AtmosphereSimulation({ scenario, ageDistribution, survivalPct, footTraffic, onClose }: Props) {
+export default function AtmosphereSimulation({ scenario, ageDistribution, survivalPct, footTraffic, dayDominant, daySalesPct, onClose }: Props) {
+  const isDay = dayDominant === true;
   const cfg = SCENARIO[scenario];
 
-  // 실데이터 연동: 점포 불빛=누적 생존율, 인원 수=평균 유동인구(로그 스케일)×생존율.
+  // 실데이터 연동: 점포 불빛=누적 생존율. 인원 수=유동인구 규모(로그 스케일)×시나리오 배수.
   const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
   const litRatio = survivalPct != null ? clamp(survivalPct / 100, 0.05, 1) : cfg.lit;
-  const count =
-    footTraffic != null && footTraffic > 0
-      ? clamp(Math.round((Math.log10(footTraffic) - 4) * 4 * litRatio), 3, 20)
-      : cfg.count;
+  // 유동인구 규모를 4~20 밀도로. 잘풀린 미래일수록 더 붐비도록 시나리오 배수 적용.
+  const trafficBase =
+    footTraffic != null && footTraffic > 0 ? clamp((Math.log10(footTraffic) - 3.5) * 5, 4, 20) : null;
+  const scenarioMult = scenario === "high" ? 1.35 : scenario === "low" ? 0.6 : 1;
+  const count = trafficBase != null ? clamp(Math.round(trafficBase * scenarioMult), 3, 24) : cfg.count;
   const realBased = survivalPct != null || (footTraffic != null && footTraffic > 0);
   const [playing, setPlaying] = useState(true);
   const [xs, setXs] = useState<number[]>([]);
@@ -150,13 +156,29 @@ export default function AtmosphereSimulation({ scenario, ageDistribution, surviv
           </div>
         </div>
 
-        <div style={{ position: "relative", height: 300, marginTop: 14, borderRadius: 14, overflow: "hidden", background: "#0f1626" }}>
-          <div style={{ position: "absolute", inset: 0, height: "45%", background: "linear-gradient(#141d30,#0f1626)" }}>
+        {/* 낮/밤 칩 */}
+        {dayDominant != null && (
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 10, padding: "4px 10px", borderRadius: 20, background: isDay ? "rgba(252,211,77,0.18)" : "rgba(99,102,241,0.18)", fontSize: 12, color: isDay ? "#92400e" : "#a5b4fc" }}>
+            {isDay
+              ? `☀️ 낮 매출${daySalesPct != null ? ` ${daySalesPct.toFixed(1)}%` : ""} — 낮이 유리한 상권`
+              : `🌙 밤 매출${daySalesPct != null ? ` ${daySalesPct.toFixed(1)}%` : ""} — 밤이 유리한 상권`}
+          </div>
+        )}
+
+        <div style={{ position: "relative", height: 300, marginTop: 14, borderRadius: 14, overflow: "hidden", background: isDay ? "linear-gradient(#aecdf0,#e3eefc)" : "#0f1626" }}>
+          {/* 낮 테마: 해 */}
+          {isDay && (
+            <div style={{ position: "absolute", top: 14, right: 18, width: 26, height: 26, borderRadius: "50%", background: "#fcd34d", boxShadow: "0 0 18px #fcd34d88", zIndex: 5 }} />
+          )}
+          <div style={{ position: "absolute", inset: 0, height: "45%", background: isDay ? "linear-gradient(#5b708f,#48597a)" : "linear-gradient(#141d30,#0f1626)" }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(9,1fr)", gap: 10, padding: "16px 18px" }}>
               {windows.map((_, i) => {
                 const on = ((i * 7 + 3) % 100) / 100 < litRatio;
+                const onBg = isDay ? "#fdf3c9" : "#d9c26a";
+                const offBg = isDay ? "#3a4a68" : "#1b2740";
+                const onOpacity = isDay ? 0.9 : 0.85;
                 return (
-                  <div key={i} style={{ height: 20, borderRadius: 5, background: on ? "#d9c26a" : "#1b2740", opacity: on ? 0.85 : 0.5, animation: on ? `atmo-glow ${2 + (i % 4)}s ease-in-out ${i * 0.1}s infinite` : "none", animationPlayState: playState }} />
+                  <div key={i} style={{ height: 20, borderRadius: 5, background: on ? onBg : offBg, opacity: on ? onOpacity : 0.5, animation: on ? `atmo-glow ${2 + (i % 4)}s ease-in-out ${i * 0.1}s infinite` : "none", animationPlayState: playState }} />
                 );
               })}
             </div>
@@ -208,7 +230,11 @@ export default function AtmosphereSimulation({ scenario, ageDistribution, surviv
         {realBased && (
           <div style={{ fontSize: 11, color: "#a2a7b5", marginTop: 4 }}>
             점포 불빛{survivalPct != null ? ` = 누적 생존율 ${Math.round(survivalPct)}%` : ""}
-            {footTraffic != null && footTraffic > 0 ? " · 인원 = 평균 유동인구 기반" : ""}
+            {footTraffic != null && footTraffic > 0
+              ? dayDominant != null
+                ? " · 인원 = 낮/밤 시간대 유동인구 기반"
+                : " · 인원 = 평균 유동인구 기반"
+              : ""}
           </div>
         )}
       </div>

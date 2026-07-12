@@ -1,4 +1,3 @@
-import { fmtNum } from "./format";
 import styles from "./RentCard.module.css";
 
 export interface RentBar {
@@ -14,10 +13,10 @@ interface RentCardProps {
   bars: RentBar[];
 }
 
-/** 원 → 만원 환산. */
-function toMan(won: number | null): string {
+/** 원 → ₩ + 천단위 콤마(예: ₩85,203). null 이면 "—". */
+function fmtWon(won: number | null): string {
   if (won == null) return "—";
-  return (won / 10000).toFixed(1);
+  return `₩${Math.round(won).toLocaleString("ko-KR")}`;
 }
 
 /** 임대료(m²당) 카드. Figma 재현: 큰 값 + 안내 태그 + 층별 미니 막대. */
@@ -33,8 +32,8 @@ export default function RentCard({ perSqm, floorLabel, bars }: RentCardProps) {
       </div>
 
       <div className={styles.big}>
-        <span className={styles.num}>{toMan(perSqm)}</span>
-        <span className={styles.unit}>만/㎡</span>
+        <span className={styles.num}>{fmtWon(perSqm)}</span>
+        <span className={styles.unit}>/㎡</span>
       </div>
 
       <p className={styles.note}>한국부동산원 R-ONE · 권리금 포함</p>
@@ -48,7 +47,7 @@ export default function RentCard({ perSqm, floorLabel, bars }: RentCardProps) {
                 <span
                   className={i === bars.length - 1 ? styles.barTop : styles.bar}
                   style={{ height: `${Math.max(8, ((b.value ?? 0) / max) * 100)}%` }}
-                  title={`${b.label}: ${fmtNum((b.value ?? 0) / 10000, 1)} 만/㎡`}
+                  title={`${b.label}: ${fmtWon(b.value)}/㎡`}
                 />
               </div>
             ))}

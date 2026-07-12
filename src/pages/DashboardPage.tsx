@@ -143,9 +143,9 @@ function toTopPct(pctl: number | null | undefined): number | null {
 
 export default function DashboardPage() {
   const { districtCode } = useParams();
-  const id = useMemo(() => {
+  const id = useMemo<number | null>(() => {
     const n = Number(districtCode);
-    return districtCode && Number.isFinite(n) && n > 0 ? n : 1;
+    return districtCode && Number.isFinite(n) && n > 0 ? n : null;
   }, [districtCode]);
 
   const [data, setData] = useState<DashboardData | null>(null);
@@ -155,6 +155,12 @@ export default function DashboardPage() {
   const [sim, setSim] = useState<"low" | "mid" | "high" | null>(null);
 
   useEffect(() => {
+    if (id == null) {
+      setError(true);
+      setLoading(false);
+      return;
+    }
+
     let alive = true;
     setLoading(true);
     setError(false);
@@ -333,6 +339,31 @@ export default function DashboardPage() {
     return items.find((it) => it.district_name === d.district_name) ?? null;
   }, [data, d]);
 
+  // AtmosphereSimulation용: 낮/밤 우위, 매출 비중, 시간대별 유동인구.
+  const simDayDominant = useMemo<boolean | null>(() => {
+    const sb = data?.salesBands;
+    if (sb == null || sb.daytime_pct == null || sb.nighttime_pct == null) return null;
+    return sb.daytime_pct >= sb.nighttime_pct;
+  }, [data]);
+
+  const simDaySalesPct = useMemo<number | null>(() => {
+    const sb = data?.salesBands;
+    if (simDayDominant === null || sb == null) return null;
+    return simDayDominant ? (sb.daytime_pct ?? null) : (sb.nighttime_pct ?? null);
+  }, [data, simDayDominant]);
+
+  const simFootTraffic = useMemo<number | null>(() => {
+    const byTime = data?.heatmap?.by_time ?? [];
+    if (simDayDominant === null || byTime.length === 0) return d?.avg_population ?? null;
+    const daySlots = new Set(["06~11", "11~14", "14~17"]);
+    const nightSlots = new Set(["17~21", "21~24", "00~06"]);
+    const targetSlots = simDayDominant ? daySlots : nightSlots;
+    const matched = byTime.filter((s) => targetSlots.has(s.slot) && s.avg_population != null);
+    if (matched.length === 0) return d?.avg_population ?? null;
+    const avg = matched.reduce((sum, s) => sum + (s.avg_population ?? 0), 0) / matched.length;
+    return avg;
+  }, [data, simDayDominant, d]);
+
   // 유출/유입 진행바: 요일 주변분포 주중/주말 합으로 근사(실데이터 없으면 지표없음).
   const flow = useMemo<{ weekday: number; weekend: number } | null>(() => {
     const byDay = data?.heatmap?.by_day ?? [];
@@ -488,12 +519,6 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <div className={styles.footerActions}>
-        <button type="button" className={styles.reportBtn}>
-          상세 리포트 생성
-        </button>
-      </div>
-
       {/* 확대 모달: 생존율 예측 */}
       {modal === "forecast" && (
         <ExpandModal
@@ -534,7 +559,9 @@ export default function DashboardPage() {
           scenario={sim}
           ageDistribution={ageSlices}
           survivalPct={survivalScenarioPct ? survivalScenarioPct[sim] : null}
-          footTraffic={d.avg_population ?? null}
+          footTraffic={simFootTraffic}
+          dayDominant={simDayDominant}
+          daySalesPct={simDaySalesPct}
           onClose={() => setSim(null)}
         />
       )}
@@ -559,9 +586,6 @@ function Header({
           {[region, typeName].filter(Boolean).join(" · ") || "상권 종합 리포트"}
         </p>
       </div>
-      <button type="button" className={styles.reportBtn}>
-        상세 리포트 생성
-      </button>
     </div>
   );
 }

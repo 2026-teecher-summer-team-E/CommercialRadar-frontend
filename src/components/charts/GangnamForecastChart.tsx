@@ -11,7 +11,7 @@ import {
 } from "recharts";
 
 import type { TimeseriesPoint } from "../../types";
-import { formatCurrency, formatPercent } from "../../utils/formatters";
+import { formatCurrency } from "../../utils/formatters";
 
 interface Props {
   history: TimeseriesPoint[];
@@ -22,6 +22,8 @@ interface Props {
   height?: number;
   /** Y축 도메인(예: [0.8, 1]). 미지정 시 recharts 자동. */
   yDomain?: [number, number];
+  /** 시나리오 선 끝에 직접 라벨 표시. 기본 false. */
+  endLabels?: boolean;
 }
 
 interface Row {
@@ -31,6 +33,13 @@ interface Row {
   mid: number | null;
   high: number | null;
   band: [number, number] | null;
+}
+
+/** unit="ratio"일 때 "93.2% · 100곳 중 93곳" 형식으로 변환. */
+function formatRatio(v: number): string {
+  const pct = (v * 100).toFixed(1);
+  const survivors = Math.round(v * 100);
+  return `${pct}% · 100곳 중 ${survivors}곳`;
 }
 
 // NaN 버그 수정: 밴드([low,high] 튜플)를 제외하고 실적/시나리오만 포맷 표시.
@@ -71,7 +80,7 @@ function ForecastTooltip({
   );
 }
 
-export default function ForecastChart({ history, forecast, unit, onScenarioClick, height = 380, yDomain }: Props) {
+export default function ForecastChart({ history, forecast, unit, onScenarioClick, height = 380, yDomain, endLabels = false }: Props) {
   const clickable = !!onScenarioClick;
 
   const makeDot =
@@ -123,13 +132,38 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
     b.band = a != null ? [a, a] : null;
   }
 
-  const formatValue = (v: number) => (unit === "won" ? formatCurrency(v) : formatPercent(v));
+  const formatValue = (v: number) => (unit === "won" ? formatCurrency(v) : formatRatio(v));
   const formatAxis = (v: number) =>
     unit === "won" ? `${Math.round(v / 1e8)}억` : `${Math.round(v * 100)}%`;
 
+  const makeEndLabel =
+    (scenario: "high" | "mid" | "low", color: string, labelText: string, dy: number) =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (props: any) => {
+      const { x, y, index, value } = props;
+      if (!endLabels || unit !== "ratio") return null;
+      if (index !== rows.length - 1) return null;
+      if (value == null) return null;
+      const pct = Math.round(value * 100);
+      return (
+        <text
+          key={`end-label-${scenario}`}
+          x={x + 6}
+          y={y}
+          dy={dy}
+          fill={color}
+          fontSize={11}
+          fontWeight={700}
+          textAnchor="start"
+        >
+          {labelText} {pct}%
+        </text>
+      );
+    };
+
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <ComposedChart data={rows} margin={{ top: 16, right: 24, bottom: 8, left: 8 }}>
+      <ComposedChart data={rows} margin={{ top: 16, right: endLabels ? 68 : 24, bottom: 8, left: 8 }}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="quarter" tick={{ fontSize: 12 }} />
         <YAxis
@@ -159,6 +193,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           strokeWidth={clickable ? 2.5 : 1.5}
           strokeDasharray="5 5"
           dot={clickable ? makeDot("high", "#16a34a") : false}
+          label={makeEndLabel("high", "#16a34a", "잘풀린", -6)}
           connectNulls
         />
         <Line
@@ -169,6 +204,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           strokeWidth={clickable ? 3 : 2}
           strokeDasharray="5 5"
           dot={clickable ? makeDot("mid", "#2563eb") : { r: 2 }}
+          label={makeEndLabel("mid", "#2563eb", "보통", 4)}
           connectNulls
         />
         <Line
@@ -179,6 +215,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           strokeWidth={clickable ? 2.5 : 1.5}
           strokeDasharray="5 5"
           dot={clickable ? makeDot("low", "#dc2626") : false}
+          label={makeEndLabel("low", "#dc2626", "안풀린", 14)}
           connectNulls
         />
       </ComposedChart>

@@ -92,7 +92,6 @@ export default function ScoreCard({
           <p className={styles.identityName}>{districtName}</p>
           <p className={styles.identityType}>{typeName ?? "상권"}</p>
           {regionLine && <p className={styles.identityRegion}>{regionLine}</p>}
-          <span className={styles.identityLink}>산출 근거 보기 ›</span>
         </div>
       </div>
 
@@ -103,7 +102,7 @@ export default function ScoreCard({
         </div>
         <div className={styles.pill}>
           <span className={styles.pillLabelDot}>
-            <i className={styles.dot} style={{ background: riskColor(closureRate) }} /> 폐업위험
+            <i className={styles.dot} style={{ background: riskColor(closureRate) }} aria-hidden="true" /> 폐업위험
           </span>
           <span className={styles.pillValue} style={{ color: riskColor(closureRate) }}>
             {closureRiskLabel(closureRate)}
