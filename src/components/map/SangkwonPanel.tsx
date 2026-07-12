@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import styles from "../../pages/MapPage.module.css";
 import type { CategoryStat } from "../../types";
+import { useFavoriteDistrict } from "../../hooks/useFavoriteDistrict";
+import FavoriteStar from "../common/FavoriteStar";
 import CategoryPicker from "./CategoryPicker";
 import { CATEGORY_GROUPS } from "./categoryList";
 import {
@@ -41,6 +43,7 @@ export default function SangkwonPanel({
 }: SangkwonPanelProps) {
   const detail = summary?.detail ?? null;
   const stats = detail?.latest_stats ?? null;
+  const { isFavorite, toggle: toggleFavorite, pending: favoritePending } = useFavoriteDistrict();
   const hasCategoryFilter = categoryFilter != null;
   const categoryOverride = hasCategoryFilter
     ? (availableCategories.find((c) => c.category_name === categoryFilter) ?? null)
@@ -89,7 +92,16 @@ export default function SangkwonPanel({
       {/* 현재 위치(선택은 상단 검색바가 담당) + 업종 필터를 한 줄에 배치. */}
       <div className={styles.headerRow}>
         <div className={styles.headerInfo}>
-          <span className={styles.locationTitle}>{detail?.district_name}</span>
+          <div className={styles.locationTitleRow}>
+            <span className={styles.locationTitle}>{detail?.district_name}</span>
+            {detail && (
+              <FavoriteStar
+                active={isFavorite(detail.id)}
+                disabled={favoritePending}
+                onToggle={() => toggleFavorite(detail.id)}
+              />
+            )}
+          </div>
           {detail && (
             <span className={styles.locationSub}>
               <span className={styles.locationSubText}>{locationLabel}</span>
