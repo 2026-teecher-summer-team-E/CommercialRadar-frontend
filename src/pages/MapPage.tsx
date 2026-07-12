@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiClient } from "../lib/apiClient";
 import { commercialApi } from "../services/commercialApi";
+import { useRecentSearches, type RecentSearchItem } from "../hooks/useRecentSearches";
 import SangkwonPanel from "../components/map/SangkwonPanel";
 import FilterBar from "../components/map/FilterBar";
 import LeafletMap, { type MapMode } from "../components/map/LeafletMap";
@@ -29,6 +30,9 @@ export default function MapPage() {
 
   const [query, setQuery] = useState("");
   const [options, setOptions] = useState<DistrictSearchResult[]>([]);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchBarRef = useRef<HTMLDivElement | null>(null);
+  const { items: recentSearches, addSearch, removeSearch } = useRecentSearches();
   const [geo, setGeo] = useState<DistrictGeo[]>([]);
   const [geojson, setGeojson] = useState<GeoJSON.FeatureCollection | null>(null);
   const [mode, setMode] = useState<MapMode>("regions");
@@ -157,12 +161,44 @@ export default function MapPage() {
     };
   }, [query]);
 
-  // 검색 결과 클릭 → 실제 상권 선택(selectedId 변경) + 검색 초기화.
-  const handlePickSearch = (id: number) => {
-    setSelectedId(id);
+  // 검색 결과 클릭 → 실제 상권 선택(selectedId 변경) + 그 상권을 최근 검색어에 저장 + 검색 초기화.
+  const handlePickSearch = (result: DistrictSearchResult) => {
+    addSearch({
+      id: result.id,
+      district_name: result.district_name,
+      gu_name: result.gu_name,
+      dong_name: result.dong_name,
+    });
+    setSelectedId(result.id);
     setQuery("");
     setOptions([]);
+    setSearchFocused(false);
   };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && options.length > 0) handlePickSearch(options[0]);
+  };
+
+  // 최근 검색어 클릭 → 해당 상권으로 바로 이동(재검색은 최신순으로 다시 끌어올림).
+  const handlePickRecent = (item: RecentSearchItem) => {
+    addSearch(item);
+    setSelectedId(item.id);
+    setQuery("");
+    setOptions([]);
+    setSearchFocused(false);
+  };
+
+  // 검색 바 바깥 클릭 시 최근 검색어 드롭다운 닫기(FilterBar와 동일한 패턴).
+  useEffect(() => {
+    if (!searchFocused) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (searchBarRef.current && !searchBarRef.current.contains(e.target as Node)) {
+        setSearchFocused(false);
+      }
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [searchFocused]);
 
   const activeScore = useMemo(
     () =>
@@ -179,7 +215,7 @@ export default function MapPage() {
   return (
     <div className={styles.page}>
       {/* 상단 검색 바 + 자동완성 결과 (앱 네비 사이드바는 AppLayout이 담당) */}
-      <div className={styles.searchBar} style={{ position: "relative" }}>
+      <div className={styles.searchBar} style={{ position: "relative" }} ref={searchBarRef}>
         <span className={styles.searchIcon} aria-hidden>
           ⌕
         </span>
@@ -189,7 +225,78 @@ export default function MapPage() {
           placeholder="지역·상권·업종 검색…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setSearchFocused(true)}
+          onKeyDown={handleSearchKeyDown}
         />
+        {searchFocused && !query.trim() && recentSearches.length > 0 && (
+          <ul
+            style={{
+              position: "absolute",
+              top: "calc(100% + 6px)",
+              left: 0,
+              right: 0,
+              zIndex: 1200,
+              listStyle: "none",
+              margin: 0,
+              padding: 6,
+              background: "var(--color-surface)",
+              border: "1px solid var(--color-border)",
+              borderRadius: 12,
+              boxShadow: "var(--shadow-pop)",
+              maxHeight: 320,
+              overflowY: "auto",
+            }}
+          >
+            {recentSearches.map((item) => (
+              <li key={item.id} style={{ display: "flex", alignItems: "center" }}>
+                <button
+                  type="button"
+                  onClick={() => handlePickRecent(item)}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    textAlign: "left",
+                    padding: "9px 12px",
+                    border: "none",
+                    background: "transparent",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    fontFamily: "var(--font-sans)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                  }}
+                >
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text)" }}>
+                    {item.district_name}
+                  </span>
+                  <span style={{ fontSize: 12, color: "var(--color-muted)" }}>
+                    {[item.gu_name, item.dong_name].filter(Boolean).join(" · ")}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  aria-label={`${item.district_name} 삭제`}
+                  onClick={() => removeSearch(item.id)}
+                  style={{
+                    flex: "none",
+                    width: 24,
+                    height: 24,
+                    marginRight: 4,
+                    border: "none",
+                    background: "transparent",
+                    borderRadius: 6,
+                    cursor: "pointer",
+                    fontSize: 13,
+                    color: "var(--color-faint)",
+                  }}
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         {query.trim() && options.length > 0 && (
           <ul
             style={{
@@ -213,7 +320,7 @@ export default function MapPage() {
               <li key={o.id}>
                 <button
                   type="button"
-                  onClick={() => handlePickSearch(o.id)}
+                  onClick={() => handlePickSearch(o)}
                   style={{
                     width: "100%",
                     textAlign: "left",
