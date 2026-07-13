@@ -13,6 +13,7 @@ const LOTTIE_FACING = 1;
 /** 파일별 방향 보정 — 원본이 기본과 반대를 볼 때. 해당 파일만 문워크하면 부호를 뒤집어라. */
 const FILE_FACING: Record<string, number> = {
   "/lottie/walking-5.json": -1, // 뽀빠이(노인)는 기본과 반대를 봄
+  "/lottie/walking-7.json": -1, // 노인 여성(보행보조기)도 기본과 반대를 봄
 };
 /** walking-2.json, walking-3.json … 최대 이 수까지 자동 감지 */
 const LOTTIE_VARIANT_MAX = 7;
@@ -90,7 +91,7 @@ const FILE_SCALE: Record<string, number> = {
 
 /** 파일별 재생 속도 보정 — 원본 애니메이션 사이클 길이가 달라 걷는 속도가 제각각인 것 정규화. */
 const FILE_SPEED: Record<string, number> = {
-  "/lottie/walking-7.json": 3.0, // 노인 여성: 사이클 150프레임(5초)로 너무 느림 → 보정
+  "/lottie/walking-7.json": 1.6, // 노인 여성: 사이클 150프레임(5초) → 느린 걸음으로 보정
 };
 
 /** 타임랩스 종료 시점 보장 최소 폐업 점포 수. */
