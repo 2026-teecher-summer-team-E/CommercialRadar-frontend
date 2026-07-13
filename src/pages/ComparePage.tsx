@@ -706,6 +706,16 @@ function RankingTable({ ranking }: { ranking: CategoryRankingResponse | null }) 
   if (!ranking || ranking.ranking.length === 0) {
     return <div className={styles.empty}>업종 순위 데이터가 없어요.</div>;
   }
+
+  const rows = ranking.ranking.map((item) => ({
+    key: `${item.rank}-${item.category_name ?? ""}`,
+    rank: item.rank,
+    categoryName: item.category_name ?? "-",
+    survivalRate: fmtPct(item.survival_rate),
+    totalBusiness: item.total_business != null ? item.total_business.toLocaleString("ko-KR") : "-",
+    districtScore: fmtNum(item.district_score, 1),
+  }));
+
   return (
     <table className={styles.table}>
       <thead>
@@ -718,15 +728,13 @@ function RankingTable({ ranking }: { ranking: CategoryRankingResponse | null }) 
         </tr>
       </thead>
       <tbody>
-        {ranking.ranking.map((item) => (
-          <tr key={`${item.rank}-${item.category_name ?? ""}`}>
+        {rows.map((item) => (
+          <tr key={item.key}>
             <td className={styles.rankCol}>{item.rank}</td>
-            <td className={styles.leftCell}>{item.category_name ?? "-"}</td>
-            <td className={styles.numCell}>{fmtPct(item.survival_rate)}</td>
-            <td className={styles.numCell}>
-              {item.total_business != null ? item.total_business.toLocaleString("ko-KR") : "-"}
-            </td>
-            <td className={styles.numCell}>{fmtNum(item.district_score, 1)}</td>
+            <td className={styles.leftCell}>{item.categoryName}</td>
+            <td className={styles.numCell}>{item.survivalRate}</td>
+            <td className={styles.numCell}>{item.totalBusiness}</td>
+            <td className={styles.numCell}>{item.districtScore}</td>
           </tr>
         ))}
       </tbody>
