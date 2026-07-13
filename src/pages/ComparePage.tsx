@@ -352,7 +352,7 @@ export default function ComparePage() {
                 </button>
               </span>
             ))}
-            <button
+           <button
               type="button"
               className={styles.addChip}
               onClick={openAddPanel}
@@ -360,22 +360,7 @@ export default function ComparePage() {
             >
               {selectedIds.length >= 5 ? "최대 5개" : "+ 상권 추가"}
             </button>
-            <span className={styles.selectionCount}>{selectedIds.length}/5</span>
-          </div>
-
-          {selectionMessage && <p className={styles.selectionMessage}>{selectionMessage}</p>}
-
-          {addOpen && (
-            <div className={styles.addPanel} role="dialog" aria-label="비교할 상권 추가">
-              <div className={styles.addPanelHeader}>
-                <div>
-                  <strong>비교할 상권 추가</strong>
-                  <span>상권명·자치구·행정동으로 검색하세요.</span>
-                </div>
-                <button type="button" className={styles.panelClose} onClick={closeAddPanel} aria-label="닫기">
-                  ×
-                </button>
-              </div>
+            
               <input
                 className={styles.searchInput}
                 type="search"
