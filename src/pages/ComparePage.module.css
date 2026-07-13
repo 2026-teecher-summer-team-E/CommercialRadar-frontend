@@ -258,6 +258,11 @@
   justify-content: center;
   padding: 8px 0 16px;
 }
+.legendTop {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 4px;
+}
 
 /* 상태 */
 .empty {

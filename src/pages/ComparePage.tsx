@@ -179,6 +179,9 @@ export default function ComparePage() {
 
         <div className={styles.card}>
           <ChartHeader title="분기별 생존율 추이" onExpand={() => setModal("trend")} />
+          <div className={styles.legendTop}>
+            <Legend names={names} />
+          </div>
           {trendLabels.length > 0 ? (
             <div className={styles.chartBody}>
               <LineChartSvg labels={trendLabels} series={trendSeries} />
@@ -186,7 +189,6 @@ export default function ComparePage() {
           ) : (
             <div className={styles.empty}>추이 데이터가 없어요.</div>
           )}
-          <Legend names={names} />
         </div>
       </section>
 
@@ -225,8 +227,10 @@ export default function ComparePage() {
           onClose={() => setModal(null)}
         >
           <div className={styles.modalChartWide}>
+            <div className={styles.legendTop}>
+              <Legend names={names} />
+            </div>
             <LineChartSvg labels={trendLabels} series={trendSeries} width={760} height={360} />
-            <Legend names={names} />
           </div>
         </ExpandModal>
       )}
