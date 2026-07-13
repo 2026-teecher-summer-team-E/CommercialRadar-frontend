@@ -118,6 +118,7 @@ export interface DistrictGeo {
   lat: number;
   lng: number;
   population: number | null;
+  district_score: number | null;
 }
 
 // ── 업종별 현황 (GET /api/commercial-districts/{id}/category-stats) ──

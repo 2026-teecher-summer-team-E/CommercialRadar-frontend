@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { DistrictGeo } from "../../types";
+import { scoreColor } from "./mapData";
 import styles from "./LeafletMap.module.css";
 
 export type MapMode = "pins" | "regions";
@@ -18,15 +19,6 @@ interface LeafletMapProps {
   onSelect: (id: number) => void;
   onOpenProfile: (id: number) => void;
 }
-
-/** 상권유형별 색상. */
-const TYPE_COLORS: Record<string, string> = {
-  골목상권: "#24398a",   // standard navy — primary
-  발달상권: "#939084",   // body-mid — warm neutral gray
-  전통시장: "#201515",   // coffee ink — dark neutral
-  관광특구: "#3d54a8",   // accent navy — secondary
-};
-const colorOf = (type: string | null | undefined) => TYPE_COLORS[type ?? ""] ?? "#939084";
 
 const SEOUL_CENTER: L.LatLngExpression = [37.5665, 126.978];
 
@@ -128,7 +120,7 @@ export default function LeafletMap({
         radius: 5,
         color: "#ffffff",
         weight: 1,
-        fillColor: colorOf(p.type_name),
+        fillColor: scoreColor(p.district_score),
         fillOpacity: 0.85,
       });
       marker.bindTooltip(p.district_name, { direction: "top", offset: [0, -4] });
@@ -148,7 +140,7 @@ export default function LeafletMap({
     polysRef.current.clear();
     const layer = L.geoJSON(geojson, {
       style: (feature) => {
-        const c = colorOf(feature?.properties?.type_name);
+        const c = scoreColor(feature?.properties?.district_score as number | null);
         return {
           renderer: rendererRef.current ?? undefined,
           color: c,
@@ -208,7 +200,9 @@ export default function LeafletMap({
     } else {
       polysRef.current.forEach((lyr, id) => {
         const sel = id === selectedId;
-        const c = colorOf((lyr as L.Path & { feature?: GeoJSON.Feature }).feature?.properties?.type_name as string);
+        const c = scoreColor(
+          (lyr as L.Path & { feature?: GeoJSON.Feature }).feature?.properties?.district_score as number | null,
+        );
         lyr.setStyle({ weight: sel ? 2.5 : 1, opacity: sel ? 1 : 0.6, fillColor: c, fillOpacity: sel ? 0.5 : 0.2, color: c });
         if (sel) lyr.bringToFront();
       });

@@ -113,6 +113,18 @@ export function scoreGrade(score: number | null): { label: string; tone: "good" 
   return { label: "주의", tone: "low" };
 }
 
+/** 종합 점수 → 지도 색상(등급 톤과 동일 기준: good/mid/low). 값 없으면 중립 회색. */
+export function scoreColor(score: number | null | undefined): string {
+  const grade = scoreGrade(score ?? null);
+  if (score == null) return "#939084";
+  const TONE_COLORS: Record<typeof grade.tone, string> = {
+    good: "#4a9e5c",
+    mid: "#24398a",
+    low: "#e8a020",
+  };
+  return TONE_COLORS[grade.tone];
+}
+
 /** 요일 헤더(혼잡도 히트맵). */
 export const DAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"] as const;
 
