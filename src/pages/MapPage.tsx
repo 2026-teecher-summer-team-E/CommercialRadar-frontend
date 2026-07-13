@@ -17,7 +17,7 @@ import {
 import type { CategoryStat, DistrictGeo } from "../types";
 import styles from "./MapPage.module.css";
 
-const DEFAULT_DISTRICT_ID = 1;
+const DEFAULT_DISTRICT_ID = 1315;
 
 export default function MapPage() {
   const navigate = useNavigate();
