@@ -1,63 +1,70 @@
-/* CommercialRadar 디자인 토큰 — 레이더 틸 팔레트 (비교용) */
-/* 딥 틸 #0E6E66 + 앰버 accent #E8A13D + 웜 크림 캔버스 #faf9f5 */
+/* CommercialRadar 디자인 토큰 — 레이더 틸 × Claude 블렌드 팔레트 */
+/* primary 계열: 레이더 딥 틸 #0E6E66 / 나머지: Claude 크림 캔버스 팔레트 */
 :root {
-  /* Primary — 레이더 딥 틸 */
+  /* Primary — 레이더 딥 틸 (override) */
   --color-primary: #0E6E66;
   --color-primary-dark: #0A4F4A;
-  --color-primary-light: #e8f2ef;
-  --color-primary-soft: #C8E8E5;
+  --color-primary-light: #e3efec;
+  --color-primary-soft: #C8E6E3;
 
-  /* Text — 웜 뉴트럴 잉크 스케일 (틸 부딪힘 방지, Claude 뉴트럴 참조) */
-  --color-text: #1f1d1a;
-  --color-text-body: #3d3a36;
+  /* on-primary */
+  --color-on-primary: #ffffff;
+
+  /* Text — Claude warm-ink scale */
+  --color-text: #141413;
+  --color-text-body: #3d3d3a;
   --color-muted: #6c6a64;
   --color-faint: #8e8b82;
 
-  /* Surface / background — 웜 크림 캔버스 (Claude 팔레트) */
-  --color-surface: #fffdf9;
+  /* Surface / background — Claude cream canvas */
+  --color-surface: #faf9f5;
   --color-bg: #faf9f5;
-  --color-chip: #f2ede4;
+  --color-chip: #efe9de;
   --color-border: #e6dfd8;
-  --color-border-strong: #d9d0c4;
-  --color-line: #ece6dd;
+  --color-border-strong: #d4cdc4;
+  --color-line: #ebe6df;
 
-  /* Semantic — 틸과 대비되는 라임-그린 생존/성공, amber 경고, red 위험 */
-  --color-green: #62B832;
-  --color-green-bg: #EDF7E4;
-  --color-amber: #E8A13D;
-  --color-gold: #C47F1A;
-  --color-gold-bg: #FDF3DC;
-  --color-silver: #66736F;
-  --color-silver-bg: #F0F4F3;
-  --color-orange: #E8A13D;
-  --color-orange-bg: #FDF3DC;
-  --color-red: #D64545;
+  /* Semantic — Claude 기준값 유지 */
+  --color-green: #5db872;
+  --color-green-bg: #eaf7ed;
+  --color-amber: #d4a017;
+  --color-gold: #b88a10;
+  --color-gold-bg: #fef6dc;
+  --color-silver: #6c6a64;
+  --color-silver-bg: #f0ebe3;
+  /* orange: 딥틸 primary와 구분되는 코랄 계열로 Claude 원값 유지 */
+  --color-orange: #cc785c;
+  --color-orange-bg: #f8ede7;
+  --color-red: #c64545;
 
-  /* Accent — 앰버 희소 하이라이트 */
-  --color-accent: #E8A13D;
-  --color-accent-light: #F2C07A;
+  /* Accent — 딥틸 primary와 어울리는 코랄/앰버 희소 하이라이트 */
+  --color-accent: #cc785c;
+  --color-accent-light: #e09a82;
 
-  /* Link */
+  /* Link — 틸 계열 */
   --color-link: #0A4F4A;
 
-  /* Comparison series — 틸 / 앰버 / 슬레이트블루 */
+  /* Comparison series
+     series-1: 딥 틸 (primary 상권)
+     series-2: 코랄 — Claude 원값 #5db8a6(밝은 틸)은 primary 딥틸과 혼동 → 코랄 #cc785c 로 대체
+     series-3: 앰버 — 틸↔코랄↔앰버 보색 삼각형으로 명확 구분 */
   --series-1: #0E6E66;
-  --series-1-bg: #E6F4F2;
-  --series-2: #E8A13D;
-  --series-2-bg: #FDF3DC;
-  --series-3: #5B7B9E;
-  --series-3-bg: #E8EFF6;
+  --series-1-bg: #e3efec;
+  --series-2: #cc785c;
+  --series-2-bg: #f8ede7;
+  --series-3: #e8a55a;
+  --series-3-bg: #fdf3e3;
 
-  /* Radius */
+  /* Radius — Claude 기준 */
   --radius-sm: 8px;
   --radius: 12px;
   --radius-lg: 16px;
   --radius-pill: 999px;
 
-  /* Shadow — 웜 잉크 at very low opacity */
-  --shadow-card: 0 2px 8px rgba(31, 29, 26, 0.06);
-  --shadow-pop: 0 8px 32px rgba(31, 29, 26, 0.09);
-  --shadow-modal: 0 24px 48px rgba(31, 29, 26, 0.13);
+  /* Shadow — Claude warm-ink at very low opacity */
+  --shadow-card: 0 2px 8px rgba(20, 20, 19, 0.05);
+  --shadow-pop: 0 8px 32px rgba(20, 20, 19, 0.08);
+  --shadow-modal: 0 24px 48px rgba(20, 20, 19, 0.12);
 
   /* Fonts */
   --font-sans: "Noto Sans KR", system-ui, -apple-system, "Segoe UI", sans-serif;
