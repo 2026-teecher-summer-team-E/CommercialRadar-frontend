@@ -86,7 +86,8 @@ const AGE_STYLE_FALLBACK = { hueRotate: 0, saturate: 1.0, brightness: 1.0, scale
 /** 파일별 렌더 크기 보정 — 원본 캔버스 크기(1080/1000/500)가 달라 보이는 키가 제각각인 것 정규화. */
 const FILE_SCALE: Record<string, number> = {
   "/lottie/walking-6.json": 1.28, // 오피스맨(1000px) — 작게 나와 키움
-  "/lottie/walking-7.json": 1.1, // 노인 여성(500px)
+  "/lottie/walking-5.json": 1.35, // 할아버지(Popeye) — 작게 보여 키움
+  "/lottie/walking-7.json": 1.5, // 할머니(500px) — 작게 보여 키움
 };
 
 /** 파일별 재생 속도 보정 — 원본 애니메이션 사이클 길이가 달라 걷는 속도가 제각각인 것 정규화. */
