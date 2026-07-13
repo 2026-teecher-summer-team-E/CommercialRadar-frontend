@@ -11,7 +11,7 @@ const CROWD_LOTTIE_BASE = "/lottie/walking.json";
 /** 기본 Lottie가 바라보는 방향: 1=오른쪽, -1=왼쪽. 문워크로 보이면 이 값을 뒤집어라. */
 const LOTTIE_FACING = 1;
 /** walking-2.json, walking-3.json … 최대 이 수까지 자동 감지 */
-const LOTTIE_VARIANT_MAX = 4;
+const LOTTIE_VARIANT_MAX = 6;
 
 /** 타임랩스: 분기당 표시 시간(ms), 끝에 정지 시간(ms), 총 분기 수 */
 const TIMELAPSE_QUARTER_MS = 1200;
@@ -292,9 +292,19 @@ export default function AtmosphereSimulation({
       const isFemale = r3 < 0.5;
       const isForeigner = r4 < foreignerThreshold;
       let lottieFile: string;
-      if (!hasVariants)      lottieFile = f(0);
-      else if (isForeigner)  lottieFile = isFemale ? f(3) : f(2);
-      else                   lottieFile = isFemale ? f(1) : f(0);
+      if (!hasVariants) {
+        lottieFile = f(0);
+      } else if (ageBucket === "60대+" || ageBucket === "60대이상") {
+        // 노인 전용 애니메이션 (성별·국적 무관)
+        lottieFile = f(4);
+      } else if (!isFemale && (ageBucket === "30대" || ageBucket === "40대" || ageBucket === "50대")) {
+        // 직장인 나이대 남성 → 오피스맨 (국적 무관)
+        lottieFile = f(5);
+      } else if (isForeigner) {
+        lottieFile = isFemale ? f(3) : f(2);
+      } else {
+        lottieFile = isFemale ? f(1) : f(0);
+      }
       out.push({ id: i, color: weightedAge(r), bag: r2 > 0.55, row: (i % 5) / 4, ageBucket, isFemale, isForeigner, lottieFile });
     }
     return out;
