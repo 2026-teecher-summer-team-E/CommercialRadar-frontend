@@ -10,6 +10,10 @@ import type { AgeSlice } from "../../types";
 const CROWD_LOTTIE_BASE = "/lottie/walking.json";
 /** 기본 Lottie가 바라보는 방향: 1=오른쪽, -1=왼쪽. 문워크로 보이면 이 값을 뒤집어라. */
 const LOTTIE_FACING = 1;
+/** 파일별 방향 보정 — 원본이 기본과 반대를 볼 때. 해당 파일만 문워크하면 부호를 뒤집어라. */
+const FILE_FACING: Record<string, number> = {
+  "/lottie/walking-5.json": -1, // 뽀빠이(노인)는 기본과 반대를 봄
+};
 /** walking-2.json, walking-3.json … 최대 이 수까지 자동 감지 */
 const LOTTIE_VARIANT_MAX = 6;
 
@@ -497,11 +501,11 @@ export default function AtmosphereSimulation({
                 const hueExtra = p.isFemale ? 5 : 0;
                 const brightnessExtra = p.isFemale ? 0.04 : 0;
                 const cssFilter = `hue-rotate(${ageStyle.hueRotate + hueExtra}deg) saturate(${ageStyle.saturate}) brightness(${ageStyle.brightness + brightnessExtra})`;
-                const scaleXDir = dir * LOTTIE_FACING;
+                const scaleXDir = dir * (FILE_FACING[p.lottieFile] ?? LOTTIE_FACING);
                 return (
                   <div
                     key={p.id}
-                    style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 10), animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}
+                    style={{ position: "absolute", bottom, zIndex: Math.round(1000 - bottom), animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}
                   >
                     <div style={{ transform: `scale(${scale}) scaleX(${scaleXDir})`, transformOrigin: "bottom center", display: "flex", flexDirection: "column", alignItems: "center" }}>
                       <DotLottieReact
@@ -526,7 +530,7 @@ export default function AtmosphereSimulation({
                 const dur = 9 + (i % 6) * 2.2;
                 const walkAnim = dir === 1 ? "atmo-walk-r" : "atmo-walk-l";
                 return (
-                  <div key={p.id} style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 10), animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}>
+                  <div key={p.id} style={{ position: "absolute", bottom, zIndex: Math.round(1000 - bottom), animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}>
                     <div style={{ transform: `scale(${scale}) scaleX(${dir})`, transformOrigin: "bottom center" }}>
                       <div style={{ animation: `atmo-bob ${1.6 + (i % 3) * 0.3}s ease-in-out infinite`, animationPlayState: playState, display: "flex", flexDirection: "column", alignItems: "center" }}>
                         <div style={{ width: 13, height: 13, borderRadius: "50%", background: p.color }} />
