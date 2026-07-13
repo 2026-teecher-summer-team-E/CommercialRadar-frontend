@@ -106,7 +106,7 @@ export default function TrendsPage() {
         <div>
           <h1 className={styles.title}>트렌드</h1>
           <p className={styles.subtitle}>
-            상권의 분기별 지표 변화와 떠오르는 업종을 한눈에 살펴보세요
+            숫자로 읽는 상권의 오늘과 내일
           </p>
         </div>
         <label className={styles.districtSelect}>
@@ -175,9 +175,9 @@ export default function TrendsPage() {
           {loading ? (
             <div className={styles.skeleton} />
           ) : error ? (
-            <div className={styles.empty}>추이 데이터를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</div>
+            <div className={styles.empty}>지표 데이터를 받아오지 못했어요. 잠시 후 다시 확인해주세요.</div>
           ) : labels.length === 0 ? (
-            <div className={styles.empty}>표시할 분기 데이터가 없어요.</div>
+            <div className={styles.empty}>이 상권의 분기 기록이 아직 없습니다.</div>
           ) : (
             <div className={styles.chartBody}>
               <TrendLineChart labels={labels} points={points} meta={meta} />
@@ -202,7 +202,7 @@ export default function TrendsPage() {
           ) : error ? (
             <div className={styles.empty}>업종 데이터를 불러오지 못했어요.</div>
           ) : rising.length === 0 ? (
-            <div className={styles.empty}>업종 순위 데이터가 없어요.</div>
+            <div className={styles.empty}>이 상권의 업종 순위 데이터가 아직 집계되지 않았습니다.</div>
           ) : (
             <ul className={styles.risingList}>
               {rising.slice(0, 6).map((item) => (
