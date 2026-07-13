@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <!-- 지도핀 모티프: 상단 원 + 하단 뾰족한 꼬리 — 딥 번트 오렌지 #c2410c -->
-  <circle cx="16" cy="13" r="9" fill="#c2410c"/>
-  <path d="M16 32 L8 18 Q16 22 24 18 Z" fill="#c2410c"/>
+  <!-- 지도핀 모티프: 상단 원 + 하단 뾰족한 꼬리 — 딥 네이비 #1e2a52 -->
+  <circle cx="16" cy="13" r="9" fill="#1e2a52"/>
+  <path d="M16 32 L8 18 Q16 22 24 18 Z" fill="#1e2a52"/>
   <!-- 핀 중앙 크림 포인트 -->
   <circle cx="16" cy="13" r="4" fill="#fffefb" opacity="0.92"/>
-  <circle cx="16" cy="13" r="1.8" fill="#9a3412"/>
+  <circle cx="16" cy="13" r="1.8" fill="#141d3a"/>
 </svg>

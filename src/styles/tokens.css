@@ -1,11 +1,11 @@
 /* CommercialRadar 디자인 토큰 — Zapier 팔레트 (비교용) */
-/* Primary: 딥 번트 오렌지 #c2410c / 캔버스: 웜 크림 #fffefb / 텍스트: 커피 잉크 3단계 */
+/* Primary: 딥 네이비 #1e2a52 / 캔버스: 웜 크림 #fffefb / 텍스트: 커피 잉크 3단계 */
 :root {
-  /* Primary — 딥 번트 오렌지 CTA */
-  --color-primary: #c2410c;
-  --color-primary-dark: #9a3412;
-  --color-primary-light: #fbeae1;
-  --color-primary-soft: #f5c4aa;
+  /* Primary — 딥 네이비 CTA */
+  --color-primary: #1e2a52;
+  --color-primary-dark: #141d3a;
+  --color-primary-light: #e7eaf3;
+  --color-primary-soft: #b9c1d8;
 
   /* on-primary */
   --color-on-primary: #fffefb;
@@ -25,8 +25,7 @@
   --color-line: #e8e2d8;
 
   /* Semantic — 크림 배경과 어울리는 톤
-     green: 자연 초록 / amber: 노랑 쪽으로 / red: 마젠타 쪽으로
-     → 딥오렌지 primary(#c2410c)와 red/amber 충돌 방지 */
+     navy primary와 겹치지 않으므로 red/amber 원래 톤 복원 */
   --color-green: #4a9e5c;
   --color-green-bg: #edf7f0;
   --color-amber: #e8a020;
@@ -34,20 +33,20 @@
   --color-gold-bg: #fdf4dc;
   --color-silver: #939084;
   --color-silver-bg: #f1ece4;
-  --color-orange: #c2410c;
-  --color-orange-bg: #fbeae1;
-  --color-red: #d9436b;           /* 마젠타 쪽으로 벌려 딥오렌지 primary와 충돌 회피 */
+  --color-orange: #e8a020;        /* amber 계열로 병합 — navy primary와 무관한 의미색 */
+  --color-orange-bg: #fdf4dc;
+  --color-red: #d94430;           /* navy와 충돌 없으므로 원래 톤 복원 */
 
-  /* Accent */
-  --color-accent: #c2410c;
-  --color-accent-light: #f5c4aa;
+  /* Accent — 보조 밝은 남색 */
+  --color-accent: #3a4a80;
+  --color-accent-light: #e7eaf3;
 
   /* Link */
-  --color-link: #9a3412;
+  --color-link: #22315c;
 
-  /* Chart series — 딥 번트 오렌지 + 커피 잉크 + 크림 그레이 스텝 */
-  --series-1: #c2410c;   /* Deep Burnt Orange — primary */
-  --series-1-bg: #fbeae1;
+  /* Chart series — 딥 네이비 + 커피 잉크 + 크림 그레이 스텝 */
+  --series-1: #1e2a52;   /* Deep Navy — primary */
+  --series-1-bg: #e7eaf3;
   --series-2: #201515;   /* Coffee Ink — dark neutral */
   --series-2-bg: #f1ece4;
   --series-3: #939084;   /* Body Mid — neutral gray */
