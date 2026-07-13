@@ -1,44 +1,52 @@
-/* CommercialRadar 디자인 토큰 — Meta 디자인 시스템 컬러 팔레트 적용 */
+/* CommercialRadar 디자인 토큰 — 레이더 틸 팔레트 (비교용) */
+/* 딥 틸 #0E6E66 + 앰버 accent #E8A13D + 오프화이트 캔버스 #FAFBFB */
 :root {
-  /* Primary — Meta cobalt */
-  --color-primary: #0064e0;
-  --color-primary-dark: #0457cb;
-  --color-primary-light: #e6f0fd;
-  --color-primary-soft: #0091ff;
+  /* Primary — 레이더 딥 틸 */
+  --color-primary: #0E6E66;
+  --color-primary-dark: #0A4F4A;
+  --color-primary-light: #E6F4F2;
+  --color-primary-soft: #C8E8E5;
 
-  /* Text — Meta ink scale */
-  --color-text: #0a1317;
-  --color-text-body: #1c1e21;
-  --color-muted: #5d6c7b;
-  --color-faint: #8595a4;
+  /* Text — 틸 언더톤 잉크 스케일 */
+  --color-text: #1A2B2A;
+  --color-text-body: #33403E;
+  --color-muted: #66736F;
+  --color-faint: #8FA09C;
 
-  /* Surface / background — Meta surface scale */
-  --color-surface: #ffffff;
-  --color-bg: #f1f4f7;
-  --color-chip: #f1f4f7;
-  --color-border: #dee3e9;
-  --color-border-strong: #ced0d4;
-  --color-line: #dee3e9;
+  /* Surface / background — 단정한 오프화이트 + 틸 서피스 */
+  --color-surface: #FFFFFF;
+  --color-bg: #FAFBFB;
+  --color-chip: #F0F4F3;
+  --color-border: #E2E8E6;
+  --color-border-strong: #CBD5D2;
+  --color-line: #E8EDEB;
 
-  /* Semantic — Meta semantic scale */
-  --color-green: #31a24c;
-  --color-green-bg: #e6f7eb;
-  --color-amber: #f7b928;
-  --color-gold: #c97f1e;
-  --color-gold-bg: #fef3cd;
-  --color-silver: #444950;
-  --color-silver-bg: #dee3e9;
-  --color-orange: #e8833a;
-  --color-orange-bg: #fdf1e7;
-  --color-red: #e41e3f;
+  /* Semantic — 틸과 대비되는 라임-그린 생존/성공, amber 경고, red 위험 */
+  --color-green: #62B832;
+  --color-green-bg: #EDF7E4;
+  --color-amber: #E8A13D;
+  --color-gold: #C47F1A;
+  --color-gold-bg: #FDF3DC;
+  --color-silver: #66736F;
+  --color-silver-bg: #F0F4F3;
+  --color-orange: #E8A13D;
+  --color-orange-bg: #FDF3DC;
+  --color-red: #D64545;
 
-  /* Comparison series — cobalt primary 계열로 동기화 */
-  --series-1: #0064e0;
-  --series-1-bg: #e6f0fd;
-  --series-2: #e8833a;
-  --series-2-bg: #fdf1e7;
-  --series-3: #31a24c;
-  --series-3-bg: #e6f7eb;
+  /* Accent — 앰버 희소 하이라이트 */
+  --color-accent: #E8A13D;
+  --color-accent-light: #F2C07A;
+
+  /* Link */
+  --color-link: #0A4F4A;
+
+  /* Comparison series — 틸 / 앰버 / 슬레이트블루 */
+  --series-1: #0E6E66;
+  --series-1-bg: #E6F4F2;
+  --series-2: #E8A13D;
+  --series-2-bg: #FDF3DC;
+  --series-3: #5B7B9E;
+  --series-3-bg: #E8EFF6;
 
   /* Radius */
   --radius-sm: 8px;
@@ -46,12 +54,12 @@
   --radius-lg: 16px;
   --radius-pill: 999px;
 
-  /* Shadow */
-  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-pop: 0 8px 24px -8px rgba(16, 24, 40, 0.16);
-  --shadow-modal: 0 24px 60px -12px rgba(16, 24, 40, 0.28);
+  /* Shadow — 틸 잉크 at very low opacity */
+  --shadow-card: 0 2px 8px rgba(26, 43, 42, 0.05);
+  --shadow-pop: 0 8px 32px rgba(26, 43, 42, 0.08);
+  --shadow-modal: 0 24px 48px rgba(26, 43, 42, 0.12);
 
   /* Fonts */
-  --font-sans: "Noto Sans KR", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Noto Sans KR", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-num: "Inter", var(--font-sans);
 }

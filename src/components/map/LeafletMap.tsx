@@ -19,14 +19,14 @@ interface LeafletMapProps {
   onOpenProfile: (id: number) => void;
 }
 
-/** 상권유형별 색상. */
+/** 상권유형별 색상 — 레이더 틸 팔레트: 딥틸/앰버/슬레이트블루 */
 const TYPE_COLORS: Record<string, string> = {
-  골목상권: "#0064e0",
-  발달상권: "#e8833a",
-  전통시장: "#1b8a5a",
-  관광특구: "#9333ea",
+  골목상권: "#0E6E66",   // deep teal — primary
+  발달상권: "#5B7B9E",   // slate blue — series-3
+  전통시장: "#E8A13D",   // amber — accent
+  관광특구: "#0A4F4A",   // teal-dark
 };
-const colorOf = (type: string | null | undefined) => TYPE_COLORS[type ?? ""] ?? "#6b7590";
+const colorOf = (type: string | null | undefined) => TYPE_COLORS[type ?? ""] ?? "#66736F";
 
 const SEOUL_CENTER: L.LatLngExpression = [37.5665, 126.978];
 
