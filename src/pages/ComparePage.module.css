@@ -295,6 +295,7 @@
   flex-direction: column;
   gap: 16px;
   align-items: center;
+  width: 100%;
 }
 .modalChartWide {
   display: flex;
