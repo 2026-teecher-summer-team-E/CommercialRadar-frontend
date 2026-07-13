@@ -21,12 +21,12 @@ interface LeafletMapProps {
 
 /** 상권유형별 색상. */
 const TYPE_COLORS: Record<string, string> = {
-  골목상권: "#0064e0",
-  발달상권: "#e8833a",
-  전통시장: "#1b8a5a",
-  관광특구: "#9333ea",
+  골목상권: "#ff4f00",   // Zapier orange — primary CTA
+  발달상권: "#939084",   // body-mid — warm neutral gray
+  전통시장: "#201515",   // coffee ink — dark neutral
+  관광특구: "#d94300",   // orange-dark — secondary accent
 };
-const colorOf = (type: string | null | undefined) => TYPE_COLORS[type ?? ""] ?? "#6b7590";
+const colorOf = (type: string | null | undefined) => TYPE_COLORS[type ?? ""] ?? "#939084";
 
 const SEOUL_CENTER: L.LatLngExpression = [37.5665, 126.978];
 

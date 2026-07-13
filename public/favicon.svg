@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <!-- 지도핀 모티프: 상단 원 + 하단 뾰족한 꼬리 -->
-  <circle cx="16" cy="13" r="9" fill="#0064e0"/>
-  <path d="M16 32 L8 18 Q16 22 24 18 Z" fill="#0064e0"/>
-  <!-- 핀 중앙 흰 점 (레이더 느낌) -->
-  <circle cx="16" cy="13" r="4" fill="#ffffff" opacity="0.9"/>
-  <circle cx="16" cy="13" r="2" fill="#0064e0"/>
+  <!-- 지도핀 모티프: 상단 원 + 하단 뾰족한 꼬리 — Zapier 오렌지 #ff4f00 -->
+  <circle cx="16" cy="13" r="9" fill="#ff4f00"/>
+  <path d="M16 32 L8 18 Q16 22 24 18 Z" fill="#ff4f00"/>
+  <!-- 핀 중앙 크림 포인트 -->
+  <circle cx="16" cy="13" r="4" fill="#fffefb" opacity="0.92"/>
+  <circle cx="16" cy="13" r="1.8" fill="#d94300"/>
 </svg>
