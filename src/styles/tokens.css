@@ -1,11 +1,11 @@
 /* CommercialRadar 디자인 토큰 — Zapier 팔레트 (비교용) */
-/* Primary: 오렌지 #ff4f00 / 캔버스: 웜 크림 #fffefb / 텍스트: 커피 잉크 3단계 */
+/* Primary: 딥 번트 오렌지 #c2410c / 캔버스: 웜 크림 #fffefb / 텍스트: 커피 잉크 3단계 */
 :root {
-  /* Primary — Zapier 오렌지 CTA */
-  --color-primary: #ff4f00;
-  --color-primary-dark: #d94300;
-  --color-primary-light: #ffece3;
-  --color-primary-soft: #ffd0b8;
+  /* Primary — 딥 번트 오렌지 CTA */
+  --color-primary: #c2410c;
+  --color-primary-dark: #9a3412;
+  --color-primary-light: #fbeae1;
+  --color-primary-soft: #f5c4aa;
 
   /* on-primary */
   --color-on-primary: #fffefb;
@@ -26,7 +26,7 @@
 
   /* Semantic — 크림 배경과 어울리는 톤
      green: 자연 초록 / amber: 노랑 쪽으로 / red: 마젠타 쪽으로
-     → orange primary(#ff4f00)와 red/amber 혼동 방지 */
+     → 딥오렌지 primary(#c2410c)와 red/amber 충돌 방지 */
   --color-green: #4a9e5c;
   --color-green-bg: #edf7f0;
   --color-amber: #e8a020;
@@ -34,20 +34,20 @@
   --color-gold-bg: #fdf4dc;
   --color-silver: #939084;
   --color-silver-bg: #f1ece4;
-  --color-orange: #ff4f00;
-  --color-orange-bg: #ffece3;
-  --color-red: #d94430;           /* 마젠타 쪽으로 벌려 orange CTA와 구분 */
+  --color-orange: #c2410c;
+  --color-orange-bg: #fbeae1;
+  --color-red: #d9436b;           /* 마젠타 쪽으로 벌려 딥오렌지 primary와 충돌 회피 */
 
   /* Accent */
-  --color-accent: #ff4f00;
-  --color-accent-light: #ffd0b8;
+  --color-accent: #c2410c;
+  --color-accent-light: #f5c4aa;
 
   /* Link */
-  --color-link: #d94300;
+  --color-link: #9a3412;
 
-  /* Chart series — 오렌지 + 커피 잉크 + 크림 그레이 스텝 */
-  --series-1: #ff4f00;   /* Zapier Orange — primary */
-  --series-1-bg: #ffece3;
+  /* Chart series — 딥 번트 오렌지 + 커피 잉크 + 크림 그레이 스텝 */
+  --series-1: #c2410c;   /* Deep Burnt Orange — primary */
+  --series-1-bg: #fbeae1;
   --series-2: #201515;   /* Coffee Ink — dark neutral */
   --series-2-bg: #f1ece4;
   --series-3: #939084;   /* Body Mid — neutral gray */

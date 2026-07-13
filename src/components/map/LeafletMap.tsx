@@ -21,10 +21,10 @@ interface LeafletMapProps {
 
 /** 상권유형별 색상. */
 const TYPE_COLORS: Record<string, string> = {
-  골목상권: "#ff4f00",   // Zapier orange — primary CTA
+  골목상권: "#c2410c",   // deep burnt orange — primary
   발달상권: "#939084",   // body-mid — warm neutral gray
   전통시장: "#201515",   // coffee ink — dark neutral
-  관광특구: "#d94300",   // orange-dark — secondary accent
+  관광특구: "#9a3412",   // burnt orange dark — secondary accent
 };
 const colorOf = (type: string | null | undefined) => TYPE_COLORS[type ?? ""] ?? "#939084";
 
