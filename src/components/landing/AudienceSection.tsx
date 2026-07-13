@@ -9,7 +9,7 @@ export default function AudienceSection() {
     <section className={styles.audience}>
       <div className={styles.container}>
         <div className={styles.sectionHead}>
-          <p className={styles.eyebrow}>For You</p>
+          <p className={styles.eyebrow}>이런 분들께</p>
           <h2 className={styles.h2}>나는 어떤 분석이 필요한가요?</h2>
           <p className={styles.sectionSub}>목적에 맞는 경로로 바로 이동하세요.</p>
         </div>
