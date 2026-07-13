@@ -25,6 +25,15 @@
 .row:hover {
   background: var(--color-primary-light);
 }
+.rowGold {
+  background: #fff6da;
+}
+.rowSilver {
+  background: #eef1f4;
+}
+.rowBronze {
+  background: #fbe9dd;
+}
 .table td {
   padding: 14px;
   border-bottom: 1px solid var(--color-line);
@@ -64,12 +73,12 @@
   color: var(--color-muted);
 }
 .badgeGold {
-  background: var(--color-primary);
-  color: var(--color-surface);
+  background: var(--color-gold-bg);
+  color: var(--color-gold);
 }
 .badgeSilver {
-  background: var(--color-primary-soft);
-  color: var(--color-primary-dark);
+  background: var(--color-silver-bg);
+  color: var(--color-silver);
 }
 .badgeBronze {
   background: var(--color-orange-bg);
