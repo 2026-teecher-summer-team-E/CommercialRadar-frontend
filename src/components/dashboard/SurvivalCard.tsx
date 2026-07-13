@@ -1,6 +1,7 @@
 import GangnamForecastChart from "../charts/GangnamForecastChart";
 import type { ForecastPoint } from "../charts/ForecastChart";
 import type { TimeseriesPoint } from "../../types";
+import { useCountUp } from "../../hooks/useCountUp";
 import { fmtPct, fmtInt } from "./format";
 import styles from "./SurvivalCard.module.css";
 
@@ -48,6 +49,10 @@ export default function SurvivalCard({
   const hasChart = hist.length + fc.length >= 2;
   const deltaUp = (delta ?? 0) >= 0;
 
+  // 히어로 숫자 카운트업: 현재값 먼저, 전망값은 살짝 늦게 올라와 '현재→전망' 흐름을 만든다.
+  const animCurrent = useCountUp(current, { duration: 900 });
+  const animForecast = useCountUp(forecast, { duration: 900, delay: 450 });
+
   // 용어 없이 이해되는 부제: "2025년 4분기에 창업하면 2026년 4분기엔 100곳 중 88곳이 남아요".
   const startLabel = fmtQuarter(hist[0]?.year_quarter);
   const endLabel = fmtQuarter(fc[fc.length - 1]?.year_quarter);
@@ -81,9 +86,9 @@ export default function SurvivalCard({
       <div className={styles.body}>
         <div className={styles.left}>
           <div className={styles.hero}>
-            <span className={styles.heroNow}>{fmtPct(current, 0)}</span>
+            <span className={styles.heroNow}>{fmtPct(animCurrent, 0)}</span>
             <span className={styles.arrow}>→</span>
-            <span className={styles.heroNext}>{fmtPct(forecast, 0)}</span>
+            <span className={styles.heroNext}>{fmtPct(animForecast, 0)}</span>
           </div>
           {delta != null && (
             <span className={styles.deltaPill}>
@@ -120,6 +125,7 @@ export default function SurvivalCard({
             height={240}
             yDomain={yDomain}
             endLabels
+            sequentialDraw
           />
         </div>
       ) : (
