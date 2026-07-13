@@ -20,6 +20,7 @@ import AgeGenderCard from "../components/dashboard/AgeGenderCard";
 import RentCard from "../components/dashboard/RentCard";
 import type { RentBar } from "../components/dashboard/RentCard";
 import BuzzGapCard from "../components/dashboard/BuzzGapCard";
+import RegressionCard from "../components/dashboard/RegressionCard";
 import { DayNightCard, ForeignCard, PerCapitaCard, WeekendCard } from "../components/dashboard/StatCards";
 import ExpandModal from "../components/dashboard/ExpandModal";
 import { quarterShort } from "../components/dashboard/format";
@@ -457,6 +458,9 @@ export default function DashboardPage() {
           onExpand={() => setModal("forecast")}
         />
       </section>
+
+      {/* 강남역(id=1315) 전용: 폐업 요인 OLS 회귀분석 카드 */}
+      {d.id === 1315 && <RegressionCard />}
 
       {/* 유동인구 */}
       <section className={styles.section}>

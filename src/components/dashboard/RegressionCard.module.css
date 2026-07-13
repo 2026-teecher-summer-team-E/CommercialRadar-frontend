@@ -1,0 +1,218 @@
+/* RegressionCard — 강남역 폐업 요인 OLS 회귀분석 카드 */
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 헤더 */
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.sub {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+/* n·R² 배지 */
+.badges {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-chip);
+  color: var(--color-text-body);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  font-family: var(--font-num);
+}
+
+/* 범례 */
+.legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--color-muted);
+  padding: 0 0 4px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.legendProtect {
+  color: var(--color-green);
+  font-weight: 600;
+}
+
+.legendZero {
+  font-weight: 700;
+  color: var(--color-text-body);
+}
+
+.legendRisk {
+  color: var(--color-red);
+  font-weight: 600;
+}
+
+/* 요인 목록 */
+.factorList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.factorRow {
+  display: grid;
+  grid-template-columns: 140px 1fr 52px 36px;
+  align-items: center;
+  gap: 8px;
+}
+
+.factorLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Diverging bar 컨테이너 */
+.barWrap {
+  display: flex;
+  align-items: center;
+  height: 20px;
+}
+
+.barLeft {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  height: 100%;
+  align-items: center;
+}
+
+.barRight {
+  flex: 1;
+  display: flex;
+  justify-content: flex-start;
+  height: 100%;
+  align-items: center;
+}
+
+.centerLine {
+  width: 2px;
+  height: 100%;
+  background: var(--color-border-strong);
+  flex-shrink: 0;
+}
+
+.bar {
+  height: 12px;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.barProtect {
+  background: var(--color-green);
+}
+
+.barRisk {
+  background: var(--color-red);
+}
+
+.barNs {
+  opacity: 0.3;
+}
+
+/* 계수값 */
+.coefVal {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-num);
+  text-align: right;
+}
+
+.coefNeg {
+  color: var(--color-green);
+}
+
+.coefPos {
+  color: var(--color-red);
+}
+
+.coefNs {
+  color: var(--color-muted);
+}
+
+/* 유의도 별 */
+.sigBadge {
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.sigSig {
+  color: var(--color-primary);
+}
+
+.sigNs {
+  color: var(--color-faint);
+}
+
+/* 해석 문구 */
+.insights {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: var(--color-bg);
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+}
+
+.insightItem {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-text-body);
+}
+
+.insightItem::before {
+  content: "· ";
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* 방법론 각주 */
+.footnote {
+  margin: 0;
+  font-size: 11px;
+  color: var(--color-faint);
+  line-height: 1.5;
+}
