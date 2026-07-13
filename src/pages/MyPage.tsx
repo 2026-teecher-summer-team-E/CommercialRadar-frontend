@@ -48,6 +48,7 @@ export default function MyPage() {
   const [error, setError] = useState(false);
   const [tab, setTab] = useState<TabKey>("interests");
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [busyInterestId, setBusyInterestId] = useState<number | null>(null);
 
   // 마운트 시 me / stats / reports 병렬 fetch
   useEffect(() => {
@@ -124,6 +125,19 @@ export default function MyPage() {
         /* 공유 실패는 조용히 무시 */
       })
       .finally(() => setBusyId(null));
+  };
+
+  const handleMemoSave = (id: number, memo: string | null) => {
+    setBusyInterestId(id);
+    const prev = interests;
+    // 낙관적 갱신
+    setInterests((list) => list.map((it) => (it.id === id ? { ...it, memo } : it)));
+    interestApi
+      .update(id, { memo })
+      .catch(() => {
+        setInterests(prev); // 실패 시 롤백
+      })
+      .finally(() => setBusyInterestId(null));
   };
 
   const handleRemove = (id: number) => {
@@ -273,7 +287,13 @@ export default function MyPage() {
           ) : interests.length > 0 ? (
             <ul className={listStyles.list}>
               {interests.map((item, i) => (
-                <InterestCard key={item.id} item={item} index={i} />
+                <InterestCard
+                  key={item.id}
+                  item={item}
+                  index={i}
+                  onSaveMemo={handleMemoSave}
+                  busy={busyInterestId === item.id}
+                />
               ))}
             </ul>
           ) : (
