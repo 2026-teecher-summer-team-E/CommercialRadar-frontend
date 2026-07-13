@@ -20,6 +20,20 @@
   box-shadow: var(--shadow-card);
 }
 
+.cardClickable {
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.cardClickable:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-card-hover, var(--shadow-card));
+  transform: translateY(-1px);
+}
+.cardClickable:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .cardMark {
   flex: 0 0 auto;
   width: 44px;

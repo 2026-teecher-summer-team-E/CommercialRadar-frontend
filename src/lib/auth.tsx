@@ -137,3 +137,16 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   if (!isSignedIn) return <Navigate to="/landing" replace />;
   return <>{children}</>;
 }
+
+/** 어드민 전용 라우트 보호. 로그인 확인 후 어드민이 아니면 홈으로 리다이렉트. */
+export function RequireAdmin({ children }: { children: ReactNode }) {
+  const { isLoaded, isSignedIn, user } = useAuth();
+  if (clerkEnabled) {
+    if (!isLoaded) return null;
+    if (!isSignedIn) return <Navigate to="/landing" replace />;
+  }
+  // 백엔드 유저 로딩 대기(어드민 판정 전 깜빡임 방지).
+  if (!user) return null;
+  if (!user.isAdmin) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}

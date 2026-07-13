@@ -55,7 +55,7 @@ const NAV = [
   { to: "/compare", label: "상권 비교", Icon: CompareIcon },
   { to: "/ranking", label: "랭킹", Icon: RankIcon },
   { to: "/trends", label: "트렌드", Icon: TrendIcon },
-  { to: "/admin", label: "관리", Icon: GearIcon },
+  { to: "/admin", label: "관리", Icon: GearIcon, adminOnly: true },
 ];
 
 export default function Sidebar() {
@@ -79,7 +79,7 @@ export default function Sidebar() {
       </div>
 
       <nav className={styles.nav}>
-        {NAV.map(({ to, label, Icon, end }) => (
+        {NAV.filter((item) => !item.adminOnly || user?.isAdmin).map(({ to, label, Icon, end }) => (
           <NavLink
             key={to}
             to={to}
