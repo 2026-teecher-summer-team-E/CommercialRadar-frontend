@@ -17,6 +17,14 @@ function badgeClass(rank: number): string {
   return styles.badge;
 }
 
+/** 순위(1-based)에 따른 행 배경 클래스. 1~3위만 강조. */
+function rowClass(rank: number): string {
+  if (rank === 1) return `${styles.row} ${styles.rowGold}`;
+  if (rank === 2) return `${styles.row} ${styles.rowSilver}`;
+  if (rank === 3) return `${styles.row} ${styles.rowBronze}`;
+  return styles.row;
+}
+
 const RISK_CLASS = {
   low: styles.riskLow,
   mid: styles.riskMid,
@@ -47,7 +55,7 @@ export default function Leaderboard({ districts }: { districts: DistrictCompareI
           return (
             <tr
               key={d.id}
-              className={styles.row}
+              className={rowClass(rank)}
               onClick={() => navigate(`/dashboard/${d.id}`)}
               role="link"
               tabIndex={0}
