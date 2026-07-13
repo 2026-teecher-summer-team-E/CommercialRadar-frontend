@@ -11,6 +11,7 @@ interface LeafletMapProps {
   geojson: GeoJSON.FeatureCollection | null;
   mode: MapMode;
   selectedId: number;
+  guFilter: string;
   activeName: string | null;
   activeType: string | null;
   activeScore: number | null;
@@ -34,6 +35,7 @@ export default function LeafletMap({
   geojson,
   mode,
   selectedId,
+  guFilter,
   activeName,
   activeType,
   activeScore,
@@ -216,6 +218,19 @@ export default function LeafletMap({
     }
     // points/geojson도 의존성에 포함: 데이터가 늦게 도착해 selectedId의 마커/구역이 뒤늦게 생기는 경우를 다시 시도한다.
   }, [selectedId, mode, activeName, activeType, activeScore, points, geojson]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 5) 자치구 필터 변경 시 해당 자치구 범위로 카메라 이동
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (guFilter === "전체") {
+      map.flyTo(SEOUL_CENTER, 12, { duration: 0.8 });
+      return;
+    }
+    if (points.length === 0) return;
+    const bounds = L.latLngBounds(points.map((p) => [p.lat, p.lng] as [number, number]));
+    map.flyToBounds(bounds, { padding: [64, 64], maxZoom: 16, duration: 0.8 });
+  }, [guFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div ref={containerRef} className={styles.map} aria-label="상권 지도" />;
 }
