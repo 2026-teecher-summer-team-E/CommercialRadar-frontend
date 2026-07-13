@@ -19,12 +19,12 @@ interface LeafletMapProps {
   onOpenProfile: (id: number) => void;
 }
 
-/** 상권유형별 색상. */
+/** 상권유형별 색상 — 신한카드 팔레트 (블루 + 인디고 + 슬레이트). */
 const TYPE_COLORS: Record<string, string> = {
-  골목상권: "#24398a",   // standard navy — primary
-  발달상권: "#939084",   // body-mid — warm neutral gray
-  전통시장: "#201515",   // coffee ink — dark neutral
-  관광특구: "#3d54a8",   // accent navy — secondary
+  골목상권: "#005df9",   // Shinhan Blue — primary
+  발달상권: "#6268ff",   // Indigo — secondary accent
+  전통시장: "#667085",   // Muted Slate — neutral
+  관광특구: "#0048c4",   // Primary Dark — deep blue
 };
 const colorOf = (type: string | null | undefined) => TYPE_COLORS[type ?? ""] ?? "#939084";
 
