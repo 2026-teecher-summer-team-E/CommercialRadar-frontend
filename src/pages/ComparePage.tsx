@@ -307,7 +307,7 @@ export default function ComparePage() {
     return (
       <div className={styles.page}>
         <Header />
-        <div className={styles.empty}>비교 데이터를 받아오지 못했습니다. 페이지를 새로고침해보세요.</div>
+        <div className={styles.empty}>비교 데이터를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</div>
       </div>
     );
   }
@@ -336,31 +336,28 @@ export default function ComparePage() {
             ))}
             <button
               type="button"
-              className={styles.addC<div className={styles.selectionArea}>
-          <div className={styles.chips}>
-            {districts.map((d, i) => (
-              <span key={d.id} className={styles.chip}>
-                <span className={styles.chipDot} style={{ background: seriesColor(i) }} />
-                {d.district_name}
-                <button
-                  type="button"
-                  className={styles.chipClose}
-                  aria-label={`${d.district_name} 제거`}
-                  onClick={() => removeDistrict(d.id)}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-           <button
-              type="button"
               className={styles.addChip}
               onClick={openAddPanel}
               aria-expanded={addOpen}
             >
               {selectedIds.length >= 5 ? "최대 5개" : "+ 상권 추가"}
             </button>
-            
+            <span className={styles.selectionCount}>{selectedIds.length}/5</span>
+          </div>
+
+          {selectionMessage && <p className={styles.selectionMessage}>{selectionMessage}</p>}
+
+          {addOpen && (
+            <div className={styles.addPanel} role="dialog" aria-label="비교할 상권 추가">
+              <div className={styles.addPanelHeader}>
+                <div>
+                  <strong>비교할 상권 추가</strong>
+                  <span>상권명·자치구·행정동으로 검색하세요.</span>
+                </div>
+                <button type="button" className={styles.panelClose} onClick={closeAddPanel} aria-label="닫기">
+                  ×
+                </button>
+              </div>
               <input
                 className={styles.searchInput}
                 type="search"
@@ -468,7 +465,7 @@ export default function ComparePage() {
               <RadarChartSvg axes={radarAxes} series={radarSeries} />
             </div>
           ) : (
-            <div className={styles.empty}>레이더 차트를 그릴 데이터가 부족합니다.</div>
+            <div className={styles.empty}>레이더 데이터가 없어요.</div>
           )}
           <Legend names={names} />
         </div>
@@ -493,17 +490,15 @@ export default function ComparePage() {
           <ChartHeader
             title={`${selectedCategory || "전체 업종"} 분기별 생존율 추이`}
             onExpand={() => setModal("trend")}
-          />         
-          <div className={styles.legendTop}>
-            <Legend names={names} />
-          </div>
+          />
           {trendLabels.length > 0 ? (
             <div className={styles.chartBody}>
               <LineChartSvg labels={trendLabels} series={trendSeries} />
             </div>
           ) : (
-            <div className={styles.empty}>생존율 추이 기록이 아직 없습니다.</div>
+            <div className={styles.empty}>추이 데이터가 없어요.</div>
           )}
+          <Legend names={names} />
         </div>
       </section>
 
@@ -529,10 +524,8 @@ export default function ComparePage() {
           onClose={() => setModal(null)}
         >
           <div className={styles.modalChartWide}>
-            <div className={styles.legendTop}>
-              <Legend names={names} />
-            </div>
-            <LineChartSvg labels={trendLabels} series={trendSeries} width={760} height={360} />
+            <LineChartSvg labels={trendLabels} series={trendSeries} width={560} height={280} />
+            <Legend names={names} />
           </div>
         </ExpandModal>
       )}
@@ -545,7 +538,7 @@ function Header() {
     <div className={styles.header}>
       <div>
         <h1 className={styles.title}>상권 비교</h1>
-        <p className={styles.subtitle}>나란히 놓으면 보이는 것들이 있습니다</p>
+        <p className={styles.subtitle}>여러 상권을 나란히 비교해 최적의 입지를 찾으세요</p>
       </div>
       <button type="button" className={styles.saveBtn}>
         리포트로 저장
@@ -713,6 +706,16 @@ function RankingTable({ ranking }: { ranking: CategoryRankingResponse | null }) 
   if (!ranking || ranking.ranking.length === 0) {
     return <div className={styles.empty}>업종 순위 데이터가 없어요.</div>;
   }
+
+  const rows = ranking.ranking.map((item) => ({
+    key: `${item.rank}-${item.category_name ?? ""}`,
+    rank: item.rank,
+    categoryName: item.category_name ?? "-",
+    survivalRate: fmtPct(item.survival_rate),
+    totalBusiness: item.total_business != null ? item.total_business.toLocaleString("ko-KR") : "-",
+    districtScore: fmtNum(item.district_score, 1),
+  }));
+
   return (
     <table className={styles.table}>
       <thead>
@@ -725,15 +728,13 @@ function RankingTable({ ranking }: { ranking: CategoryRankingResponse | null }) 
         </tr>
       </thead>
       <tbody>
-        {ranking.ranking.map((item) => (
-          <tr key={`${item.rank}-${item.category_name ?? ""}`}>
+        {rows.map((item) => (
+          <tr key={item.key}>
             <td className={styles.rankCol}>{item.rank}</td>
-            <td className={styles.leftCell}>{item.category_name ?? "-"}</td>
-            <td className={styles.numCell}>{fmtPct(item.survival_rate)}</td>
-            <td className={styles.numCell}>
-              {item.total_business != null ? item.total_business.toLocaleString("ko-KR") : "-"}
-            </td>
-            <td className={styles.numCell}>{fmtNum(item.district_score, 1)}</td>
+            <td className={styles.leftCell}>{item.categoryName}</td>
+            <td className={styles.numCell}>{item.survivalRate}</td>
+            <td className={styles.numCell}>{item.totalBusiness}</td>
+            <td className={styles.numCell}>{item.districtScore}</td>
           </tr>
         ))}
       </tbody>
