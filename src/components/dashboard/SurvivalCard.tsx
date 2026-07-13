@@ -59,7 +59,7 @@ export default function SurvivalCard({
   const survivors = forecast != null ? Math.round(forecast) : null;
   const subtitle =
     startLabel && endLabel && survivors != null
-      ? `${startLabel}에 창업하면 ${endLabel}엔 100곳 중 ${survivors}곳이 남아요`
+      ? `100곳이 문 열면 ${survivors}곳이 버팁니다 — ${startLabel} 창업 기준`
       : "창업 시점 대비 살아남는 점포 비율(ML 예측)";
 
   // Y축을 데이터 범위(최저값~100%)로 좁혀 곡선이 눌리지 않게. 최저값을 0.05 단위로 내림.
@@ -127,6 +127,40 @@ export default function SurvivalCard({
             endLabels
             sequentialDraw
           />
+          {onScenarioClick && (
+            <div className={styles.scenarioBar}>
+              <span className={styles.scenarioHint}>미래 거리 미리보기</span>
+              <div className={styles.scenarioBtns}>
+                <button
+                  type="button"
+                  className={`${styles.scenarioBtn} ${styles.scenarioBtnHigh}`}
+                  onClick={() => onScenarioClick("high")}
+                  aria-label="잘풀린 미래 시뮬레이션 열기"
+                >
+                  <span className={styles.scenarioDot} style={{ background: "#16a34a" }} />
+                  잘풀린 미래
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.scenarioBtn} ${styles.scenarioBtnMid}`}
+                  onClick={() => onScenarioClick("mid")}
+                  aria-label="보통 미래 시뮬레이션 열기"
+                >
+                  <span className={styles.scenarioDot} style={{ background: "#2563eb" }} />
+                  보통 미래
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.scenarioBtn} ${styles.scenarioBtnLow}`}
+                  onClick={() => onScenarioClick("low")}
+                  aria-label="안풀린 미래 시뮬레이션 열기"
+                >
+                  <span className={styles.scenarioDot} style={{ background: "#dc2626" }} />
+                  안풀린 미래
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className={styles.empty}>예측 데이터가 없어요.</div>

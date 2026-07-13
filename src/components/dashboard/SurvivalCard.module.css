@@ -225,6 +225,61 @@
   font-size: 14px;
 }
 
+.scenarioBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.scenarioHint {
+  font-size: 12px;
+  color: var(--color-muted);
+  white-space: nowrap;
+  flex: none;
+}
+.scenarioBtns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.scenarioBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.scenarioDot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+.scenarioBtnHigh:hover {
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #166534;
+}
+.scenarioBtnMid:hover {
+  background: #dbeafe;
+  border-color: #2563eb;
+  color: #1e40af;
+}
+.scenarioBtnLow:hover {
+  background: #fee2e2;
+  border-color: #dc2626;
+  color: #991b1b;
+}
+
 /* 접근성: '모션 줄이기'가 켜지면 진입/반복 애니메이션을 끈다(호버 트랜지션은 유지). */
 @media (prefers-reduced-motion: reduce) {
   .card,

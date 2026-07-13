@@ -84,6 +84,9 @@ function ForecastTooltip({
 
 export default function ForecastChart({ history, forecast, unit, onScenarioClick, height = 380, yDomain, endLabels = false, sequentialDraw = false }: Props) {
   const clickable = !!onScenarioClick;
+  const reducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // 순차 draw: 실적/밴드(0ms)가 먼저 그려지고, 예측 시나리오 라인은 뒤이어 그려진다.
   const drawBase = sequentialDraw
@@ -93,6 +96,9 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
     ? { isAnimationActive: true, animationBegin: 650, animationDuration: 850, animationEasing: "ease-out" as const }
     : {};
 
+  // rows 길이는 history + forecast 합산. makeDot은 rows 선언 전에 정의되므로 직접 계산.
+  const totalRowCount = history.length + forecast.length;
+
   const makeDot =
     (scenario: "low" | "mid" | "high", color: string) =>
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -100,10 +106,18 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
       const { cx, cy, value, index } = props;
       const key = `dot-${scenario}-${index}`;
       if (cx == null || cy == null || value == null) return <g key={key} />;
+      const isLast = index === totalRowCount - 1;
       return (
         <g key={key} style={{ cursor: "pointer" }} onClick={() => onScenarioClick?.(scenario)}>
           <circle cx={cx} cy={cy} r={12} fill="transparent" />
-          <circle cx={cx} cy={cy} r={4} fill={color} stroke="#fff" strokeWidth={1} />
+          {/* 펄스 링: 마지막 점(시나리오 끝점)에만 표시, 모션 민감 사용자 제외 */}
+          {isLast && !reducedMotion && (
+            <circle cx={cx} cy={cy} fill="none" stroke={color} strokeWidth={1.5}>
+              <animate attributeName="r" values="4;11" dur="1.8s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.55;0" dur="1.8s" repeatCount="indefinite" />
+            </circle>
+          )}
+          <circle cx={cx} cy={cy} r={4} fill={color} stroke="#fff" strokeWidth={1.5} />
         </g>
       );
     };
