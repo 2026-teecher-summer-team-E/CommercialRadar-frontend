@@ -24,6 +24,8 @@ interface Props {
   yDomain?: [number, number];
   /** 시나리오 선 끝에 직접 라벨 표시. 기본 false. */
   endLabels?: boolean;
+  /** 실적 → 예측 순으로 라인이 그려지는 순차 draw-on 애니메이션. 기본 false. */
+  sequentialDraw?: boolean;
 }
 
 interface Row {
@@ -60,7 +62,7 @@ function ForecastTooltip({
   for (const p of payload) byKey[p.dataKey] = p.value;
   const order: [string, string, string][] = [
     ["actual", "실적", "#111827"],
-    ["mid", "보통 미래(p50)", "#2563eb"],
+    ["mid", "보통 미래(p50)", "#1876f2"],
     ["low", "안풀린 미래(p10)", "#dc2626"],
     ["high", "잘풀린 미래(p90)", "#16a34a"],
   ];
@@ -80,8 +82,22 @@ function ForecastTooltip({
   );
 }
 
-export default function ForecastChart({ history, forecast, unit, onScenarioClick, height = 380, yDomain, endLabels = false }: Props) {
+export default function ForecastChart({ history, forecast, unit, onScenarioClick, height = 380, yDomain, endLabels = false, sequentialDraw = false }: Props) {
   const clickable = !!onScenarioClick;
+  const reducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // 순차 draw: 실적/밴드(0ms)가 먼저 그려지고, 예측 시나리오 라인은 뒤이어 그려진다.
+  const drawBase = sequentialDraw
+    ? { isAnimationActive: true, animationBegin: 0, animationDuration: 700, animationEasing: "ease-out" as const }
+    : {};
+  const drawForecast = sequentialDraw
+    ? { isAnimationActive: true, animationBegin: 650, animationDuration: 850, animationEasing: "ease-out" as const }
+    : {};
+
+  // rows 길이는 history + forecast 합산. makeDot은 rows 선언 전에 정의되므로 직접 계산.
+  const totalRowCount = history.length + forecast.length;
 
   const makeDot =
     (scenario: "low" | "mid" | "high", color: string) =>
@@ -90,10 +106,18 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
       const { cx, cy, value, index } = props;
       const key = `dot-${scenario}-${index}`;
       if (cx == null || cy == null || value == null) return <g key={key} />;
+      const isLast = index === totalRowCount - 1;
       return (
         <g key={key} style={{ cursor: "pointer" }} onClick={() => onScenarioClick?.(scenario)}>
           <circle cx={cx} cy={cy} r={12} fill="transparent" />
-          <circle cx={cx} cy={cy} r={4} fill={color} stroke="#fff" strokeWidth={1} />
+          {/* 펄스 링: 마지막 점(시나리오 끝점)에만 표시, 모션 민감 사용자 제외 */}
+          {isLast && !reducedMotion && (
+            <circle cx={cx} cy={cy} fill="none" stroke={color} strokeWidth={1.5}>
+              <animate attributeName="r" values="4;11" dur="1.8s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.55;0" dur="1.8s" repeatCount="indefinite" />
+            </circle>
+          )}
+          <circle cx={cx} cy={cy} r={4} fill={color} stroke="#fff" strokeWidth={1.5} />
         </g>
       );
     };
@@ -183,8 +207,9 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           fillOpacity={0.12}
           connectNulls
           legendType="none"
+          {...drawForecast}
         />
-        <Line type="monotone" dataKey="actual" name="실적" stroke="#111827" strokeWidth={2} dot={false} connectNulls />
+        <Line type="monotone" dataKey="actual" name="실적" stroke="#111827" strokeWidth={2} dot={false} connectNulls {...drawBase} />
         <Line
           type="monotone"
           dataKey="high"
@@ -195,17 +220,19 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           dot={clickable ? makeDot("high", "#16a34a") : false}
           label={makeEndLabel("high", "#16a34a", "잘풀린", -6)}
           connectNulls
+          {...drawForecast}
         />
         <Line
           type="monotone"
           dataKey="mid"
           name="보통 미래(p50)"
-          stroke="#2563eb"
+          stroke="#1876f2"
           strokeWidth={clickable ? 3 : 2}
           strokeDasharray="5 5"
-          dot={clickable ? makeDot("mid", "#2563eb") : { r: 2 }}
-          label={makeEndLabel("mid", "#2563eb", "보통", 4)}
+          dot={clickable ? makeDot("mid", "#1876f2") : { r: 2 }}
+          label={makeEndLabel("mid", "#1876f2", "보통", 4)}
           connectNulls
+          {...drawForecast}
         />
         <Line
           type="monotone"
@@ -217,6 +244,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           dot={clickable ? makeDot("low", "#dc2626") : false}
           label={makeEndLabel("low", "#dc2626", "안풀린", 14)}
           connectNulls
+          {...drawForecast}
         />
       </ComposedChart>
     </ResponsiveContainer>

@@ -307,7 +307,7 @@ export default function ComparePage() {
     return (
       <div className={styles.page}>
         <Header />
-        <div className={styles.empty}>비교 데이터를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</div>
+        <div className={styles.empty}>비교 데이터를 받아오지 못했습니다. 페이지를 새로고침해보세요.</div>
       </div>
     );
   }
@@ -319,6 +319,24 @@ export default function ComparePage() {
       {/* 컨트롤 바 */}
       <div className={styles.controlBar}>
         <div className={styles.selectionArea}>
+          <div className={styles.chips}>
+            {districts.map((d, i) => (
+              <span key={d.id} className={styles.chip}>
+                <span className={styles.chipDot} style={{ background: seriesColor(i) }} />
+                {d.district_name}
+                <button
+                  type="button"
+                  className={styles.chipClose}
+                  aria-label={`${d.district_name} 제거`}
+                  onClick={() => removeDistrict(d.id)}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            <button
+              type="button"
+              className={styles.addC<div className={styles.selectionArea}>
           <div className={styles.chips}>
             {districts.map((d, i) => (
               <span key={d.id} className={styles.chip}>
@@ -465,7 +483,7 @@ export default function ComparePage() {
               <RadarChartSvg axes={radarAxes} series={radarSeries} />
             </div>
           ) : (
-            <div className={styles.empty}>레이더 데이터가 없어요.</div>
+            <div className={styles.empty}>레이더 차트를 그릴 데이터가 부족합니다.</div>
           )}
           <Legend names={names} />
         </div>
@@ -490,15 +508,17 @@ export default function ComparePage() {
           <ChartHeader
             title={`${selectedCategory || "전체 업종"} 분기별 생존율 추이`}
             onExpand={() => setModal("trend")}
-          />
+          />         
+          <div className={styles.legendTop}>
+            <Legend names={names} />
+          </div>
           {trendLabels.length > 0 ? (
             <div className={styles.chartBody}>
               <LineChartSvg labels={trendLabels} series={trendSeries} />
             </div>
           ) : (
-            <div className={styles.empty}>추이 데이터가 없어요.</div>
+            <div className={styles.empty}>생존율 추이 기록이 아직 없습니다.</div>
           )}
-          <Legend names={names} />
         </div>
       </section>
 
@@ -524,8 +544,10 @@ export default function ComparePage() {
           onClose={() => setModal(null)}
         >
           <div className={styles.modalChartWide}>
-            <LineChartSvg labels={trendLabels} series={trendSeries} width={560} height={280} />
-            <Legend names={names} />
+            <div className={styles.legendTop}>
+              <Legend names={names} />
+            </div>
+            <LineChartSvg labels={trendLabels} series={trendSeries} width={760} height={360} />
           </div>
         </ExpandModal>
       )}
@@ -538,7 +560,7 @@ function Header() {
     <div className={styles.header}>
       <div>
         <h1 className={styles.title}>상권 비교</h1>
-        <p className={styles.subtitle}>여러 상권을 나란히 비교해 최적의 입지를 찾으세요</p>
+        <p className={styles.subtitle}>나란히 놓으면 보이는 것들이 있습니다</p>
       </div>
       <button type="button" className={styles.saveBtn}>
         리포트로 저장

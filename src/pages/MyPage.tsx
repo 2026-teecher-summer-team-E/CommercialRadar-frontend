@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   UserMe,
   UserStats,
@@ -15,6 +15,7 @@ import InterestCard from "../components/mypage/InterestCard";
 import EmptyState from "../components/mypage/EmptyState";
 import listStyles from "../components/mypage/mypage.module.css";
 import styles from "./MyPage.module.css";
+import { useAuth, clerkEnabled } from "../lib/auth";
 
 type TabKey = "reports" | "interests" | "shared";
 
@@ -38,6 +39,7 @@ function buildCompareChunks(ids: number[]): number[][] {
 }
 
 export default function MyPage() {
+  const { signOut } = useAuth();
   const [user, setUser] = useState<UserMe | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [reports, setReports] = useState<ReportListItem[]>([]);
@@ -48,6 +50,9 @@ export default function MyPage() {
   const [error, setError] = useState(false);
   const [tab, setTab] = useState<TabKey>("interests");
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [busyInterestId, setBusyInterestId] = useState<number | null>(null);
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const cancelBtnRef = useRef<HTMLButtonElement>(null);
 
   // 마운트 시 me / stats / reports 병렬 fetch
   useEffect(() => {
@@ -116,6 +121,17 @@ export default function MyPage() {
     };
   }, [tab, interestsLoaded]);
 
+  // 모달 열릴 때 취소 버튼에 포커스, ESC 로 닫기
+  useEffect(() => {
+    if (!showSignOutModal) return;
+    cancelBtnRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowSignOutModal(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [showSignOutModal]);
+
   const handleShare = (id: number) => {
     setBusyId(id);
     reportsApi
@@ -124,6 +140,19 @@ export default function MyPage() {
         /* 공유 실패는 조용히 무시 */
       })
       .finally(() => setBusyId(null));
+  };
+
+  const handleMemoSave = (id: number, memo: string | null) => {
+    setBusyInterestId(id);
+    const prev = interests;
+    // 낙관적 갱신
+    setInterests((list) => list.map((it) => (it.id === id ? { ...it, memo } : it)));
+    interestApi
+      .update(id, { memo })
+      .catch(() => {
+        setInterests(prev); // 실패 시 롤백
+      })
+      .finally(() => setBusyInterestId(null));
   };
 
   const handleRemove = (id: number) => {
@@ -146,7 +175,7 @@ export default function MyPage() {
   if (loading) {
     return (
       <div className={styles.page}>
-        <div className={styles.state}>불러오는 중…</div>
+        <div className={styles.state}>내 정보를 불러오고 있어요…</div>
       </div>
     );
   }
@@ -204,9 +233,15 @@ export default function MyPage() {
               {formatJoinDate(user?.created_at)}
             </p>
           </div>
-          <button type="button" className={styles.settingsBtn}>
-            계정 설정
-          </button>
+          {clerkEnabled && (
+            <button
+              type="button"
+              className={styles.signOutBtn}
+              onClick={() => setShowSignOutModal(true)}
+            >
+              로그아웃
+            </button>
+          )}
         </div>
 
         <div className={styles.statsRow}>
@@ -262,34 +297,84 @@ export default function MyPage() {
             </ul>
           ) : (
             <EmptyState
-              title="저장된 리포트가 없어요"
+              title="저장된 리포트가 아직 없어요"
               description="상권 분석 결과를 리포트로 저장하면 여기에서 모아볼 수 있습니다."
             />
           ))}
 
         {tab === "interests" &&
           (!interestsLoaded ? (
-            <div className={styles.state}>불러오는 중…</div>
+            <div className={styles.state}>관심 상권 목록을 가져오는 중…</div>
           ) : interests.length > 0 ? (
             <ul className={listStyles.list}>
               {interests.map((item, i) => (
-                <InterestCard key={item.id} item={item} index={i} />
+                <InterestCard
+                  key={item.id}
+                  item={item}
+                  index={i}
+                  onSaveMemo={handleMemoSave}
+                  busy={busyInterestId === item.id}
+                />
               ))}
             </ul>
           ) : (
             <EmptyState
-              title="관심 상권이 없어요"
-              description="관심 있는 상권을 저장하면 변화를 빠르게 확인할 수 있습니다."
+              title="아직 찜한 상권이 없어요"
+              description="관심 있는 상권을 저장해두면 변화를 빠르게 확인할 수 있습니다."
             />
           ))}
 
         {tab === "shared" && (
           <EmptyState
-            title="공유된 리포트가 없어요"
-            description="리포트를 공유하면 공유 링크와 함께 이곳에 표시됩니다."
+            title="공유된 리포트가 아직 없어요"
+            description="리포트를 공유하면 공유 링크와 함께 이곳에 모입니다."
           />
         )}
       </section>
+
+      {/* 로그아웃 확인 모달 */}
+      {showSignOutModal && (
+        <div
+          className={styles.modalDim}
+          onClick={() => setShowSignOutModal(false)}
+          role="presentation"
+        >
+          <div
+            className={styles.modalBox}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="signout-modal-title"
+          >
+            <h2 id="signout-modal-title" className={styles.modalTitle}>
+              로그아웃할까요?
+            </h2>
+            <p className={styles.modalBody}>
+              저장한 리포트와 관심 상권은 그대로 남아 있어요.
+            </p>
+            <div className={styles.modalActions}>
+              <button
+                ref={cancelBtnRef}
+                type="button"
+                className={styles.modalCancelBtn}
+                onClick={() => setShowSignOutModal(false)}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                className={styles.modalSignOutBtn}
+                onClick={() => {
+                  setShowSignOutModal(false);
+                  signOut();
+                }}
+              >
+                로그아웃
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

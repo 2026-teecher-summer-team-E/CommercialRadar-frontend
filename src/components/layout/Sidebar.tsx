@@ -1,6 +1,17 @@
-import { NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../../lib/auth";
 import styles from "./Sidebar.module.css";
+
+const COLLAPSED_KEY = "sidebarCollapsed";
+
+function ChevronIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 function MapIcon() {
   return (
@@ -60,13 +71,28 @@ const NAV = [
 
 export default function Sidebar() {
   const { user, isSignedIn } = useAuth();
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSED_KEY) === "true");
+
+  useEffect(() => {
+    localStorage.setItem(COLLAPSED_KEY, String(collapsed));
+  }, [collapsed]);
 
   const name = user?.name ?? "게스트";
   const plan = user ? (user.isCompany ? "기업 회원" : "일반 회원") : "로그인 필요";
 
   return (
-    <aside className={styles.sidebar}>
-      <div className={styles.logo}>
+    <aside className={collapsed ? `${styles.sidebar} ${styles.collapsed}` : styles.sidebar}>
+      <button
+        type="button"
+        className={styles.toggleBtn}
+        onClick={() => setCollapsed((prev) => !prev)}
+        aria-label={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
+        aria-pressed={collapsed}
+      >
+        <ChevronIcon />
+      </button>
+
+      <Link to="/landing" className={styles.logo} aria-label="랜딩 페이지로 이동">
         <span className={styles.logoMark}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path
@@ -76,7 +102,7 @@ export default function Sidebar() {
           </svg>
         </span>
         <span className={styles.logoText}>상권레이더</span>
-      </div>
+      </Link>
 
       <nav className={styles.nav}>
         {NAV.filter((item) => !item.adminOnly || user?.isAdmin).map(({ to, label, Icon, end }) => (
@@ -87,7 +113,7 @@ export default function Sidebar() {
             className={({ isActive }) => (isActive ? `${styles.item} ${styles.active}` : styles.item)}
           >
             <Icon />
-            <span>{label}</span>
+            <span className={styles.itemLabel}>{label}</span>
           </NavLink>
         ))}
       </nav>

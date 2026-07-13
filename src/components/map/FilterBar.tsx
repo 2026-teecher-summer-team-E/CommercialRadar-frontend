@@ -36,6 +36,14 @@ export default function FilterBar({
 
   const toggle = (key: PillKey) => setOpen((prev) => (prev === key ? null : key));
 
+  const hasActiveFilter = guFilter !== "전체" || typeFilter !== "전체" || popFilter !== "전체";
+  const resetAll = () => {
+    onGuFilterChange("전체");
+    onTypeFilterChange("전체");
+    onPopFilterChange("전체");
+    setOpen(null);
+  };
+
   return (
     <div className={styles.bar} ref={rootRef}>
       <Pill
@@ -95,6 +103,12 @@ export default function FilterBar({
           />
         ))}
       </Pill>
+
+      {hasActiveFilter && (
+        <button type="button" className={styles.resetBtn} onClick={resetAll}>
+          ✕ 필터 초기화
+        </button>
+      )}
     </div>
   );
 }

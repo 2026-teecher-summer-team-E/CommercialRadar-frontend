@@ -11,9 +11,39 @@
   font-size: 10px;
   fill: var(--color-muted);
 }
+.axisTitle {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--color-muted);
+}
+.axisTitle {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--color-muted);
+}
 .line {
   fill: none;
   stroke-width: 2;
   stroke-linejoin: round;
   stroke-linecap: round;
+}
+.tooltip {
+  pointer-events: none;
+}
+.tooltipBg {
+  fill: var(--color-text);
+}
+.tooltipTitle {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  fill: var(--color-surface);
+}
+.tooltipRow {
+  font-family: var(--font-num);
+  font-size: 10px;
+  fill: var(--color-surface);
+  opacity: 0.85;
 }
