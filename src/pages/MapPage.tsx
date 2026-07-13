@@ -323,6 +323,7 @@ export default function MapPage() {
             geojson={filteredGeojson}
             mode={mode}
             selectedId={selectedId}
+            guFilter={guFilter}
             activeName={summary?.detail?.district_name ?? null}
             activeType={summary?.detail?.type_name ?? null}
             activeScore={activeScore}
