@@ -32,7 +32,7 @@ const RISK_CLASS = {
   none: styles.riskNone,
 } as const;
 
-/** 종합 리더보드 표. 행 클릭 시 상권 대시보드로 이동. */
+/** 종합 리더보드 표. 행 클릭 시 지도(지역 분석) 페이지로 이동해 해당 상권을 선택된 상태로 연다. */
 export default function Leaderboard({ districts }: { districts: DistrictCompareItem[] }) {
   const navigate = useNavigate();
 
@@ -56,13 +56,13 @@ export default function Leaderboard({ districts }: { districts: DistrictCompareI
             <tr
               key={d.id}
               className={rowClass(rank)}
-              onClick={() => navigate(`/dashboard/${d.id}`)}
+              onClick={() => navigate(`/?district=${d.id}`)}
               role="link"
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  navigate(`/dashboard/${d.id}`);
+                  navigate(`/?district=${d.id}`);
                 }
               }}
             >

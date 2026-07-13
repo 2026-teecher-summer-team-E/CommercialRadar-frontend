@@ -57,35 +57,85 @@
   gap: 12px;
   padding: 16px;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
 }
 
-.selectRow {
+/* 현재 위치(제목+구·동)와 업종 필터를 아예 다른 줄로 분리 — 폭을 다투지 않으니 지역명이 잘릴 일이 없다. */
+.headerRow {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 10px;
   padding: 10px 12px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-surface);
 }
-.pinIcon {
-  color: var(--color-primary);
-  font-size: 14px;
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow: hidden;
 }
-.select {
-  flex: 1;
-  border: none;
-  outline: none;
-  background: transparent;
+.locationTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.locationTitle {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0;
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+.locationSub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.locationSubText {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.districtTypeChip {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-chip);
+  color: var(--color-text-body);
+  font-size: 11px;
   font-weight: 600;
-  color: var(--color-text);
-  cursor: pointer;
+}
+
+.categoryRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+}
+.categoryLabel {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-muted);
+  flex: none;
 }
 
 .panelState {
@@ -95,29 +145,27 @@
   text-align: center;
 }
 
-/* 상권명 헤더 */
-.districtHead {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 4px;
+/* 큰 점수: 배지와 똑같은 배경+글자색 짝을 카드 전체·숫자에도 그대로 써서 통일감 있게 맞춘다. */
+.scoreCard {
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--color-chip);
 }
-.districtPin {
-  color: var(--color-primary);
-  font-size: 14px;
+.scoreCard_good {
+  background: var(--color-green-bg);
 }
-.districtName {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--color-text);
+.scoreCard_mid {
+  background: var(--color-primary-light);
 }
-.districtType {
-  margin-left: auto;
+.scoreCard_low {
+  background: var(--color-orange-bg);
+}
+.scoreLabel {
+  margin: 0;
   font-size: 12px;
+  font-weight: 600;
   color: var(--color-muted);
 }
-
-/* 큰 점수 */
 .scoreBlock {
   display: flex;
   align-items: baseline;
@@ -129,6 +177,15 @@
   font-weight: 800;
   line-height: 1;
   color: var(--color-primary);
+}
+.scoreNum_good {
+  color: var(--color-green);
+}
+.scoreNum_mid {
+  color: var(--color-primary);
+}
+.scoreNum_low {
+  color: var(--color-orange);
 }
 .scoreUnit {
   font-size: 16px;
@@ -143,16 +200,18 @@
   font-size: 12px;
   font-weight: 700;
 }
+/* 배지는 이제 색이 있는 scoreCard 안에 놓이므로, 배경은 흰색 칩으로 눈에 띄게 하고
+   글자색으로만 등급을 표시한다(카드 배경과 배지 배경이 같은 색이면 배지가 묻힘). */
 .grade_good {
-  background: var(--color-green-bg);
+  background: var(--color-surface);
   color: var(--color-green);
 }
 .grade_mid {
-  background: var(--color-primary-light);
+  background: var(--color-surface);
   color: var(--color-primary);
 }
 .grade_low {
-  background: var(--color-orange-bg);
+  background: var(--color-surface);
   color: var(--color-orange);
 }
 
@@ -228,15 +287,15 @@
   border-radius: 3px;
   background: var(--color-chip);
 }
+/* 4단계 혼잡도 색상: 균등한 명도 단계로 확실히 구분되게(기존엔 40+/65+가 거의 같은 색이었음). */
 .heat_0 {
-  background: var(--color-chip);
+  background: #eef1f8;
 }
 .heat_1 {
-  background: var(--color-primary-soft);
+  background: #aabfec;
 }
 .heat_2 {
-  background: var(--color-primary-soft);
-  filter: saturate(1.4) brightness(0.95);
+  background: #7592e0;
 }
 .heat_3 {
   background: var(--color-primary);

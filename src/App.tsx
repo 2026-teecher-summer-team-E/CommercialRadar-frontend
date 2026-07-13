@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import AppLayout from "./components/layout/AppLayout";
-import { RequireAuth } from "./lib/auth";
+import { RequireAuth, RequireAdmin } from "./lib/auth";
 import DashboardPage from "./pages/DashboardPage";
 import MapPage from "./pages/MapPage";
 import ComparePage from "./pages/ComparePage";
@@ -23,6 +23,17 @@ function appRoute(node: React.ReactNode) {
   );
 }
 
+/** 어드민 전용 페이지: 인증 + 어드민 가드 + 사이드바 레이아웃. */
+function adminRoute(node: React.ReactNode) {
+  return (
+    <RequireAuth>
+      <RequireAdmin>
+        <AppLayout>{node}</AppLayout>
+      </RequireAdmin>
+    </RequireAuth>
+  );
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -40,7 +51,7 @@ function App() {
         <Route path="/compare" element={appRoute(<ComparePage />)} />
         <Route path="/ranking" element={appRoute(<RankingPage />)} />
         <Route path="/trends" element={appRoute(<TrendsPage />)} />
-        <Route path="/admin" element={appRoute(<AdminPage />)} />
+        <Route path="/admin" element={adminRoute(<AdminPage />)} />
         <Route path="/mypage" element={appRoute(<MyPage />)} />
 
         {/* 404 */}

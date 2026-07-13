@@ -36,7 +36,7 @@ function points(
 }
 
 /** 다중 상권 오버레이 레이더 차트(순수 SVG). */
-export default function RadarChartSvg({ axes, series, size = 260 }: Props) {
+export default function RadarChartSvg({ axes, series, size = 420 }: Props) {
   const n = axes.length;
   if (n < 3) return null;
 
@@ -73,6 +73,7 @@ export default function RadarChartSvg({ axes, series, size = 260 }: Props) {
       className={styles.svg}
       viewBox={`0 0 ${size} ${size}`}
       width="100%"
+      style={{ maxWidth: size }}
       role="img"
       aria-label="지표 레이더 차트"
     >

@@ -20,6 +20,20 @@
   box-shadow: var(--shadow-card);
 }
 
+.cardClickable {
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.cardClickable:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-card-hover, var(--shadow-card));
+  transform: translateY(-1px);
+}
+.cardClickable:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .cardMark {
   flex: 0 0 auto;
   width: 44px;
@@ -78,6 +92,15 @@
   color: var(--color-muted);
 }
 
+.metaMemo {
+  font-size: 13px;
+  color: var(--color-text-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
 .cardMemo {
   margin: 6px 0 0;
   font-size: 13px;
@@ -106,6 +129,61 @@
 }
 .linkBtn:hover:not(:disabled) {
   background: var(--color-bg);
+}
+
+.primaryBtn {
+  padding: 7px 16px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.primaryBtn:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+.primaryBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* 메모 편집 영역 */
+.memoEdit {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.memoInput {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.memoInput:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -1px;
+  border-color: var(--color-primary);
+}
+.memoEditActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.memoCount {
+  margin-right: auto;
+  font-family: var(--font-num);
+  font-size: 12px;
+  color: var(--color-muted);
 }
 
 .iconBtn {

@@ -61,6 +61,14 @@
   color: var(--color-primary);
 }
 
+.pillCompact {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.pillCompact .pillCaret {
+  font-size: 9px;
+}
+
 .dropdown {
   position: absolute;
   top: calc(100% + 6px);

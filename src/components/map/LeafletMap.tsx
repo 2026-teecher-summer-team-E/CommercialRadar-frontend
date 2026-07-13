@@ -21,7 +21,7 @@ interface LeafletMapProps {
 
 /** 상권유형별 색상. */
 const TYPE_COLORS: Record<string, string> = {
-  골목상권: "#2447c7",
+  골목상권: "#0064e0",
   발달상권: "#e8833a",
   전통시장: "#1b8a5a",
   관광특구: "#9333ea",
@@ -55,6 +55,12 @@ export default function LeafletMap({
   const onOpenRef = useRef(onOpenProfile);
   onSelectRef.current = onSelect;
   onOpenRef.current = onOpenProfile;
+
+  // 방금 이 (selectedId, mode) 조합으로 카메라 이동을 이미 했는지 추적.
+  // points/geojson이 뒤늦게 로드돼 selectedId의 마커가 나중에야 생기는 경우를 다시 시도하기 위해
+  // 이 값들도 effect 4의 의존성에 포함하는데, 그 재실행이 필터 변경처럼 선택과 무관한 이유일 때는
+  // 카메라를 또 움직이지 않도록 이 ref로 "이미 이동했음"을 구분한다.
+  const flownRef = useRef<{ id: number; mode: MapMode } | null>(null);
 
   // 선택 상권 팝업 DOM(이름/유형/점수 + 프로필 버튼).
   const buildPopup = () => {
@@ -94,7 +100,14 @@ export default function LeafletMap({
     rendererRef.current = L.canvas({ padding: 0.5 });
     mapRef.current = map;
     setTimeout(() => map.invalidateSize(), 0);
+
+    // 사이드바 접힘/펼침 등 부모 크기 변화를 Leaflet이 스스로 감지하지 못해 지도가 잘리므로,
+    // 컨테이너 크기 변화를 직접 관찰해 invalidateSize를 호출한다(트랜지션 도중에도 계속 맞춰짐).
+    const resizeObserver = new ResizeObserver(() => map.invalidateSize());
+    resizeObserver.observe(containerRef.current);
+
     return () => {
+      resizeObserver.disconnect();
       map.remove();
       mapRef.current = null;
       markersRef.current.clear();
@@ -174,6 +187,8 @@ export default function LeafletMap({
     const map = mapRef.current;
     if (!map) return;
 
+    const isNewSelection = !(flownRef.current && flownRef.current.id === selectedId && flownRef.current.mode === mode);
+
     if (mode === "pins") {
       markersRef.current.forEach((m, id) => {
         const sel = id === selectedId;
@@ -182,8 +197,13 @@ export default function LeafletMap({
       });
       const sel = markersRef.current.get(selectedId);
       if (sel) {
-        map.flyTo(sel.getLatLng(), Math.max(map.getZoom(), 16), { duration: 0.8 });
-        sel.bindPopup(buildPopup(), { closeButton: true, minWidth: 170 }).openPopup();
+        const wasOpen = sel.isPopupOpen();
+        if (isNewSelection) {
+          flownRef.current = { id: selectedId, mode };
+          map.flyTo(sel.getLatLng(), Math.max(map.getZoom(), 16), { duration: 0.8 });
+        }
+        sel.bindPopup(buildPopup(), { closeButton: true, minWidth: 170 });
+        if (isNewSelection || wasOpen) sel.openPopup();
       }
     } else {
       polysRef.current.forEach((lyr, id) => {
@@ -194,11 +214,30 @@ export default function LeafletMap({
       });
       const sel = polysRef.current.get(selectedId) as L.Polygon | undefined;
       if (sel && typeof sel.getBounds === "function") {
-        map.flyToBounds(sel.getBounds(), { padding: [80, 80], maxZoom: 17, duration: 0.8 });
-        sel.bindPopup(buildPopup(), { closeButton: true, minWidth: 170 }).openPopup();
+        const wasOpen = sel.isPopupOpen();
+        if (isNewSelection) {
+          flownRef.current = { id: selectedId, mode };
+          map.flyToBounds(sel.getBounds(), { padding: [80, 80], maxZoom: 17, duration: 0.8 });
+        }
+        sel.bindPopup(buildPopup(), { closeButton: true, minWidth: 170 });
+        if (isNewSelection || wasOpen) sel.openPopup();
       }
     }
-  }, [selectedId, mode, activeName, activeType, activeScore]); // eslint-disable-line react-hooks/exhaustive-deps
+    // points/geojson도 의존성에 포함: 데이터가 늦게 도착해 selectedId의 마커/구역이 뒤늦게 생기는 경우를 다시 시도한다.
+  }, [selectedId, mode, activeName, activeType, activeScore, points, geojson]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 5) 자치구 필터 변경 시 해당 자치구 범위로 카메라 이동
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (guFilter === "전체") {
+      map.flyTo(SEOUL_CENTER, 12, { duration: 0.8 });
+      return;
+    }
+    if (points.length === 0) return;
+    const bounds = L.latLngBounds(points.map((p) => [p.lat, p.lng] as [number, number]));
+    map.flyToBounds(bounds, { padding: [64, 64], maxZoom: 16, duration: 0.8 });
+  }, [guFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 5) 자치구 필터 변경 시 해당 자치구 범위로 카메라 이동
   useEffect(() => {

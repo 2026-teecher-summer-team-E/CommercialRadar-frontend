@@ -23,6 +23,8 @@ import BuzzGapCard from "../components/dashboard/BuzzGapCard";
 import { DayNightCard, ForeignCard, PerCapitaCard, WeekendCard } from "../components/dashboard/StatCards";
 import ExpandModal from "../components/dashboard/ExpandModal";
 import { quarterShort } from "../components/dashboard/format";
+import { useFavoriteDistrict } from "../hooks/useFavoriteDistrict";
+import FavoriteStar from "../components/common/FavoriteStar";
 import styles from "./DashboardPage.module.css";
 
 /** getDistrict 응답(서비스가 제네릭 없이 any 반환) — 페이지 내부 로컬 타입. */
@@ -406,7 +408,7 @@ export default function DashboardPage() {
       <div className={styles.page}>
         <PageNav />
         <Header name={null} region={null} typeName={null} />
-        <div className={styles.empty}>대시보드 데이터를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</div>
+        <div className={styles.empty}>상권 데이터를 불러오는 데 실패했어요. 새로고침하거나 다른 상권을 선택해보세요.</div>
       </div>
     );
   }
@@ -425,7 +427,7 @@ export default function DashboardPage() {
   return (
     <div className={styles.page}>
       <PageNav />
-      <Header name={d.district_name} region={region} typeName={d.type_name} />
+      <Header name={d.district_name} region={region} typeName={d.type_name} districtId={d.id} />
 
       {/* 상단 2열: 종합점수 + 생존율 예측 */}
       <section className={styles.topGrid}>
@@ -479,7 +481,7 @@ export default function DashboardPage() {
           {data.heatmap ? (
             <PopulationHeatmap byTime={data.heatmap.by_time} byDay={data.heatmap.by_day} />
           ) : (
-            <div className={styles.empty}>유동인구 데이터가 없어요.</div>
+            <div className={styles.empty}>이 상권의 유동인구 기록이 아직 없습니다.</div>
           )}
         </div>
 
@@ -565,6 +567,8 @@ export default function DashboardPage() {
           footTraffic={simFootTraffic}
           dayDominant={simDayDominant}
           daySalesPct={simDaySalesPct}
+          foreignerPct={data.foreign?.foreigner_pct ?? null}
+          startQuarter={survivalForecast[0]?.year_quarter ?? null}
           onClose={() => setSim(null)}
         />
       )}
@@ -589,15 +593,23 @@ function Header({
   name,
   region,
   typeName,
+  districtId,
 }: {
   name: string | null;
   region: string | null;
   typeName: string | null;
+  districtId?: number;
 }) {
+  const { isFavorite, toggle, pending } = useFavoriteDistrict();
   return (
     <div className={styles.header}>
       <div>
-        <h1 className={styles.title}>{name ?? "상권 프로필"}</h1>
+        <div className={styles.titleRow}>
+          <h1 className={styles.title}>{name ?? "상권 프로필"}</h1>
+          {districtId != null && (
+            <FavoriteStar active={isFavorite(districtId)} disabled={pending} onToggle={() => toggle(districtId)} />
+          )}
+        </div>
         <p className={styles.subtitle}>
           {[region, typeName].filter(Boolean).join(" · ") || "상권 종합 리포트"}
         </p>

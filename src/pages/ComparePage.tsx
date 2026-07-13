@@ -120,7 +120,7 @@ export default function ComparePage() {
     return (
       <div className={styles.page}>
         <Header />
-        <div className={styles.empty}>비교 데이터를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</div>
+        <div className={styles.empty}>비교 데이터를 받아오지 못했습니다. 페이지를 새로고침해보세요.</div>
       </div>
     );
   }
@@ -141,15 +141,15 @@ export default function ComparePage() {
               </button>
             </span>
           ))}
-          <button type="button" className={styles.addChip}>
+          <button type="button" className={styles.addChip} disabled title="준비 중인 기능입니다">
             + 상권 추가
           </button>
         </div>
         <div className={styles.selectors}>
-          <button type="button" className={styles.selector}>
+          <button type="button" className={styles.selector} disabled title="준비 중인 기능입니다">
             2026년 1분기 ▾
           </button>
-          <button type="button" className={styles.selector}>
+          <button type="button" className={styles.selector} disabled title="준비 중인 기능입니다">
             전체 업종 ▾
           </button>
         </div>
@@ -157,7 +157,7 @@ export default function ComparePage() {
 
       {/* 핵심 지표 비교표 */}
       <section className={styles.section}>
-        <SectionTitle title="핵심 지표 비교" subtitle="상권별 대표 지표를 한눈에 비교합니다" />
+        <SectionTitle title="핵심 지표 비교" subtitle="상권별 대표 지표를 나란히 놓고 비교합니다" />
         <div className={styles.card}>
           <MetricsTable districts={districts} />
         </div>
@@ -172,11 +172,27 @@ export default function ComparePage() {
               <RadarChartSvg axes={radarAxes} series={radarSeries} />
             </div>
           ) : (
-            <div className={styles.empty}>레이더 데이터가 없어요.</div>
+            <div className={styles.empty}>레이더 차트를 그릴 데이터가 부족합니다.</div>
           )}
           <Legend names={names} />
         </div>
 
+        <div className={styles.card}>
+          <div style={{ marginBottom: 12 }}>
+            <SectionTitle
+              title="업종별 추천 순위"
+              subtitle={
+                districts[0] ? `${districts[0].district_name} 기준 상위 업종` : "선택 상권 기준 상위 업종"
+              }
+              showAccent={false}
+            />
+          </div>
+          <RankingTable ranking={data.ranking} />
+        </div>
+      </section>
+
+      {/* 분기별 생존율 추이: 그래프가 길쭉해서 2열보단 전체 폭 차지가 낫다. */}
+      <section className={styles.section}>
         <div className={styles.card}>
           <ChartHeader title="분기별 생존율 추이" onExpand={() => setModal("trend")} />
           <div className={styles.legendTop}>
@@ -187,21 +203,8 @@ export default function ComparePage() {
               <LineChartSvg labels={trendLabels} series={trendSeries} />
             </div>
           ) : (
-            <div className={styles.empty}>추이 데이터가 없어요.</div>
+            <div className={styles.empty}>생존율 추이 기록이 아직 없습니다.</div>
           )}
-        </div>
-      </section>
-
-      {/* 업종별 추천 순위표 */}
-      <section className={styles.section}>
-        <SectionTitle
-          title="업종별 추천 순위"
-          subtitle={
-            districts[0] ? `${districts[0].district_name} 기준 상위 업종` : "선택 상권 기준 상위 업종"
-          }
-        />
-        <div className={styles.card}>
-          <RankingTable ranking={data.ranking} />
         </div>
       </section>
 
@@ -243,7 +246,7 @@ function Header() {
     <div className={styles.header}>
       <div>
         <h1 className={styles.title}>상권 비교</h1>
-        <p className={styles.subtitle}>여러 상권을 나란히 비교해 최적의 입지를 찾으세요</p>
+        <p className={styles.subtitle}>나란히 놓으면 보이는 것들이 있습니다</p>
       </div>
       <button type="button" className={styles.saveBtn}>
         리포트로 저장
@@ -252,10 +255,18 @@ function Header() {
   );
 }
 
-function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
+function SectionTitle({
+  title,
+  subtitle,
+  showAccent = true,
+}: {
+  title: string;
+  subtitle?: string;
+  showAccent?: boolean;
+}) {
   return (
     <div className={styles.sectionTitle}>
-      <span className={styles.accentBar} />
+      {showAccent && <span className={styles.accentBar} />}
       <div>
         <h2 className={styles.sectionHeading}>{title}</h2>
         {subtitle && <p className={styles.sectionSub}>{subtitle}</p>}
@@ -342,7 +353,6 @@ function MetricsTable({ districts }: { districts: DistrictCompareResponse["distr
             {row.cells.map((cell, i) => (
               <td key={i} className={`${styles.numCell} ${i === row.best ? styles.bestCell : ""}`}>
                 {cell}
-                {i === row.best && <span className={styles.bestTag}>1위</span>}
               </td>
             ))}
           </tr>

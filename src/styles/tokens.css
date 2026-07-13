@@ -1,44 +1,44 @@
-/* CommercialRadar 디자인 토큰 — Figma(Ltyz6Iq75ODccjCDJbx8Wp)에서 추출 */
+/* CommercialRadar 디자인 토큰 — Meta 디자인 시스템 컬러 팔레트 적용 */
 :root {
-  /* Primary */
-  --color-primary: #2447c7;
-  --color-primary-dark: #1a2f7d;
-  --color-primary-light: #edf2fc;
-  --color-primary-soft: #d7e1f7;
+  /* Primary — Meta cobalt */
+  --color-primary: #0064e0;
+  --color-primary-dark: #0457cb;
+  --color-primary-light: #e6f0fd;
+  --color-primary-soft: #0091ff;
 
-  /* Text */
-  --color-text: #131b2e;
-  --color-text-body: #3b4356;
-  --color-muted: #6b7590;
-  --color-faint: #8a94a6;
+  /* Text — Meta ink scale */
+  --color-text: #0a1317;
+  --color-text-body: #1c1e21;
+  --color-muted: #5d6c7b;
+  --color-faint: #8595a4;
 
-  /* Surface / background */
+  /* Surface / background — Meta surface scale */
   --color-surface: #ffffff;
-  --color-bg: #f4f6fb;
-  --color-chip: #f4f6fb;
-  --color-border: #e6eaf0;
-  --color-border-strong: #c6cede;
-  --color-line: #eef1f6;
+  --color-bg: #f1f4f7;
+  --color-chip: #f1f4f7;
+  --color-border: #dee3e9;
+  --color-border-strong: #ced0d4;
+  --color-line: #dee3e9;
 
-  /* Semantic */
-  --color-green: #1b8a5a;
-  --color-green-bg: #e7f6ee;
-  --color-amber: #e9a23b;
+  /* Semantic — Meta semantic scale */
+  --color-green: #31a24c;
+  --color-green-bg: #e6f7eb;
+  --color-amber: #f7b928;
   --color-gold: #c97f1e;
-  --color-gold-bg: #fbe8b8;
-  --color-silver: #2b333f;
-  --color-silver-bg: #d5dbe2;
+  --color-gold-bg: #fef3cd;
+  --color-silver: #444950;
+  --color-silver-bg: #dee3e9;
   --color-orange: #e8833a;
   --color-orange-bg: #fdf1e7;
-  --color-red: #c73e2e;
+  --color-red: #e41e3f;
 
-  /* Comparison series */
-  --series-1: #2447c7;
-  --series-1-bg: #edf2fc;
+  /* Comparison series — cobalt primary 계열로 동기화 */
+  --series-1: #0064e0;
+  --series-1-bg: #e6f0fd;
   --series-2: #e8833a;
   --series-2-bg: #fdf1e7;
-  --series-3: #1b8a5a;
-  --series-3-bg: #e7f6ee;
+  --series-3: #31a24c;
+  --series-3-bg: #e6f7eb;
 
   /* Radius */
   --radius-sm: 8px;

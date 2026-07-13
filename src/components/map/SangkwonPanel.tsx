@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import styles from "../../pages/MapPage.module.css";
 import type { CategoryStat } from "../../types";
+import { useFavoriteDistrict } from "../../hooks/useFavoriteDistrict";
+import FavoriteStar from "../common/FavoriteStar";
 import CategoryPicker from "./CategoryPicker";
 import { CATEGORY_GROUPS } from "./categoryList";
 import {
@@ -13,7 +15,6 @@ import {
   fmtSales,
   scoreGrade,
   toScore,
-  type DistrictSearchResult,
   type DistrictSummary,
 } from "./mapData";
 
@@ -21,10 +22,6 @@ interface SangkwonPanelProps {
   summary: DistrictSummary | null;
   loading: boolean;
   error: boolean;
-  /** 위치 선택 드롭다운 옵션(검색 결과 또는 기본 목록). */
-  options: DistrictSearchResult[];
-  selectedId: number;
-  onSelect: (id: number) => void;
   /** 상권 프로필(대시보드)로 이동. */
   onOpenProfile: (id: number) => void;
   /** 선택 상권에 실재하는 업종 목록(해당 상권 category-stats 전체 조회 결과). */
@@ -34,14 +31,11 @@ interface SangkwonPanelProps {
   onCategoryFilterChange: (v: string | null) => void;
 }
 
-/** 지도 페이지 좌측 콘텐츠 패널: 위치 선택 + 업종 필터 + 점수 + 지표 2x2 + 시간대별 혼잡도. */
+/** 지도 페이지 좌측 콘텐츠 패널: 현재 위치 표시 + 업종 필터 + 점수 + 지표 2x2 + 시간대별 혼잡도. */
 export default function SangkwonPanel({
   summary,
   loading,
   error,
-  options,
-  selectedId,
-  onSelect,
   onOpenProfile,
   availableCategories,
   categoryFilter,
@@ -49,6 +43,7 @@ export default function SangkwonPanel({
 }: SangkwonPanelProps) {
   const detail = summary?.detail ?? null;
   const stats = detail?.latest_stats ?? null;
+  const { isFavorite, toggle: toggleFavorite, pending: favoritePending } = useFavoriteDistrict();
   const hasCategoryFilter = categoryFilter != null;
   const categoryOverride = hasCategoryFilter
     ? (availableCategories.find((c) => c.category_name === categoryFilter) ?? null)
@@ -94,64 +89,62 @@ export default function SangkwonPanel({
 
   return (
     <aside className={styles.panel}>
-      {/* 위치 선택 드롭다운 */}
-      <div className={styles.selectRow}>
-        <span className={styles.pinIcon} aria-hidden>
-          ◎
-        </span>
-        <select
-          className={styles.select}
-          value={selectedId}
-          onChange={(e) => onSelect(Number(e.target.value))}
-          aria-label="상권 위치 선택"
-        >
-          {options.length === 0 && detail && (
-            <option value={detail.id}>
-              {[detail.gu_name, detail.district_name].filter(Boolean).join(" ")}
-            </option>
+      {/* 현재 위치(선택은 상단 검색바가 담당) + 업종 필터를 한 줄에 배치. */}
+      <div className={styles.headerRow}>
+        <div className={styles.headerInfo}>
+          <div className={styles.locationTitleRow}>
+            <span className={styles.locationTitle}>{detail?.district_name}</span>
+            {detail && (
+              <FavoriteStar
+                active={isFavorite(detail.id)}
+                disabled={favoritePending}
+                onToggle={() => toggleFavorite(detail.id)}
+              />
+            )}
+          </div>
+          {detail && (
+            <span className={styles.locationSub}>
+              <span className={styles.locationSubText}>{locationLabel}</span>
+              {detail.type_name && (
+                <span className={styles.districtTypeChip}>{detail.type_name}</span>
+              )}
+              {hasCategoryFilter && categoryOverride && (
+                <span className={styles.districtTypeChip}>{categoryOverride.category_name} 기준</span>
+              )}
+            </span>
           )}
-          {options.map((o) => (
-            <option key={o.id} value={o.id}>
-              {[o.gu_name, o.district_name].filter(Boolean).join(" ")}
-            </option>
-          ))}
-        </select>
+        </div>
+        <div className={styles.categoryRow}>
+          <span className={styles.categoryLabel}>업종</span>
+          <CategoryPicker
+            groups={availableGroups}
+            value={categoryFilter}
+            onChange={onCategoryFilterChange}
+            compact
+          />
+        </div>
       </div>
 
-      {/* 업종 필터: 이 상권에 실재하는 업종만 대분류→소분류 드릴다운으로 선택. */}
-      <CategoryPicker groups={availableGroups} value={categoryFilter} onChange={onCategoryFilterChange} />
-
-      {loading && <div className={styles.panelState}>불러오는 중…</div>}
+      {loading && <div className={styles.panelState}>지도 데이터를 불러오는 중…</div>}
       {error && !loading && (
         <div className={styles.panelState}>상권 정보를 불러오지 못했습니다.</div>
       )}
 
       {!loading && !error && detail && (
         <>
-          {/* 상권명 + 점수 */}
-          <div className={styles.districtHead}>
-            <span className={styles.districtPin} aria-hidden>
-              ◎
-            </span>
-            <span className={styles.districtName}>{locationLabel}</span>
-            {detail.type_name && (
-              <span className={styles.districtType}>{detail.type_name}</span>
-            )}
-            {hasCategoryFilter && categoryOverride && (
-              <span className={styles.districtType}>{categoryOverride.category_name} 기준</span>
-            )}
-          </div>
-
           {categoryEmpty && (
             <div className={styles.panelState}>이 상권엔 선택한 업종 데이터가 없습니다.</div>
           )}
 
-          <div className={styles.scoreBlock}>
-            <span className={styles.scoreNum}>{score ?? "-"}</span>
-            <span className={styles.scoreUnit}>점</span>
-            <span className={`${styles.scoreGrade} ${styles[`grade_${grade.tone}`]}`}>
-              {grade.label}
-            </span>
+          <div className={`${styles.scoreCard} ${styles[`scoreCard_${grade.tone}`]}`}>
+            <p className={styles.scoreLabel}>상권 종합 점수</p>
+            <div className={styles.scoreBlock}>
+              <span className={`${styles.scoreNum} ${styles[`scoreNum_${grade.tone}`]}`}>{score ?? "-"}</span>
+              <span className={styles.scoreUnit}>점</span>
+              <span className={`${styles.scoreGrade} ${styles[`grade_${grade.tone}`]}`}>
+                {grade.label}
+              </span>
+            </div>
           </div>
 
           <button

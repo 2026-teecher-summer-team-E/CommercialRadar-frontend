@@ -76,6 +76,7 @@ export default function LineChartSvg({ labels, series, width = 520, height = 260
       className={styles.svg}
       viewBox={`0 0 ${width} ${height}`}
       width="100%"
+      style={{ maxWidth: width }}
       role="img"
       aria-label="분기별 생존율 추이 차트"
     >

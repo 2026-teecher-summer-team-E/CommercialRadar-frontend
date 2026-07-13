@@ -74,7 +74,7 @@ export default function RankingPage() {
       <div className={styles.header}>
         <h1 className={styles.title}>상권 랭킹</h1>
         <p className={styles.subtitle}>
-          생존율·유동인구·종합 점수를 기준으로 서울 주요 상권을 한눈에 비교하세요
+          지금 어디가 살아남고 있나요?
         </p>
       </div>
 
@@ -105,9 +105,9 @@ export default function RankingPage() {
           ))}
         </div>
       ) : error ? (
-        <div className={styles.state}>랭킹 데이터를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</div>
+        <div className={styles.state}>랭킹 데이터를 가져오다 멈췄어요. 새로고침해보세요.</div>
       ) : sorted.length === 0 ? (
-        <div className={styles.state}>표시할 상권이 없어요.</div>
+        <div className={styles.state}>조건에 맞는 상권이 보이지 않습니다.</div>
       ) : (
         <div className={styles.card}>
           <Leaderboard districts={sorted} />

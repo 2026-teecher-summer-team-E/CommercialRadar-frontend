@@ -9,7 +9,7 @@ export default function FeaturesSection() {
     <section className={styles.features}>
       <div className={styles.container}>
         <div className={styles.sectionHead}>
-          <h2 className={styles.h2}>창업 결정에 필요한 모든 데이터, 한 곳에</h2>
+          <h2 className={styles.h2}>열기 전에 알아야 할 것들, 여기 있습니다</h2>
           <p className={styles.sectionSub}>
             텍스트 보고서가 아닌 인터랙티브 시각화로, 데이터를 직접 탐색하세요.
           </p>
