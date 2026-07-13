@@ -1,57 +1,69 @@
-/* CommercialRadar 디자인 토큰 — Meta 디자인 시스템 컬러 팔레트 적용 */
+/* CommercialRadar 디자인 토큰 — Zapier 팔레트 (비교용) */
+/* Primary: 표준 남색 #24398A / 캔버스: 웜 크림 #fffefb / 텍스트: 커피 잉크 3단계 */
 :root {
-  /* Primary — Meta cobalt */
-  --color-primary: #0064e0;
-  --color-primary-dark: #0457cb;
-  --color-primary-light: #e6f0fd;
-  --color-primary-soft: #0091ff;
+  /* Primary — 표준 남색 CTA */
+  --color-primary: #24398a;
+  --color-primary-dark: #182650;
+  --color-primary-light: #e8ebf5;
+  --color-primary-soft: #b4bedd;
 
-  /* Text — Meta ink scale */
-  --color-text: #0a1317;
-  --color-text-body: #1c1e21;
-  --color-muted: #5d6c7b;
-  --color-faint: #8595a4;
+  /* on-primary */
+  --color-on-primary: #fffefb;
 
-  /* Surface / background — Meta surface scale */
-  --color-surface: #ffffff;
-  --color-bg: #f1f4f7;
-  --color-chip: #f1f4f7;
-  --color-border: #dee3e9;
-  --color-border-strong: #ced0d4;
-  --color-line: #dee3e9;
+  /* Text — 커피 잉크 계열 (웜 뉴트럴) */
+  --color-text: #201515;       /* Deep Coffee Ink — heading / ink */
+  --color-text-body: #605d52;  /* Body — default body */
+  --color-muted: #939084;      /* Body Mid — secondary / metadata */
+  --color-faint: #c5c0b1;      /* Mute — fine print / disabled */
 
-  /* Semantic — Meta semantic scale */
-  --color-green: #31a24c;
-  --color-green-bg: #e6f7eb;
-  --color-amber: #f7b928;
-  --color-gold: #c97f1e;
-  --color-gold-bg: #fef3cd;
-  --color-silver: #444950;
-  --color-silver-bg: #dee3e9;
-  --color-orange: #e8833a;
-  --color-orange-bg: #fdf1e7;
-  --color-red: #e41e3f;
+  /* Surface / background — 웜 크림 캔버스 */
+  --color-surface: #fffefb;
+  --color-bg: #f8f4f0;
+  --color-chip: #f1ece4;          /* Warm chip / tag background */
+  --color-border: #e8e2d8;        /* Cream warm gray — 기본 divider */
+  --color-border-strong: #d8d1c4; /* Stronger warm border */
+  --color-line: #e8e2d8;
 
-  /* Comparison series — cobalt primary 계열로 동기화 */
-  --series-1: #0064e0;
-  --series-1-bg: #e6f0fd;
-  --series-2: #e8833a;
-  --series-2-bg: #fdf1e7;
-  --series-3: #31a24c;
-  --series-3-bg: #e6f7eb;
+  /* Semantic — 크림 배경과 어울리는 톤
+     navy primary와 겹치지 않으므로 red/amber 원래 톤 복원 */
+  --color-green: #4a9e5c;
+  --color-green-bg: #edf7f0;
+  --color-amber: #e8a020;
+  --color-gold: #c47c10;
+  --color-gold-bg: #fdf4dc;
+  --color-silver: #939084;
+  --color-silver-bg: #f1ece4;
+  --color-orange: #e8a020;        /* amber 계열 — navy primary와 무관한 의미색 */
+  --color-orange-bg: #fdf4dc;
+  --color-red: #d94430;           /* navy와 충돌 없으므로 원래 톤 복원 */
 
-  /* Radius */
-  --radius-sm: 8px;
+  /* Accent — 보조 밝은 남색 */
+  --color-accent: #3d54a8;
+  --color-accent-light: #e8ebf5;
+
+  /* Link */
+  --color-link: #24398a;
+
+  /* Chart series — 표준 남색 + 커피 잉크 + 크림 그레이 스텝 */
+  --series-1: #24398a;   /* Standard Navy — primary */
+  --series-1-bg: #e8ebf5;
+  --series-2: #201515;   /* Coffee Ink — dark neutral */
+  --series-2-bg: #f1ece4;
+  --series-3: #939084;   /* Body Mid — neutral gray */
+  --series-3-bg: #f8f4f0;
+
+  /* Radius — Zapier 시그니처 미들 라디우스 */
+  --radius-sm: 6px;
   --radius: 12px;
-  --radius-lg: 16px;
+  --radius-lg: 12px;
   --radius-pill: 999px;
 
-  /* Shadow */
-  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-pop: 0 8px 24px -8px rgba(16, 24, 40, 0.16);
-  --shadow-modal: 0 24px 60px -12px rgba(16, 24, 40, 0.28);
+  /* Shadow — 크림 배경 위 소프트 웜 섀도 */
+  --shadow-card: 0 1px 3px rgba(32, 21, 21, 0.07);
+  --shadow-pop: 0 4px 16px rgba(32, 21, 21, 0.10);
+  --shadow-modal: 0 12px 32px rgba(32, 21, 21, 0.14);
 
   /* Fonts */
-  --font-sans: "Noto Sans KR", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Noto Sans KR", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-num: "Inter", var(--font-sans);
 }
