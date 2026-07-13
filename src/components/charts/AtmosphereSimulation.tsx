@@ -509,7 +509,7 @@ export default function AtmosphereSimulation({
                 return (
                   <div
                     key={p.id}
-                    style={{ position: "absolute", bottom, zIndex: Math.round(1000 - bottom), animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}
+                    style={{ position: "absolute", bottom, zIndex: Math.round(scale * 1000) + i, animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}
                   >
                     <div style={{ transform: `scale(${scale}) scaleX(${scaleXDir})`, transformOrigin: "bottom center", display: "flex", flexDirection: "column", alignItems: "center" }}>
                       <DotLottieReact
@@ -534,7 +534,7 @@ export default function AtmosphereSimulation({
                 const dur = 9 + (i % 6) * 2.2;
                 const walkAnim = dir === 1 ? "atmo-walk-r" : "atmo-walk-l";
                 return (
-                  <div key={p.id} style={{ position: "absolute", bottom, zIndex: Math.round(1000 - bottom), animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}>
+                  <div key={p.id} style={{ position: "absolute", bottom, zIndex: Math.round(scale * 1000) + i, animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}>
                     <div style={{ transform: `scale(${scale}) scaleX(${dir})`, transformOrigin: "bottom center" }}>
                       <div style={{ animation: `atmo-bob ${1.6 + (i % 3) * 0.3}s ease-in-out infinite`, animationPlayState: playState, display: "flex", flexDirection: "column", alignItems: "center" }}>
                         <div style={{ width: 13, height: 13, borderRadius: "50%", background: p.color }} />
