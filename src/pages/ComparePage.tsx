@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { apiClient } from "../lib/apiClient";
 import { commercialApi } from "../services/commercialApi";
+import type { DistrictSearchResult } from "../components/map/mapData";
 import type {
   DistrictCompareResponse,
   RadarResponse,
@@ -32,23 +34,61 @@ interface CompareData {
 
 const EXPAND_ICON = "⤢";
 
+function commonValues(groups: string[][]): string[] {
+  if (groups.length === 0) return [];
+  const [first, ...rest] = groups;
+  return Array.from(new Set(first)).filter((value) => rest.every((group) => group.includes(value)));
+}
+
+function formatQuarter(value: string): string {
+  const match = /^(\d{4})-Q([1-4])$/.exec(value);
+  return match ? `${match[1]}년 ${match[2]}분기` : value;
+}
+
 export default function ComparePage() {
-  const [selectedIds] = useState<number[]>([1, 2, 3]);
+  const [selectedIds, setSelectedIds] = useState<number[]>([1, 2, 3]);
   const [data, setData] = useState<CompareData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [modal, setModal] = useState<ModalKind>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<DistrictSearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState(false);
+  const [selectionMessage, setSelectionMessage] = useState<string | null>(null);
+  const [selectedQuarter, setSelectedQuarter] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [quarterOptions, setQuarterOptions] = useState<string[]>([]);
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
+  const [quarterOptionsLoading, setQuarterOptionsLoading] = useState(true);
+  const [categoryOptionsLoading, setCategoryOptionsLoading] = useState(true);
+  const [filterOptionsError, setFilterOptionsError] = useState(false);
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
     setError(false);
 
+    const snapshotParams = {
+      year_quarter: selectedQuarter || undefined,
+      category_name: selectedCategory || undefined,
+    };
+
     Promise.all([
-      commercialApi.compare(selectedIds),
-      Promise.all(selectedIds.map((id) => commercialApi.radar(id))),
-      Promise.all(selectedIds.map((id) => commercialApi.timeSeries(id))),
-      selectedIds.length > 0 ? commercialApi.categoryRanking(selectedIds[0]) : Promise.resolve(null),
+      commercialApi.compare(selectedIds, snapshotParams),
+      Promise.all(selectedIds.map((id) => commercialApi.radar(id, snapshotParams))),
+      Promise.all(
+        selectedIds.map((id) =>
+          commercialApi.timeSeries(id, selectedCategory ? { category_name: selectedCategory } : undefined),
+        ),
+      ),
+      selectedIds.length > 0
+        ? commercialApi.categoryRanking(
+            selectedIds[0],
+            selectedQuarter ? { year_quarter: selectedQuarter } : undefined,
+          )
+        : Promise.resolve(null),
     ])
       .then(([compareRes, radarRes, tsRes, rankingRes]) => {
         if (!alive) return;
@@ -69,7 +109,149 @@ export default function ComparePage() {
     return () => {
       alive = false;
     };
+  }, [selectedIds, selectedQuarter, selectedCategory]);
+
+  // 비교 대상 모두에게 데이터가 있는 분기만 선택지로 제공한다.
+  useEffect(() => {
+    let alive = true;
+    setQuarterOptionsLoading(true);
+    setFilterOptionsError(false);
+    Promise.all(
+      selectedIds.map((id) => commercialApi.timeSeries(id, { metrics: "survival_rate" })),
+    )
+      .then((responses) => {
+        if (!alive) return;
+        const common = commonValues(
+          responses.map((response) => response.data.data.map((point) => point.year_quarter)),
+        ).sort((a, b) => b.localeCompare(a));
+        setQuarterOptions(common);
+        setSelectedQuarter((current) => (current && !common.includes(current) ? "" : current));
+      })
+      .catch(() => {
+        if (!alive) return;
+        setQuarterOptions([]);
+        setFilterOptionsError(true);
+      })
+      .finally(() => {
+        if (alive) setQuarterOptionsLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
   }, [selectedIds]);
+
+  // 선택 분기(또는 비교 API가 결정한 공통 최신 분기)에 모든 대상 상권이 보유한 업종만 노출한다.
+  useEffect(() => {
+    const targetQuarter = selectedQuarter || data?.compare.year_quarter || "";
+    if (!targetQuarter) {
+      setCategoryOptions([]);
+      setCategoryOptionsLoading(false);
+      return;
+    }
+
+    let alive = true;
+    setCategoryOptionsLoading(true);
+    setFilterOptionsError(false);
+    Promise.all(
+      selectedIds.map((id) => commercialApi.categoryStats(id, { year_quarter: targetQuarter })),
+    )
+      .then((responses) => {
+        if (!alive) return;
+        const common = commonValues(
+          responses.map((response) => response.data.categories.map((category) => category.category_name)),
+        ).sort((a, b) => a.localeCompare(b, "ko"));
+        setCategoryOptions(common);
+        setSelectedCategory((current) => (current && !common.includes(current) ? "" : current));
+      })
+      .catch(() => {
+        if (!alive) return;
+        setCategoryOptions([]);
+        setFilterOptionsError(true);
+      })
+      .finally(() => {
+        if (alive) setCategoryOptionsLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [selectedIds, selectedQuarter, data?.compare.year_quarter]);
+
+  // 추가 패널 검색: 지도 페이지와 동일한 상권 검색 API를 사용한다.
+  useEffect(() => {
+    if (!addOpen) return;
+    const keyword = searchQuery.trim();
+    if (!keyword) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      setSearchError(false);
+      return;
+    }
+
+    let alive = true;
+    setSearchLoading(true);
+    setSearchError(false);
+    const timer = window.setTimeout(() => {
+      apiClient
+        .get<DistrictSearchResult[]>("/api/commercial-districts/search", { params: { q: keyword } })
+        .then((response) => {
+          if (alive) setSearchResults(response.data);
+        })
+        .catch(() => {
+          if (alive) {
+            setSearchResults([]);
+            setSearchError(true);
+          }
+        })
+        .finally(() => {
+          if (alive) setSearchLoading(false);
+        });
+    }, 250);
+
+    return () => {
+      alive = false;
+      window.clearTimeout(timer);
+    };
+  }, [addOpen, searchQuery]);
+
+  const openAddPanel = () => {
+    if (selectedIds.length >= 5) {
+      setSelectionMessage("상권은 최대 5개까지 비교할 수 있어요.");
+      return;
+    }
+    setSelectionMessage(null);
+    setAddOpen(true);
+  };
+
+  const closeAddPanel = () => {
+    setAddOpen(false);
+    setSearchQuery("");
+    setSearchResults([]);
+    setSearchError(false);
+  };
+
+  const addDistrict = (district: DistrictSearchResult) => {
+    if (selectedIds.includes(district.id)) {
+      setSelectionMessage("이미 비교 중인 상권이에요.");
+      return;
+    }
+    if (selectedIds.length >= 5) {
+      setSelectionMessage("상권은 최대 5개까지 비교할 수 있어요.");
+      closeAddPanel();
+      return;
+    }
+    setSelectedIds((current) => [...current, district.id]);
+    setSelectionMessage(null);
+    closeAddPanel();
+  };
+
+  const removeDistrict = (id: number) => {
+    if (selectedIds.length <= 2) {
+      setSelectionMessage("비교하려면 상권을 최소 2개 유지해야 해요. 다른 상권을 먼저 추가해주세요.");
+      return;
+    }
+    setSelectedIds((current) => current.filter((districtId) => districtId !== id));
+    setSelectionMessage(null);
+  };
 
   const districts = data?.compare.districts ?? [];
   const names = districts.map((d) => d.district_name);
@@ -131,33 +313,139 @@ export default function ComparePage() {
 
       {/* 컨트롤 바 */}
       <div className={styles.controlBar}>
-        <div className={styles.chips}>
-          {districts.map((d, i) => (
-            <span key={d.id} className={styles.chip}>
-              <span className={styles.chipDot} style={{ background: seriesColor(i) }} />
-              {d.district_name}
-              <button type="button" className={styles.chipClose} aria-label={`${d.district_name} 제거`}>
-                ×
-              </button>
-            </span>
-          ))}
-          <button type="button" className={styles.addChip}>
-            + 상권 추가
-          </button>
+        <div className={styles.selectionArea}>
+          <div className={styles.chips}>
+            {districts.map((d, i) => (
+              <span key={d.id} className={styles.chip}>
+                <span className={styles.chipDot} style={{ background: seriesColor(i) }} />
+                {d.district_name}
+                <button
+                  type="button"
+                  className={styles.chipClose}
+                  aria-label={`${d.district_name} 제거`}
+                  onClick={() => removeDistrict(d.id)}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            <button
+              type="button"
+              className={styles.addChip}
+              onClick={openAddPanel}
+              aria-expanded={addOpen}
+            >
+              {selectedIds.length >= 5 ? "최대 5개" : "+ 상권 추가"}
+            </button>
+            <span className={styles.selectionCount}>{selectedIds.length}/5</span>
+          </div>
+
+          {selectionMessage && <p className={styles.selectionMessage}>{selectionMessage}</p>}
+
+          {addOpen && (
+            <div className={styles.addPanel} role="dialog" aria-label="비교할 상권 추가">
+              <div className={styles.addPanelHeader}>
+                <div>
+                  <strong>비교할 상권 추가</strong>
+                  <span>상권명·자치구·행정동으로 검색하세요.</span>
+                </div>
+                <button type="button" className={styles.panelClose} onClick={closeAddPanel} aria-label="닫기">
+                  ×
+                </button>
+              </div>
+              <input
+                className={styles.searchInput}
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="예: 강남역, 마포구, 성수동"
+                autoFocus
+              />
+              <div className={styles.searchResults} aria-live="polite">
+                {!searchQuery.trim() && <p className={styles.searchStatus}>검색어를 입력해주세요.</p>}
+                {searchQuery.trim() && searchLoading && <p className={styles.searchStatus}>검색 중…</p>}
+                {searchQuery.trim() && !searchLoading && searchError && (
+                  <p className={styles.searchStatus}>검색 결과를 불러오지 못했어요.</p>
+                )}
+                {searchQuery.trim() &&
+                  !searchLoading &&
+                  !searchError &&
+                  searchResults.filter((item) => !selectedIds.includes(item.id)).length === 0 && (
+                    <p className={styles.searchStatus}>추가할 수 있는 검색 결과가 없어요.</p>
+                  )}
+                {!searchLoading &&
+                  !searchError &&
+                  searchResults
+                    .filter((item) => !selectedIds.includes(item.id))
+                    .map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className={styles.searchResult}
+                        onClick={() => addDistrict(item)}
+                      >
+                        <span className={styles.resultName}>{item.district_name}</span>
+                        <span className={styles.resultMeta}>
+                          {[item.gu_name, item.dong_name, item.type_name].filter(Boolean).join(" · ")}
+                        </span>
+                      </button>
+                    ))}
+              </div>
+            </div>
+          )}
         </div>
         <div className={styles.selectors}>
-          <button type="button" className={styles.selector}>
-            2026년 1분기 ▾
-          </button>
-          <button type="button" className={styles.selector}>
-            전체 업종 ▾
-          </button>
+          <label className={styles.selectorLabel}>
+            <span>기준 분기</span>
+            <select
+              className={styles.selector}
+              value={selectedQuarter}
+              onChange={(event) => {
+                setSelectedQuarter(event.target.value);
+                setSelectedCategory("");
+              }}
+              disabled={quarterOptionsLoading}
+              aria-label="비교 기준 분기"
+            >
+              <option value="">
+                {data.compare.year_quarter
+                  ? `최신 공통 · ${formatQuarter(data.compare.year_quarter)}`
+                  : "최신 공통 분기"}
+              </option>
+              {quarterOptions.map((quarter) => (
+                <option key={quarter} value={quarter}>
+                  {formatQuarter(quarter)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={styles.selectorLabel}>
+            <span>비교 업종</span>
+            <select
+              className={styles.selector}
+              value={selectedCategory}
+              onChange={(event) => setSelectedCategory(event.target.value)}
+              disabled={categoryOptionsLoading || categoryOptions.length === 0}
+              aria-label="비교 업종"
+            >
+              <option value="">전체 업종</option>
+              {categoryOptions.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </label>
+          {filterOptionsError && <span className={styles.filterError}>선택 목록을 불러오지 못했어요.</span>}
         </div>
       </div>
 
       {/* 핵심 지표 비교표 */}
       <section className={styles.section}>
-        <SectionTitle title="핵심 지표 비교" subtitle="상권별 대표 지표를 한눈에 비교합니다" />
+        <SectionTitle
+          title="핵심 지표 비교"
+          subtitle={`${selectedCategory || "전체 업종"} · ${formatQuarter(data.compare.year_quarter || selectedQuarter || "-")}`}
+        />
         <div className={styles.card}>
           <MetricsTable districts={districts} />
         </div>
@@ -194,7 +482,10 @@ export default function ComparePage() {
       {/* 분기별 생존율 추이: 그래프가 길쭉해서 2열보단 전체 폭 차지가 낫다. */}
       <section className={styles.section}>
         <div className={styles.card}>
-          <ChartHeader title="분기별 생존율 추이" onExpand={() => setModal("trend")} />
+          <ChartHeader
+            title={`${selectedCategory || "전체 업종"} 분기별 생존율 추이`}
+            onExpand={() => setModal("trend")}
+          />
           {trendLabels.length > 0 ? (
             <div className={styles.chartBody}>
               <LineChartSvg labels={trendLabels} series={trendSeries} />
