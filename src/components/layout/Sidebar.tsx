@@ -113,7 +113,7 @@ export default function Sidebar() {
             className={({ isActive }) => (isActive ? `${styles.item} ${styles.active}` : styles.item)}
           >
             <Icon />
-            <span>{label}</span>
+            <span className={styles.itemLabel}>{label}</span>
           </NavLink>
         ))}
       </nav>
