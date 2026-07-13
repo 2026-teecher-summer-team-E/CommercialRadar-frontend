@@ -28,7 +28,7 @@ export default function MyPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [tab, setTab] = useState<TabKey>("reports");
+  const [tab, setTab] = useState<TabKey>("interests");
   const [busyId, setBusyId] = useState<number | null>(null);
 
   // 마운트 시 me / stats / reports 병렬 fetch
@@ -126,8 +126,8 @@ export default function MyPage() {
   const sharedCount = stats?.shared_reports ?? 0;
 
   const tabs: { key: TabKey; label: string; count: number }[] = [
-    { key: "reports", label: "저장된 리포트", count: savedCount },
     { key: "interests", label: "관심 상권", count: interestCount },
+    { key: "reports", label: "저장된 리포트", count: savedCount },
     { key: "shared", label: "공유된 리포트", count: sharedCount },
   ];
 
@@ -170,13 +170,13 @@ export default function MyPage() {
 
         <div className={styles.statsRow}>
           <div className={styles.statCell}>
-            <span className={styles.statNum}>{savedCount}</span>
-            <span className={styles.statLabel}>저장 리포트</span>
+            <span className={styles.statNum}>{interestCount}</span>
+            <span className={styles.statLabel}>관심 상권</span>
           </div>
           <span className={styles.statDivider} aria-hidden="true" />
           <div className={styles.statCell}>
-            <span className={styles.statNum}>{interestCount}</span>
-            <span className={styles.statLabel}>관심 상권</span>
+            <span className={styles.statNum}>{savedCount}</span>
+            <span className={styles.statLabel}>저장 리포트</span>
           </div>
           <span className={styles.statDivider} aria-hidden="true" />
           <div className={styles.statCell}>
