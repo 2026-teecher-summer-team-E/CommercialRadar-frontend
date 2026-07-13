@@ -7,12 +7,17 @@ import type {
   RadarResponse,
   PopulationHeatmapResponse,
   DistrictGeo,
+  CommercialDistrictSearchResult,
 } from "../types";
 
 type QP = Record<string, string | number | undefined>;
 
 export const commercialApi = {
   listDistricts: () => apiClient.get("/api/commercial-districts"),
+  searchDistricts: (query: string) =>
+    apiClient.get<CommercialDistrictSearchResult[]>("/api/commercial-districts/search", {
+      params: { q: query },
+    }),
   getDistrict: (id: string | number) => apiClient.get(`/api/commercial-districts/${id}`),
 
   /** 다중 상권 비교. district_ids 는 콤마 구분. */

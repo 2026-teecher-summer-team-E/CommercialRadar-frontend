@@ -5,6 +5,7 @@ import type {
   RadarResponse,
   DistrictTimeSeriesResponse,
   CategoryRankingResponse,
+  CommercialDistrictSearchResult,
 } from "../types";
 import RadarChartSvg from "../components/compare/RadarChartSvg";
 import type { RadarSeries } from "../components/compare/RadarChartSvg";
@@ -31,24 +32,150 @@ interface CompareData {
 }
 
 const EXPAND_ICON = "⤢";
+const MIN_DISTRICTS = 2;
+const MAX_DISTRICTS = 5;
 
 export default function ComparePage() {
-  const [selectedIds] = useState<number[]>([1, 2, 3]);
+  const [selectedIds, setSelectedIds] = useState<number[]>([1, 2, 3]);
+  const [selectedQuarter, setSelectedQuarter] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [availableQuarters, setAvailableQuarters] = useState<string[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [data, setData] = useState<CompareData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [modal, setModal] = useState<ModalKind>(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<CommercialDistrictSearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState(false);
+
+  useEffect(() => {
+    const keyword = searchQuery.trim();
+    if (!isAdding || !keyword) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      setSearchError(false);
+      return;
+    }
+
+    let alive = true;
+    setSearchLoading(true);
+    setSearchError(false);
+
+    const timer = window.setTimeout(() => {
+      commercialApi
+        .searchDistricts(keyword)
+        .then((response) => {
+          if (alive) setSearchResults(response.data);
+        })
+        .catch(() => {
+          if (alive) {
+            setSearchResults([]);
+            setSearchError(true);
+          }
+        })
+        .finally(() => {
+          if (alive) setSearchLoading(false);
+        });
+    }, 250);
+
+    return () => {
+      alive = false;
+      window.clearTimeout(timer);
+    };
+  }, [isAdding, searchQuery]);
+
+  useEffect(() => {
+    let alive = true;
+
+    Promise.all(
+      selectedIds.map((id) => commercialApi.timeSeries(id, { metrics: "survival_rate" })),
+    )
+      .then((responses) => {
+        if (!alive) return;
+
+        const commonQuarters = responses
+          .map((response) => new Set(response.data.data.map((item) => item.year_quarter)))
+          .reduce<Set<string>>((common, quarters, index) => {
+            if (index === 0) return new Set(quarters);
+            return new Set([...common].filter((quarter) => quarters.has(quarter)));
+          }, new Set<string>());
+        const quarters = [...commonQuarters].sort((a, b) => b.localeCompare(a));
+
+        setAvailableQuarters(quarters);
+        setSelectedQuarter((current) =>
+          current && quarters.includes(current) ? current : (quarters[0] ?? ""),
+        );
+      })
+      .catch(() => {
+        if (alive) setAvailableQuarters([]);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [selectedIds]);
+
+  useEffect(() => {
+    let alive = true;
+
+    Promise.all(
+      selectedIds.map((id) =>
+        commercialApi.categoryStats(id, {
+          year_quarter: selectedQuarter || undefined,
+        }),
+      ),
+    )
+      .then((responses) => {
+        if (!alive) return;
+
+        const categories = Array.from(
+          new Set(
+            responses.flatMap((response) =>
+              response.data.categories.map((category) => category.category_name),
+            ),
+          ),
+        ).sort((a, b) => a.localeCompare(b, "ko"));
+
+        setAvailableCategories(categories);
+        setSelectedCategory((current) =>
+          current && !categories.includes(current) ? "" : current,
+        );
+      })
+      .catch(() => {
+        if (alive) setAvailableCategories([]);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [selectedIds, selectedQuarter]);
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
     setError(false);
 
+    const comparisonParams = {
+      year_quarter: selectedQuarter || undefined,
+      category_name: selectedCategory || undefined,
+    };
+    const timeSeriesParams = {
+      to_quarter: selectedQuarter || undefined,
+      category_name: selectedCategory || undefined,
+    };
+
     Promise.all([
-      commercialApi.compare(selectedIds),
-      Promise.all(selectedIds.map((id) => commercialApi.radar(id))),
-      Promise.all(selectedIds.map((id) => commercialApi.timeSeries(id))),
-      selectedIds.length > 0 ? commercialApi.categoryRanking(selectedIds[0]) : Promise.resolve(null),
+      commercialApi.compare(selectedIds, comparisonParams),
+      Promise.all(selectedIds.map((id) => commercialApi.radar(id, comparisonParams))),
+      Promise.all(selectedIds.map((id) => commercialApi.timeSeries(id, timeSeriesParams))),
+      selectedIds.length > 0
+        ? commercialApi.categoryRanking(selectedIds[0], {
+            year_quarter: selectedQuarter || undefined,
+          })
+        : Promise.resolve(null),
     ])
       .then(([compareRes, radarRes, tsRes, rankingRes]) => {
         if (!alive) return;
@@ -69,7 +196,7 @@ export default function ComparePage() {
     return () => {
       alive = false;
     };
-  }, [selectedIds]);
+  }, [selectedIds, selectedQuarter, selectedCategory]);
 
   const districts = data?.compare.districts ?? [];
   const names = districts.map((d) => d.district_name);
@@ -102,6 +229,30 @@ export default function ComparePage() {
       };
     });
   }, [data, names, trendLabels]);
+
+  const removeDistrict = (id: number) => {
+    if (selectedIds.length <= MIN_DISTRICTS) return;
+    setSelectedIds((current) => current.filter((selectedId) => selectedId !== id));
+  };
+
+  const addDistrict = (district: CommercialDistrictSearchResult) => {
+    if (selectedIds.includes(district.id) || selectedIds.length >= MAX_DISTRICTS) return;
+    setSelectedIds((current) => [...current, district.id]);
+    setSearchQuery("");
+    setSearchResults([]);
+    setIsAdding(false);
+  };
+
+  const toggleAddPanel = () => {
+    if (selectedIds.length >= MAX_DISTRICTS) return;
+    setIsAdding((current) => !current);
+    setSearchQuery("");
+    setSearchResults([]);
+    setSearchError(false);
+  };
+
+  const activeQuarter = selectedQuarter || data?.compare.year_quarter || "";
+  const filterSummary = `${formatQuarter(activeQuarter)} · ${selectedCategory || "전체 업종"}`;
 
   if (loading) {
     return (
@@ -136,28 +287,131 @@ export default function ComparePage() {
             <span key={d.id} className={styles.chip}>
               <span className={styles.chipDot} style={{ background: seriesColor(i) }} />
               {d.district_name}
-              <button type="button" className={styles.chipClose} aria-label={`${d.district_name} 제거`}>
+              <button
+                type="button"
+                className={styles.chipClose}
+                aria-label={`${d.district_name} 제거`}
+                onClick={() => removeDistrict(d.id)}
+                disabled={selectedIds.length <= MIN_DISTRICTS}
+                title={selectedIds.length <= MIN_DISTRICTS ? "비교하려면 상권이 2개 이상 필요합니다" : "상권 제거"}
+              >
                 ×
               </button>
             </span>
           ))}
-          <button type="button" className={styles.addChip} disabled title="준비 중인 기능입니다">
+          <button
+            type="button"
+            className={styles.addChip}
+            onClick={toggleAddPanel}
+            disabled={selectedIds.length >= MAX_DISTRICTS}
+            aria-expanded={isAdding}
+            title={selectedIds.length >= MAX_DISTRICTS ? "상권은 최대 5개까지 비교할 수 있습니다" : "비교할 상권 추가"}
+          >
             + 상권 추가
           </button>
         </div>
         <div className={styles.selectors}>
-          <button type="button" className={styles.selector} disabled title="준비 중인 기능입니다">
-            2026년 1분기 ▾
-          </button>
-          <button type="button" className={styles.selector} disabled title="준비 중인 기능입니다">
-            전체 업종 ▾
-          </button>
+          <label className={styles.selectorGroup}>
+            <span>기준 분기</span>
+            <select
+              className={styles.selector}
+              value={selectedQuarter}
+              onChange={(event) => setSelectedQuarter(event.target.value)}
+              disabled={availableQuarters.length === 0}
+              aria-label="비교 기준 분기"
+            >
+              {availableQuarters.map((quarter) => (
+                <option key={quarter} value={quarter}>
+                  {formatQuarter(quarter)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={styles.selectorGroup}>
+            <span>비교 업종</span>
+            <select
+              className={styles.selector}
+              value={selectedCategory}
+              onChange={(event) => setSelectedCategory(event.target.value)}
+              disabled={availableCategories.length === 0}
+              aria-label="비교 업종"
+            >
+              <option value="">전체 업종</option>
+              {availableCategories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
+
+        {isAdding && (
+          <div className={styles.addPanel}>
+            <div className={styles.searchWrap}>
+              <span className={styles.searchIcon} aria-hidden>⌕</span>
+              <input
+                className={styles.searchInput}
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="상권명, 자치구, 행정동으로 검색"
+                aria-label="추가할 상권 검색"
+                autoFocus
+              />
+              <button type="button" className={styles.cancelAddBtn} onClick={toggleAddPanel}>
+                취소
+              </button>
+            </div>
+
+            <div className={styles.searchResults} role="listbox" aria-label="상권 검색 결과">
+              {!searchQuery.trim() && (
+                <p className={styles.searchMessage}>비교할 상권을 검색해 선택하세요.</p>
+              )}
+              {searchQuery.trim() && searchLoading && (
+                <p className={styles.searchMessage}>상권을 찾고 있습니다…</p>
+              )}
+              {searchQuery.trim() && !searchLoading && searchError && (
+                <p className={styles.searchMessage}>검색 결과를 불러오지 못했습니다.</p>
+              )}
+              {searchQuery.trim() && !searchLoading && !searchError && searchResults.length === 0 && (
+                <p className={styles.searchMessage}>일치하는 상권이 없습니다.</p>
+              )}
+              {!searchLoading &&
+                searchResults.map((result) => {
+                  const alreadySelected = selectedIds.includes(result.id);
+                  const location = [result.gu_name, result.dong_name, result.type_name]
+                    .filter(Boolean)
+                    .join(" · ");
+
+                  return (
+                    <button
+                      type="button"
+                      className={styles.searchResult}
+                      key={result.id}
+                      onClick={() => addDistrict(result)}
+                      disabled={alreadySelected}
+                      role="option"
+                      aria-selected={alreadySelected}
+                    >
+                      <span>
+                        <strong>{result.district_name}</strong>
+                        {location && <small>{location}</small>}
+                      </span>
+                      <span className={styles.resultAction}>
+                        {alreadySelected ? "선택됨" : "추가"}
+                      </span>
+                    </button>
+                  );
+                })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 핵심 지표 비교표 */}
       <section className={styles.section}>
-        <SectionTitle title="핵심 지표 비교" subtitle="상권별 대표 지표를 나란히 놓고 비교합니다" />
+        <SectionTitle title="핵심 지표 비교" subtitle={`${filterSummary} 기준 상권별 대표 지표`} />
         <div className={styles.card}>
           <MetricsTable districts={districts} />
         </div>
@@ -182,7 +436,9 @@ export default function ComparePage() {
             <SectionTitle
               title="업종별 추천 순위"
               subtitle={
-                districts[0] ? `${districts[0].district_name} 기준 상위 업종` : "선택 상권 기준 상위 업종"
+                districts[0]
+                  ? `${formatQuarter(activeQuarter)} · ${districts[0].district_name} 기준`
+                  : "선택 상권 기준 상위 업종"
               }
               showAccent={false}
             />
@@ -194,7 +450,10 @@ export default function ComparePage() {
       {/* 분기별 생존율 추이: 그래프가 길쭉해서 2열보단 전체 폭 차지가 낫다. */}
       <section className={styles.section}>
         <div className={styles.card}>
-          <ChartHeader title="분기별 생존율 추이" onExpand={() => setModal("trend")} />
+          <ChartHeader
+            title={`분기별 생존율 추이 · ${selectedCategory || "전체 업종"}`}
+            onExpand={() => setModal("trend")}
+          />
           <div className={styles.legendTop}>
             <Legend names={names} />
           </div>
@@ -225,7 +484,7 @@ export default function ComparePage() {
       {modal === "trend" && trendLabels.length > 0 && (
         <ExpandModal
           title="분기별 생존율 추이"
-          subtitle="상권별 생존율(%) 추이"
+          subtitle={`${filterSummary}까지의 상권별 생존율(%) 추이`}
           onClose={() => setModal(null)}
         >
           <div className={styles.modalChartWide}>
@@ -238,6 +497,11 @@ export default function ComparePage() {
       )}
     </div>
   );
+}
+
+function formatQuarter(quarter: string) {
+  const match = /^(\d{4})-Q([1-4])$/.exec(quarter);
+  return match ? `${match[1]}년 ${match[2]}분기` : quarter || "기준 분기 없음";
 }
 
 function Header() {
