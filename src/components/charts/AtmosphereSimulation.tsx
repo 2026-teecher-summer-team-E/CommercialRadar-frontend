@@ -78,6 +78,12 @@ const AGE_STYLE: Record<
 };
 const AGE_STYLE_FALLBACK = { hueRotate: 0, saturate: 1.0, brightness: 1.0, scaleBonus: 1.0, speedMult: 1.0 };
 
+/** 파일별 렌더 크기 보정 — 원본 캔버스 크기(1080/1000/500)가 달라 보이는 키가 제각각인 것 정규화. */
+const FILE_SCALE: Record<string, number> = {
+  "/lottie/walking-6.json": 1.28, // 오피스맨(1000px) — 작게 나와 키움
+  "/lottie/walking-5.json": 1.1, // 노인(500px)
+};
+
 /** 타임랩스 종료 시점 보장 최소 폐업 점포 수. */
 const SCENARIO_MIN_CLOSED: Record<AtmoScenario, number> = { high: 1, mid: 2, low: 3 };
 
@@ -478,7 +484,7 @@ export default function AtmosphereSimulation({
             ? people.slice(0, Math.min(people.length, 12)).map((p, i) => {
                 const ageStyle = AGE_STYLE[p.ageBucket] ?? AGE_STYLE_FALLBACK;
                 const rowScale = 0.62 + p.row * 0.5;
-                const scale = rowScale * ageStyle.scaleBonus;
+                const scale = rowScale * ageStyle.scaleBonus * (FILE_SCALE[p.lottieFile] ?? 1);
                 const bottom = 4 + p.row * 52;
                 const dir = i % 2 === 0 ? 1 : -1;
                 const baseDur = 9 + (i % 6) * 2.2;
