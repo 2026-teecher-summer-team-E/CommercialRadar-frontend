@@ -7,7 +7,13 @@
 }
 .axisLabel {
   font-family: var(--font-num);
-  font-size: 11px;
+  font-size: 9px;
+  fill: var(--color-muted);
+}
+.axisTitle {
+  font-family: var(--font-sans);
+  font-size: 8px;
+  font-weight: 600;
   fill: var(--color-muted);
 }
 .line {
@@ -18,11 +24,28 @@
   stroke-linecap: round;
 }
 .area {
-  fill: var(--color-primary-light);
-  opacity: 0.6;
+  fill: none;
 }
 .point {
   fill: var(--color-surface);
   stroke: var(--color-primary);
   stroke-width: 2;
+}
+.tooltip {
+  pointer-events: none;
+}
+.tooltipBg {
+  fill: var(--color-text);
+}
+.tooltipTitle {
+  font-family: var(--font-sans);
+  font-size: 7px;
+  font-weight: 700;
+  fill: var(--color-surface);
+}
+.tooltipRow {
+  font-family: var(--font-num);
+  font-size: 7px;
+  fill: var(--color-surface);
+  opacity: 0.85;
 }
