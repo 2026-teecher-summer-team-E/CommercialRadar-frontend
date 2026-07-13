@@ -1,7 +1,26 @@
 .bar {
   flex: none;
   display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.resetBtn {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: var(--color-muted);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.resetBtn:hover {
+  color: var(--color-text);
+  text-decoration: underline;
 }
 
 .pillWrap {
