@@ -136,13 +136,15 @@ export default function SangkwonPanel({
             <div className={styles.panelState}>이 상권엔 선택한 업종 데이터가 없습니다.</div>
           )}
 
-          <p className={styles.scoreLabel}>상권 종합 점수</p>
-          <div className={styles.scoreBlock}>
-            <span className={styles.scoreNum}>{score ?? "-"}</span>
-            <span className={styles.scoreUnit}>점</span>
-            <span className={`${styles.scoreGrade} ${styles[`grade_${grade.tone}`]}`}>
-              {grade.label}
-            </span>
+          <div className={`${styles.scoreCard} ${styles[`scoreCard_${grade.tone}`]}`}>
+            <p className={styles.scoreLabel}>상권 종합 점수</p>
+            <div className={styles.scoreBlock}>
+              <span className={`${styles.scoreNum} ${styles[`scoreNum_${grade.tone}`]}`}>{score ?? "-"}</span>
+              <span className={styles.scoreUnit}>점</span>
+              <span className={`${styles.scoreGrade} ${styles[`grade_${grade.tone}`]}`}>
+                {grade.label}
+              </span>
+            </div>
           </div>
 
           <button
