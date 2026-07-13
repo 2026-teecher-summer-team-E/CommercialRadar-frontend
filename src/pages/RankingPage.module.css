@@ -2,7 +2,7 @@
   padding: 28px 32px 44px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 14px;
 }
 
 /* 헤더 */
@@ -23,35 +23,10 @@
   color: var(--color-muted);
 }
 
-/* 정렬 토글 (세그먼트 컨트롤) */
 .controls {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.segment {
-  display: inline-flex;
-  gap: 4px;
-  padding: 4px;
-  background: var(--color-chip);
-  border-radius: var(--radius-pill);
-}
-.segBtn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: var(--radius-pill);
-  background: transparent;
-  color: var(--color-muted);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.segBtnActive {
-  background: var(--color-surface);
-  color: var(--color-text);
-  box-shadow: var(--shadow-card);
+  justify-content: flex-end;
 }
 .count {
   font-size: 13px;
