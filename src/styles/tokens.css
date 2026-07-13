@@ -1,11 +1,11 @@
 /* CommercialRadar 디자인 토큰 — Zapier 팔레트 (비교용) */
-/* Primary: 딥 네이비 #1e2a52 / 캔버스: 웜 크림 #fffefb / 텍스트: 커피 잉크 3단계 */
+/* Primary: 표준 남색 #24398A / 캔버스: 웜 크림 #fffefb / 텍스트: 커피 잉크 3단계 */
 :root {
-  /* Primary — 딥 네이비 CTA */
-  --color-primary: #1e2a52;
-  --color-primary-dark: #141d3a;
-  --color-primary-light: #e7eaf3;
-  --color-primary-soft: #b9c1d8;
+  /* Primary — 표준 남색 CTA */
+  --color-primary: #24398a;
+  --color-primary-dark: #182650;
+  --color-primary-light: #e8ebf5;
+  --color-primary-soft: #b4bedd;
 
   /* on-primary */
   --color-on-primary: #fffefb;
@@ -33,20 +33,20 @@
   --color-gold-bg: #fdf4dc;
   --color-silver: #939084;
   --color-silver-bg: #f1ece4;
-  --color-orange: #e8a020;        /* amber 계열로 병합 — navy primary와 무관한 의미색 */
+  --color-orange: #e8a020;        /* amber 계열 — navy primary와 무관한 의미색 */
   --color-orange-bg: #fdf4dc;
   --color-red: #d94430;           /* navy와 충돌 없으므로 원래 톤 복원 */
 
   /* Accent — 보조 밝은 남색 */
-  --color-accent: #3a4a80;
-  --color-accent-light: #e7eaf3;
+  --color-accent: #3d54a8;
+  --color-accent-light: #e8ebf5;
 
   /* Link */
-  --color-link: #22315c;
+  --color-link: #24398a;
 
-  /* Chart series — 딥 네이비 + 커피 잉크 + 크림 그레이 스텝 */
-  --series-1: #1e2a52;   /* Deep Navy — primary */
-  --series-1-bg: #e7eaf3;
+  /* Chart series — 표준 남색 + 커피 잉크 + 크림 그레이 스텝 */
+  --series-1: #24398a;   /* Standard Navy — primary */
+  --series-1-bg: #e8ebf5;
   --series-2: #201515;   /* Coffee Ink — dark neutral */
   --series-2-bg: #f1ece4;
   --series-3: #939084;   /* Body Mid — neutral gray */
