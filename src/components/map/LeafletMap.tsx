@@ -21,7 +21,7 @@ interface LeafletMapProps {
 
 /** 상권유형별 색상. */
 const TYPE_COLORS: Record<string, string> = {
-  골목상권: "#1e3a8a",
+  골목상권: "#0064e0",
   발달상권: "#e8833a",
   전통시장: "#1b8a5a",
   관광특구: "#9333ea",
