@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../../lib/auth";
 import styles from "./Sidebar.module.css";
 
@@ -66,7 +66,7 @@ export default function Sidebar() {
 
   return (
     <aside className={styles.sidebar}>
-      <div className={styles.logo}>
+      <Link to="/landing" className={styles.logo} aria-label="랜딩 페이지로 이동">
         <span className={styles.logoMark}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path
@@ -76,7 +76,7 @@ export default function Sidebar() {
           </svg>
         </span>
         <span className={styles.logoText}>상권레이더</span>
-      </div>
+      </Link>
 
       <nav className={styles.nav}>
         {NAV.filter((item) => !item.adminOnly || user?.isAdmin).map(({ to, label, Icon, end }) => (
