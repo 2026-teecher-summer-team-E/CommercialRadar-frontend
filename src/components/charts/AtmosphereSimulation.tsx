@@ -41,7 +41,7 @@ const PALETTE = ["#7c6ef0", "#2fbf87", "#5b9bf0", "#f0a020", "#f0685f", "#a78bfa
 
 const SCENARIO = {
   high: { title: "잘풀린 미래", mood: "활기찬 상권", count: 16, lit: 0.65, street: "#c8d0dc", accent: "#16a34a", desc: "사람이 북적이는 미래 — 유동인구가 몰립니다." },
-  mid: { title: "보통 미래", mood: "무난한 상권", count: 9, lit: 0.4, street: "#c2c8d4", accent: "#1876f2", desc: "평소 수준의 미래 — 꾸준한 발걸음." },
+  mid: { title: "보통 미래", mood: "무난한 상권", count: 9, lit: 0.4, street: "#c2c8d4", accent: "#2563eb", desc: "평소 수준의 미래 — 꾸준한 발걸음." },
   low: { title: "안풀린 미래", mood: "한산한 상권", count: 4, lit: 0.15, street: "#b7bcc7", accent: "#dc2626", desc: "발길이 뜸한 미래 — 거리가 비어갑니다." },
 } as const;
 

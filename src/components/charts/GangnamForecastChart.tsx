@@ -60,7 +60,7 @@ function ForecastTooltip({
   for (const p of payload) byKey[p.dataKey] = p.value;
   const order: [string, string, string][] = [
     ["actual", "실적", "#111827"],
-    ["mid", "보통 미래(p50)", "#1876f2"],
+    ["mid", "보통 미래(p50)", "#2563eb"],
     ["low", "안풀린 미래(p10)", "#dc2626"],
     ["high", "잘풀린 미래(p90)", "#16a34a"],
   ];
@@ -200,11 +200,11 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           type="monotone"
           dataKey="mid"
           name="보통 미래(p50)"
-          stroke="#1876f2"
+          stroke="#2563eb"
           strokeWidth={clickable ? 3 : 2}
           strokeDasharray="5 5"
-          dot={clickable ? makeDot("mid", "#1876f2") : { r: 2 }}
-          label={makeEndLabel("mid", "#1876f2", "보통", 4)}
+          dot={clickable ? makeDot("mid", "#2563eb") : { r: 2 }}
+          label={makeEndLabel("mid", "#2563eb", "보통", 4)}
           connectNulls
         />
         <Line
