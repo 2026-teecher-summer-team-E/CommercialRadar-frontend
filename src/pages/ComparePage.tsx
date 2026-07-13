@@ -217,7 +217,6 @@ export default function ComparePage() {
         >
           <div className={styles.modalChart}>
             <RadarChartSvg axes={radarAxes} series={radarSeries} size={420} />
-            <Legend names={names} />
           </div>
           <RadarValueTable axes={radarAxes} series={radarSeries} />
         </ExpandModal>
