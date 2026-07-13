@@ -1,44 +1,51 @@
-/* CommercialRadar 디자인 토큰 — Meta 디자인 시스템 컬러 팔레트 적용 */
+/* CommercialRadar 디자인 토큰 — Mastercard 디자인 시스템 팔레트 적용 (비교용) */
 :root {
-  /* Primary — Meta cobalt */
-  --color-primary: #0064e0;
-  --color-primary-dark: #0457cb;
-  --color-primary-light: #e6f0fd;
-  --color-primary-soft: #0091ff;
+  /* Primary — Ink Black (Mastercard CTA/active) */
+  --color-primary: #141413;
+  --color-primary-dark: #262627;
+  --color-primary-light: #f0ede9;
+  --color-primary-soft: #3d3d3c;
 
-  /* Text — Meta ink scale */
-  --color-text: #0a1317;
-  --color-text-body: #1c1e21;
-  --color-muted: #5d6c7b;
-  --color-faint: #8595a4;
+  /* Text — Mastercard ink scale */
+  --color-text: #141413;
+  --color-text-body: #262627;
+  --color-muted: #696969;
+  --color-faint: #D1CDC7;
 
-  /* Surface / background — Meta surface scale */
-  --color-surface: #ffffff;
-  --color-bg: #f1f4f7;
-  --color-chip: #f1f4f7;
-  --color-border: #dee3e9;
-  --color-border-strong: #ced0d4;
-  --color-line: #dee3e9;
+  /* Surface / background — Mastercard cream canvas */
+  --color-surface: #FCFBFA;
+  --color-bg: #F3F0EE;
+  --color-chip: #EDEAE6;
+  --color-border: #D1CDC7;
+  --color-border-strong: #B8B3AC;
+  --color-line: #D1CDC7;
 
-  /* Semantic — Meta semantic scale */
-  --color-green: #31a24c;
-  --color-green-bg: #e6f7eb;
-  --color-amber: #f7b928;
-  --color-gold: #c97f1e;
-  --color-gold-bg: #fef3cd;
-  --color-silver: #444950;
-  --color-silver-bg: #dee3e9;
-  --color-orange: #e8833a;
-  --color-orange-bg: #fdf1e7;
-  --color-red: #e41e3f;
+  /* Semantic — 의미 색 유지, 크림 배경과 어울리는 톤으로 미세 조정 */
+  --color-green: #1a8a3c;
+  --color-green-bg: #e6f5ec;
+  --color-amber: #d4920e;
+  --color-gold: #a8720b;
+  --color-gold-bg: #fef3d3;
+  --color-silver: #555555;
+  --color-silver-bg: #E8E4E0;
+  --color-orange: #CF4500;
+  --color-orange-bg: #fdeee6;
+  --color-red: #cc1a33;
 
-  /* Comparison series — cobalt primary 계열로 동기화 */
-  --series-1: #0064e0;
-  --series-1-bg: #e6f0fd;
-  --series-2: #e8833a;
-  --series-2-bg: #fdf1e7;
-  --series-3: #31a24c;
-  --series-3-bg: #e6f7eb;
+  /* Signal Orange — 액센트 (아껴 쓸 것: 활성 인디케이터·강조 수치 등 소수에만) */
+  --color-accent: #CF4500;
+  --color-accent-light: #F37338;
+
+  /* Link blue */
+  --color-link: #3860BE;
+
+  /* Comparison series — 잉크/오렌지/블루 계열 */
+  --series-1: #141413;
+  --series-1-bg: #EDEAE6;
+  --series-2: #CF4500;
+  --series-2-bg: #fdeee6;
+  --series-3: #3860BE;
+  --series-3-bg: #e8edf8;
 
   /* Radius */
   --radius-sm: 8px;
@@ -46,12 +53,12 @@
   --radius-lg: 16px;
   --radius-pill: 999px;
 
-  /* Shadow */
-  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-pop: 0 8px 24px -8px rgba(16, 24, 40, 0.16);
-  --shadow-modal: 0 24px 60px -12px rgba(16, 24, 40, 0.28);
+  /* Shadow — atmospheric cushioning (Mastercard: large radius, very low opacity) */
+  --shadow-card: 0 2px 8px rgba(20, 20, 19, 0.05);
+  --shadow-pop: 0 8px 32px rgba(20, 20, 19, 0.08);
+  --shadow-modal: 0 24px 48px rgba(20, 20, 19, 0.12);
 
   /* Fonts */
-  --font-sans: "Noto Sans KR", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Noto Sans KR", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-num: "Inter", var(--font-sans);
 }
