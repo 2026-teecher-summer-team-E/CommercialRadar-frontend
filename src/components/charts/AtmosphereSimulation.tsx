@@ -498,7 +498,7 @@ export default function AtmosphereSimulation({
                 const rawScale = rowScale * ageStyle.scaleBonus * (FILE_SCALE[p.lottieFile] ?? 1);
                 // 오피스맨은 최소 크기 하한을 둬(현재 최소의 약 2배) 뒷줄에서도 작게 안 보이게.
                 const scale = p.lottieFile === "/lottie/walking-6.json" ? Math.max(rawScale, 1.28) : rawScale;
-                const bottom = 4 + p.row * 52;
+                const bottom = 4 + (1 - p.row) * 52; // row 클수록(=큰/가까운) 화면 아래(앞)
                 const dir = i % 2 === 0 ? 1 : -1;
                 const baseDur = 9 + (i % 6) * 2.2;
                 const dur = baseDur / ageStyle.speedMult;
@@ -530,7 +530,7 @@ export default function AtmosphereSimulation({
               })
             : people.map((p, i) => {
                 const scale = 0.62 + p.row * 0.5;
-                const bottom = 14 + p.row * 96;
+                const bottom = 14 + (1 - p.row) * 96; // row 클수록(=큰/가까운) 화면 아래(앞)
                 const dir = i % 2 === 0 ? 1 : -1;
                 const dur = 9 + (i % 6) * 2.2;
                 const walkAnim = dir === 1 ? "atmo-walk-r" : "atmo-walk-l";
