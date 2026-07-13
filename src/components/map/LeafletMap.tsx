@@ -19,14 +19,14 @@ interface LeafletMapProps {
   onOpenProfile: (id: number) => void;
 }
 
-/** 상권유형별 색상. */
+/** 상권유형별 색상 — Claude 팔레트: 코랄/틸/앰버 */
 const TYPE_COLORS: Record<string, string> = {
-  골목상권: "#0064e0",
-  발달상권: "#e8833a",
-  전통시장: "#1b8a5a",
-  관광특구: "#9333ea",
+  골목상권: "#cc785c",   // coral — primary
+  발달상권: "#5db8a6",   // teal — accent
+  전통시장: "#e8a55a",   // amber — accent
+  관광특구: "#a9583e",   // coral-dark
 };
-const colorOf = (type: string | null | undefined) => TYPE_COLORS[type ?? ""] ?? "#6b7590";
+const colorOf = (type: string | null | undefined) => TYPE_COLORS[type ?? ""] ?? "#8e8b82";
 
 const SEOUL_CENTER: L.LatLngExpression = [37.5665, 126.978];
 
