@@ -21,7 +21,7 @@ interface LeafletMapProps {
 
 /** 상권유형별 색상. */
 const TYPE_COLORS: Record<string, string> = {
-  골목상권: "#2447c7",
+  골목상권: "#1e3a8a",
   발달상권: "#e8833a",
   전통시장: "#1b8a5a",
   관광특구: "#9333ea",
@@ -107,6 +107,7 @@ export default function LeafletMap({
     resizeObserver.observe(containerRef.current);
 
     return () => {
+      resizeObserver.disconnect();
       map.remove();
       mapRef.current = null;
       markersRef.current.clear();
