@@ -290,7 +290,8 @@ export default function AtmosphereSimulation({
     const f = (idx: number) => lottieFiles[idx] ?? lottieFiles[0] ?? CROWD_LOTTIE_BASE;
     const hasVariants = lottieFiles.length >= 2;
     for (let i = 0; i < count; i++) {
-      const r  = ((i * 9301 + 49297) % 233280) / 233280;
+      // 배수를 크게 해 인덱스가 커질 때 값이 골고루 섞이게(9301은 작아서 앞 인덱스가 단조증가 → 노인 편중 누락).
+      const r  = ((i * 90001 + 49297) % 233280) / 233280;
       const r2 = ((i * 4021 + 3571) % 100) / 100;
       const r3 = ((i * 1777 + 7919) % 997) / 997;
       const r4 = ((i * 6271 + 1031) % 883) / 883;
@@ -310,8 +311,7 @@ export default function AtmosphereSimulation({
         lottieFile = isFemale ? f(3) : f(2);
       } else {
         lottieFile = isFemale ? f(1) : f(0);
-      }
-      out.push({ id: i, color: weightedAge(r), bag: r2 > 0.55, row: (i % 5) / 4, ageBucket, isFemale, isForeigner, lottieFile });
+      }      out.push({ id: i, color: weightedAge(r), bag: r2 > 0.55, row: (i % 5) / 4, ageBucket, isFemale, isForeigner, lottieFile });
     }
     return out;
   }, [count, weightedAge, weightedAgeBucket, lottieFiles, foreignerThreshold]);
