@@ -304,6 +304,17 @@ export default function AtmosphereSimulation({
   }, [onClose]);
 
   const shops = Array.from({ length: 7 });
+  const shopCount = shops.length;
+  // 개수 기반 on/off: liveLit(0~1) × 총 점포 수 → 영업 점포 수.
+  // liveLit이 1 미만으로 내려가기 시작하면 최소 1곳은 폐업이 보이도록 보정.
+  const rawLitCount = Math.floor(shopCount * liveLit);
+  const litCount = liveLit < 1 && rawLitCount === shopCount ? shopCount - 1 : rawLitCount;
+  // 꺼지는 순서: (i*5+2)%7 순열로 결정적 섞기 — litCount보다 높은 순위 점포가 꺼짐.
+  const SHOP_ORDER: number[] = Array.from({ length: shopCount }, (_, i) => (i * 5 + 2) % shopCount);
+  // shopOn[i] = 이 점포가 켜져 있는지 (litCount개 점포만 영업)
+  const shopOn: boolean[] = Array(shopCount).fill(false);
+  SHOP_ORDER.slice(0, litCount).forEach((idx) => { shopOn[idx] = true; });
+
   const playState = playing ? "running" : "paused";
   const AWNING = ["#e05a5a", "#e0894a", "#4a9de0", "#3fb984", "#7c6ef0", "#e0b84a", "#e05a8a"];
   const STARS: [number, number][] = [
@@ -375,7 +386,7 @@ export default function AtmosphereSimulation({
             )}
             <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "58%", display: "flex", alignItems: "stretch", gap: 6, padding: "0 14px" }}>
               {shops.map((_, i) => {
-                const on = ((i * 7 + 3) % 100) / 100 < liveLit;
+                const on = shopOn[i] ?? false;
                 const awning = AWNING[i % AWNING.length];
                 const glass = on ? (isDay ? "#fff4cf" : "#ffd873") : isDay ? "#9fb0c8" : "#243149";
                 const door = isDay ? "#5a6a86" : "#151d30";
