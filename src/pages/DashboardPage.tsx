@@ -459,9 +459,6 @@ export default function DashboardPage() {
         />
       </section>
 
-      {/* 강남역(id=1315) 전용: 폐업 요인 OLS 회귀분석 카드 */}
-      {d.id === 1315 && <RegressionCard />}
-
       {/* 유동인구 */}
       <section className={styles.section}>
         <SectionTitle title="유동인구" subtitle="누가, 언제 이 상권에 오는가" />
@@ -576,6 +573,9 @@ export default function DashboardPage() {
           onClose={() => setSim(null)}
         />
       )}
+
+      {/* 강남역(id=1315) 전용: 폐업 요인 OLS 회귀분석 카드 — 페이지 최하단 */}
+      {d.id === 1315 && <RegressionCard />}
     </div>
   );
 }
