@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   UserMe,
   UserStats,
@@ -15,6 +15,7 @@ import InterestCard from "../components/mypage/InterestCard";
 import EmptyState from "../components/mypage/EmptyState";
 import listStyles from "../components/mypage/mypage.module.css";
 import styles from "./MyPage.module.css";
+import { useAuth, clerkEnabled } from "../lib/auth";
 
 type TabKey = "reports" | "interests" | "shared";
 
@@ -38,6 +39,7 @@ function buildCompareChunks(ids: number[]): number[][] {
 }
 
 export default function MyPage() {
+  const { signOut } = useAuth();
   const [user, setUser] = useState<UserMe | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [reports, setReports] = useState<ReportListItem[]>([]);
@@ -49,6 +51,8 @@ export default function MyPage() {
   const [tab, setTab] = useState<TabKey>("interests");
   const [busyId, setBusyId] = useState<number | null>(null);
   const [busyInterestId, setBusyInterestId] = useState<number | null>(null);
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const cancelBtnRef = useRef<HTMLButtonElement>(null);
 
   // 마운트 시 me / stats / reports 병렬 fetch
   useEffect(() => {
@@ -116,6 +120,17 @@ export default function MyPage() {
       alive = false;
     };
   }, [tab, interestsLoaded]);
+
+  // 모달 열릴 때 취소 버튼에 포커스, ESC 로 닫기
+  useEffect(() => {
+    if (!showSignOutModal) return;
+    cancelBtnRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowSignOutModal(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [showSignOutModal]);
 
   const handleShare = (id: number) => {
     setBusyId(id);
@@ -218,9 +233,15 @@ export default function MyPage() {
               {formatJoinDate(user?.created_at)}
             </p>
           </div>
-          <button type="button" className={styles.settingsBtn}>
-            계정 설정
-          </button>
+          {clerkEnabled && (
+            <button
+              type="button"
+              className={styles.signOutBtn}
+              onClick={() => setShowSignOutModal(true)}
+            >
+              로그아웃
+            </button>
+          )}
         </div>
 
         <div className={styles.statsRow}>
@@ -310,6 +331,50 @@ export default function MyPage() {
           />
         )}
       </section>
+
+      {/* 로그아웃 확인 모달 */}
+      {showSignOutModal && (
+        <div
+          className={styles.modalDim}
+          onClick={() => setShowSignOutModal(false)}
+          role="presentation"
+        >
+          <div
+            className={styles.modalBox}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="signout-modal-title"
+          >
+            <h2 id="signout-modal-title" className={styles.modalTitle}>
+              로그아웃할까요?
+            </h2>
+            <p className={styles.modalBody}>
+              저장한 리포트와 관심 상권은 그대로 남아 있어요.
+            </p>
+            <div className={styles.modalActions}>
+              <button
+                ref={cancelBtnRef}
+                type="button"
+                className={styles.modalCancelBtn}
+                onClick={() => setShowSignOutModal(false)}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                className={styles.modalSignOutBtn}
+                onClick={() => {
+                  setShowSignOutModal(false);
+                  signOut();
+                }}
+              >
+                로그아웃
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
