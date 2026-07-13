@@ -239,5 +239,18 @@ export default function LeafletMap({
     map.flyToBounds(bounds, { padding: [64, 64], maxZoom: 16, duration: 0.8 });
   }, [guFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 5) 자치구 필터 변경 시 해당 자치구 범위로 카메라 이동
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (guFilter === "전체") {
+      map.flyTo(SEOUL_CENTER, 12, { duration: 0.8 });
+      return;
+    }
+    if (points.length === 0) return;
+    const bounds = L.latLngBounds(points.map((p) => [p.lat, p.lng] as [number, number]));
+    map.flyToBounds(bounds, { padding: [64, 64], maxZoom: 16, duration: 0.8 });
+  }, [guFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return <div ref={containerRef} className={styles.map} aria-label="상권 지도" />;
 }

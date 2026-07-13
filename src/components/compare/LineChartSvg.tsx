@@ -42,11 +42,11 @@ function estimateTextWidth(text: string, fontSize = 10): number {
  * Y축 상한은 100 고정, 하한은 실제 최솟값보다 1%p 낮게 잡아 작은 변화도 잘 보이게 한다.
  * X축은 연도 단위로만 라벨을 표시하고(분기 상세는 tooltip), tick은 보기 좋은 간격으로 자동 계산.
  */
-export default function LineChartSvg({ labels, series, width = 900, height = 450 }: Props) {
+export default function LineChartSvg({ labels, series, width = 520, height = 260 }: Props) {
   if (labels.length === 0) return null;
 
-  const padL = 36;
-  const padR = 10;
+  const padL = 40;
+  const padR = 12;
   const padT = 22;
   const padB = 28;
   const plotW = width - padL - padR;

@@ -233,7 +233,7 @@ export default function ComparePage() {
             <div className={styles.legendTop}>
               <Legend names={names} />
             </div>
-            <LineChartSvg labels={trendLabels} series={trendSeries} width={560} height={280} />
+            <LineChartSvg labels={trendLabels} series={trendSeries} width={760} height={360} />
           </div>
         </ExpandModal>
       )}
