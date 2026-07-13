@@ -18,6 +18,31 @@
   text-align: left;
 }
 
+.sortBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.sortBtn:hover {
+  color: var(--color-text);
+}
+.sortArrow {
+  font-size: 10px;
+  color: var(--color-faint);
+}
+.sortBtnActive {
+  color: var(--color-primary);
+}
+.sortBtnActive .sortArrow {
+  color: var(--color-primary);
+}
+
 .row {
   cursor: pointer;
   transition: background 0.12s ease;

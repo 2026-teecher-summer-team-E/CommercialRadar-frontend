@@ -9,6 +9,14 @@ import {
 } from "./format";
 import styles from "./Leaderboard.module.css";
 
+/** 정렬 가능한 열. 폐업위험은 정렬 대상에서 제외(정적 텍스트로만 표시). */
+export type SortableKey = "survival" | "population" | "score";
+export type SortDirection = "asc" | "desc";
+export interface SortState {
+  key: SortableKey;
+  direction: SortDirection;
+}
+
 /** 순위(1-based)에 따른 뱃지 클래스. 1~3위만 강조. */
 function badgeClass(rank: number): string {
   if (rank === 1) return `${styles.badge} ${styles.badgeGold}`;
@@ -32,8 +40,45 @@ const RISK_CLASS = {
   none: styles.riskNone,
 } as const;
 
+/** 정렬 가능한 열 헤더. 클릭 시 onSort 호출, 활성 열엔 방향 화살표(▲/▼) 표시. */
+function SortableTh({
+  label,
+  columnKey,
+  sort,
+  onSort,
+}: {
+  label: string;
+  columnKey: SortableKey;
+  sort: SortState;
+  onSort: (key: SortableKey) => void;
+}) {
+  const active = sort.key === columnKey;
+  return (
+    <th aria-sort={active ? (sort.direction === "asc" ? "ascending" : "descending") : "none"}>
+      <button
+        type="button"
+        className={`${styles.sortBtn} ${active ? styles.sortBtnActive : ""}`}
+        onClick={() => onSort(columnKey)}
+      >
+        {label}
+        <span className={styles.sortArrow} aria-hidden>
+          {active ? (sort.direction === "asc" ? "▲" : "▼") : "▾"}
+        </span>
+      </button>
+    </th>
+  );
+}
+
 /** 종합 리더보드 표. 행 클릭 시 지도(지역 분석) 페이지로 이동해 해당 상권을 선택된 상태로 연다. */
-export default function Leaderboard({ districts }: { districts: DistrictCompareItem[] }) {
+export default function Leaderboard({
+  districts,
+  sort,
+  onSort,
+}: {
+  districts: DistrictCompareItem[];
+  sort: SortState;
+  onSort: (key: SortableKey) => void;
+}) {
   const navigate = useNavigate();
 
   return (
@@ -42,10 +87,10 @@ export default function Leaderboard({ districts }: { districts: DistrictCompareI
         <tr>
           <th className={styles.rankTh}>순위</th>
           <th className={styles.nameTh}>상권</th>
-          <th>생존율</th>
+          <SortableTh label="생존율" columnKey="survival" sort={sort} onSort={onSort} />
           <th>폐업 위험</th>
-          <th>유동인구</th>
-          <th>종합 점수</th>
+          <SortableTh label="유동인구" columnKey="population" sort={sort} onSort={onSort} />
+          <SortableTh label="종합 점수" columnKey="score" sort={sort} onSort={onSort} />
         </tr>
       </thead>
       <tbody>
