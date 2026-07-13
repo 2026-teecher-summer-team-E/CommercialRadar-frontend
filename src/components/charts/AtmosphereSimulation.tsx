@@ -15,7 +15,7 @@ const FILE_FACING: Record<string, number> = {
   "/lottie/walking-5.json": -1, // 뽀빠이(노인)는 기본과 반대를 봄
 };
 /** walking-2.json, walking-3.json … 최대 이 수까지 자동 감지 */
-const LOTTIE_VARIANT_MAX = 6;
+const LOTTIE_VARIANT_MAX = 7;
 
 /** 타임랩스: 분기당 표시 시간(ms), 끝에 정지 시간(ms), 총 분기 수 */
 const TIMELAPSE_QUARTER_MS = 1200;
@@ -85,10 +85,13 @@ const AGE_STYLE_FALLBACK = { hueRotate: 0, saturate: 1.0, brightness: 1.0, scale
 /** 파일별 렌더 크기 보정 — 원본 캔버스 크기(1080/1000/500)가 달라 보이는 키가 제각각인 것 정규화. */
 const FILE_SCALE: Record<string, number> = {
   "/lottie/walking-6.json": 1.28, // 오피스맨(1000px) — 작게 나와 키움
+  "/lottie/walking-7.json": 1.1, // 노인 여성(500px)
 };
 
 /** 파일별 재생 속도 보정 — 원본 애니메이션 사이클 길이가 달라 걷는 속도가 제각각인 것 정규화. */
-const FILE_SPEED: Record<string, number> = {};
+const FILE_SPEED: Record<string, number> = {
+  "/lottie/walking-7.json": 3.0, // 노인 여성: 사이클 150프레임(5초)로 너무 느림 → 보정
+};
 
 /** 타임랩스 종료 시점 보장 최소 폐업 점포 수. */
 const SCENARIO_MIN_CLOSED: Record<AtmoScenario, number> = { high: 1, mid: 2, low: 3 };
@@ -308,8 +311,8 @@ export default function AtmosphereSimulation({
       if (!hasVariants) {
         lottieFile = f(0);
       } else if (ageBucket === "50대" || ageBucket === "60대+" || ageBucket === "60대이상") {
-        // 노인 전용 애니메이션 (50대 이상, 성별·국적 무관)
-        lottieFile = f(4);
+        // 노인 전용 애니메이션 (50대 이상). 여성=보행보조기 할머니(f6), 남성=할아버지(f4).
+        lottieFile = isFemale ? f(6) : f(4);
       } else if (!isFemale && (ageBucket === "30대" || ageBucket === "40대")) {
         // 직장인 나이대 남성 → 오피스맨 (국적 무관)
         lottieFile = f(5);
