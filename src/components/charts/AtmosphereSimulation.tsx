@@ -81,13 +81,10 @@ const AGE_STYLE_FALLBACK = { hueRotate: 0, saturate: 1.0, brightness: 1.0, scale
 /** 파일별 렌더 크기 보정 — 원본 캔버스 크기(1080/1000/500)가 달라 보이는 키가 제각각인 것 정규화. */
 const FILE_SCALE: Record<string, number> = {
   "/lottie/walking-6.json": 1.28, // 오피스맨(1000px) — 작게 나와 키움
-  "/lottie/walking-5.json": 1.1, // 노인(500px)
 };
 
 /** 파일별 재생 속도 보정 — 원본 애니메이션 사이클 길이가 달라 걷는 속도가 제각각인 것 정규화. */
-const FILE_SPEED: Record<string, number> = {
-  "/lottie/walking-5.json": 3.0, // 노인: 사이클 150프레임(5초)로 너무 느림 → 보정
-};
+const FILE_SPEED: Record<string, number> = {};
 
 /** 타임랩스 종료 시점 보장 최소 폐업 점포 수. */
 const SCENARIO_MIN_CLOSED: Record<AtmoScenario, number> = { high: 1, mid: 2, low: 3 };
@@ -511,6 +508,7 @@ export default function AtmosphereSimulation({
                         src={p.lottieFile}
                         loop
                         autoplay={playing}
+                        speed={(FILE_SPEED[p.lottieFile] ?? 1) * ageStyle.speedMult}
                         dotLottieRefCallback={(inst) => {
                           players.current[i] = inst;
                           if (inst) inst.setSpeed((FILE_SPEED[p.lottieFile] ?? 1) * ageStyle.speedMult);
