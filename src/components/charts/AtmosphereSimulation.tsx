@@ -478,11 +478,38 @@ export default function AtmosphereSimulation({
                 const brightnessExtra = p.isFemale ? 0.04 : 0;
                 const cssFilter = `hue-rotate(${ageStyle.hueRotate + hueExtra}deg) saturate(${ageStyle.saturate}) brightness(${ageStyle.brightness + brightnessExtra})`;
                 const scaleXDir = dir * LOTTIE_FACING;
+                const charH = 112 * scale;
+                const markerSize = Math.max(14, 15 * scale);
+                const markerBottom = charH + 2;
                 return (
                   <div
                     key={p.id}
                     style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 10), animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}
                   >
+                    {/* 성별 마커 — scaleX 뒤집힘 영향 밖에 배치 */}
+                    <div
+                      aria-label={p.isFemale ? "여성" : "남성"}
+                      style={{
+                        position: "absolute",
+                        bottom: markerBottom,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: markerSize,
+                        height: markerSize,
+                        borderRadius: "50%",
+                        background: p.isFemale ? "rgba(217,68,48,0.85)" : "rgba(36,57,138,0.82)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: Math.max(10, 11 * scale),
+                        color: "#fff",
+                        lineHeight: 1,
+                        pointerEvents: "none",
+                        zIndex: 1,
+                      }}
+                    >
+                      {p.isFemale ? "♀" : "♂"}
+                    </div>
                     <div style={{ transform: `scale(${scale}) scaleX(${scaleXDir})`, transformOrigin: "bottom center", display: "flex", flexDirection: "column", alignItems: "center" }}>
                       <DotLottieReact
                         src={p.lottieFile}
@@ -504,8 +531,32 @@ export default function AtmosphereSimulation({
                 const dir = i % 2 === 0 ? 1 : -1;
                 const dur = 9 + (i % 6) * 2.2;
                 const walkAnim = dir === 1 ? "atmo-walk-r" : "atmo-walk-l";
+                const dotH = (13 + 1 + 24) * scale;
                 return (
                   <div key={p.id} style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 10), animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}>
+                    {/* 성별 마커 */}
+                    <div
+                      aria-label={p.isFemale ? "여성" : "남성"}
+                      style={{
+                        position: "absolute",
+                        bottom: dotH + 2,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: 14,
+                        height: 14,
+                        borderRadius: "50%",
+                        background: p.isFemale ? "rgba(217,68,48,0.85)" : "rgba(36,57,138,0.82)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 10,
+                        color: "#fff",
+                        lineHeight: 1,
+                        pointerEvents: "none",
+                      }}
+                    >
+                      {p.isFemale ? "♀" : "♂"}
+                    </div>
                     <div style={{ transform: `scale(${scale}) scaleX(${dir})`, transformOrigin: "bottom center" }}>
                       <div style={{ animation: `atmo-bob ${1.6 + (i % 3) * 0.3}s ease-in-out infinite`, animationPlayState: playState, display: "flex", flexDirection: "column", alignItems: "center" }}>
                         <div style={{ width: 13, height: 13, borderRadius: "50%", background: p.color }} />
