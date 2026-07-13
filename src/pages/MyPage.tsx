@@ -8,6 +8,7 @@ import type {
 import { meApi } from "../services/meApi";
 import { reportsApi } from "../services/reportsApi";
 import { interestApi } from "../services/interestApi";
+import { commercialApi } from "../services/commercialApi";
 import { formatJoinDate, initialOf } from "../components/mypage/format";
 import ReportCard from "../components/mypage/ReportCard";
 import InterestCard from "../components/mypage/InterestCard";
@@ -61,8 +62,32 @@ export default function MyPage() {
     let alive = true;
     interestApi
       .list()
-      .then((r) => {
-        if (alive) setInterests(r.data ?? []);
+      .then(async (r) => {
+        const list = r.data ?? [];
+        if (list.length === 0) {
+          if (alive) setInterests([]);
+          return;
+        }
+        // 랭킹 페이지처럼 compare API로 상권 이름을 채운다. (compare는 한 번에 최대 5개)
+        const ids = [...new Set(list.map((it) => it.commercial_district_id))];
+        const chunks: number[][] = [];
+        for (let i = 0; i < ids.length; i += 5) chunks.push(ids.slice(i, i + 5));
+        const nameById = new Map<number, string>();
+        try {
+          const resArr = await Promise.all(chunks.map((c) => commercialApi.compare(c)));
+          resArr.forEach((res) =>
+            res.data.districts.forEach((d) => nameById.set(d.id, d.district_name)),
+          );
+        } catch {
+          /* 이름 조회 실패 시 기존 값(폴백) 유지 */
+        }
+        if (alive)
+          setInterests(
+            list.map((it) => ({
+              ...it,
+              district_name: nameById.get(it.commercial_district_id) ?? it.district_name,
+            })),
+          );
       })
       .catch(() => {
         /* 방어적: 실패해도 빈 상태 유지 */
