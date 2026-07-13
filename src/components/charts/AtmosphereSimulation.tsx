@@ -484,7 +484,9 @@ export default function AtmosphereSimulation({
             ? people.slice(0, Math.min(people.length, 12)).map((p, i) => {
                 const ageStyle = AGE_STYLE[p.ageBucket] ?? AGE_STYLE_FALLBACK;
                 const rowScale = 0.62 + p.row * 0.5;
-                const scale = rowScale * ageStyle.scaleBonus * (FILE_SCALE[p.lottieFile] ?? 1);
+                const rawScale = rowScale * ageStyle.scaleBonus * (FILE_SCALE[p.lottieFile] ?? 1);
+                // 오피스맨은 최소 크기 하한을 둬(현재 최소의 약 2배) 뒷줄에서도 작게 안 보이게.
+                const scale = p.lottieFile === "/lottie/walking-6.json" ? Math.max(rawScale, 1.6) : rawScale;
                 const bottom = 4 + p.row * 52;
                 const dir = i % 2 === 0 ? 1 : -1;
                 const baseDur = 9 + (i % 6) * 2.2;
