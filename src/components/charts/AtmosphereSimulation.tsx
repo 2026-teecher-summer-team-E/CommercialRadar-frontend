@@ -11,7 +11,7 @@ const CROWD_LOTTIE_BASE = "/lottie/walking.json";
 /** 기본 Lottie가 바라보는 방향: 1=오른쪽, -1=왼쪽. 문워크로 보이면 이 값을 뒤집어라. */
 const LOTTIE_FACING = 1;
 /** walking-2.json, walking-3.json … 최대 이 수까지 자동 감지 */
-const LOTTIE_VARIANT_MAX = 4;
+const LOTTIE_VARIANT_MAX = 6;
 
 /** 타임랩스: 분기당 표시 시간(ms), 끝에 정지 시간(ms), 총 분기 수 */
 const TIMELAPSE_QUARTER_MS = 1200;
@@ -77,6 +77,12 @@ const AGE_STYLE: Record<
   "60대이상": { hueRotate: -8, saturate: 0.85, brightness: 0.90, scaleBonus: 0.88, speedMult: 0.75 },
 };
 const AGE_STYLE_FALLBACK = { hueRotate: 0, saturate: 1.0, brightness: 1.0, scaleBonus: 1.0, speedMult: 1.0 };
+
+/** 파일별 렌더 크기 보정 — 원본 캔버스 크기(1080/1000/500)가 달라 보이는 키가 제각각인 것 정규화. */
+const FILE_SCALE: Record<string, number> = {
+  "/lottie/walking-6.json": 1.28, // 오피스맨(1000px) — 작게 나와 키움
+  "/lottie/walking-5.json": 1.1, // 노인(500px)
+};
 
 /** 타임랩스 종료 시점 보장 최소 폐업 점포 수. */
 const SCENARIO_MIN_CLOSED: Record<AtmoScenario, number> = { high: 1, mid: 2, low: 3 };
@@ -292,9 +298,19 @@ export default function AtmosphereSimulation({
       const isFemale = r3 < 0.5;
       const isForeigner = r4 < foreignerThreshold;
       let lottieFile: string;
-      if (!hasVariants)      lottieFile = f(0);
-      else if (isForeigner)  lottieFile = isFemale ? f(3) : f(2);
-      else                   lottieFile = isFemale ? f(1) : f(0);
+      if (!hasVariants) {
+        lottieFile = f(0);
+      } else if (ageBucket === "60대+" || ageBucket === "60대이상") {
+        // 노인 전용 애니메이션 (성별·국적 무관)
+        lottieFile = f(4);
+      } else if (!isFemale && (ageBucket === "30대" || ageBucket === "40대" || ageBucket === "50대")) {
+        // 직장인 나이대 남성 → 오피스맨 (국적 무관)
+        lottieFile = f(5);
+      } else if (isForeigner) {
+        lottieFile = isFemale ? f(3) : f(2);
+      } else {
+        lottieFile = isFemale ? f(1) : f(0);
+      }
       out.push({ id: i, color: weightedAge(r), bag: r2 > 0.55, row: (i % 5) / 4, ageBucket, isFemale, isForeigner, lottieFile });
     }
     return out;
@@ -468,7 +484,9 @@ export default function AtmosphereSimulation({
             ? people.slice(0, Math.min(people.length, 12)).map((p, i) => {
                 const ageStyle = AGE_STYLE[p.ageBucket] ?? AGE_STYLE_FALLBACK;
                 const rowScale = 0.62 + p.row * 0.5;
-                const scale = rowScale * ageStyle.scaleBonus;
+                const rawScale = rowScale * ageStyle.scaleBonus * (FILE_SCALE[p.lottieFile] ?? 1);
+                // 오피스맨은 최소 크기 하한을 둬(현재 최소의 약 2배) 뒷줄에서도 작게 안 보이게.
+                const scale = p.lottieFile === "/lottie/walking-6.json" ? Math.max(rawScale, 1.6) : rawScale;
                 const bottom = 4 + p.row * 52;
                 const dir = i % 2 === 0 ? 1 : -1;
                 const baseDur = 9 + (i % 6) * 2.2;
@@ -478,11 +496,38 @@ export default function AtmosphereSimulation({
                 const brightnessExtra = p.isFemale ? 0.04 : 0;
                 const cssFilter = `hue-rotate(${ageStyle.hueRotate + hueExtra}deg) saturate(${ageStyle.saturate}) brightness(${ageStyle.brightness + brightnessExtra})`;
                 const scaleXDir = dir * LOTTIE_FACING;
+                const charH = 112 * scale;
+                const markerSize = Math.max(14, 15 * scale);
+                const markerBottom = charH + 2;
                 return (
                   <div
                     key={p.id}
                     style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 10), animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}
                   >
+                    {/* 성별 마커 — scaleX 뒤집힘 영향 밖에 배치 */}
+                    <div
+                      aria-label={p.isFemale ? "여성" : "남성"}
+                      style={{
+                        position: "absolute",
+                        bottom: markerBottom,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: markerSize,
+                        height: markerSize,
+                        borderRadius: "50%",
+                        background: p.isFemale ? "rgba(217,68,48,0.85)" : "rgba(36,57,138,0.82)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: Math.max(10, 11 * scale),
+                        color: "#fff",
+                        lineHeight: 1,
+                        pointerEvents: "none",
+                        zIndex: 1,
+                      }}
+                    >
+                      {p.isFemale ? "♀" : "♂"}
+                    </div>
                     <div style={{ transform: `scale(${scale}) scaleX(${scaleXDir})`, transformOrigin: "bottom center", display: "flex", flexDirection: "column", alignItems: "center" }}>
                       <DotLottieReact
                         src={p.lottieFile}
@@ -504,8 +549,32 @@ export default function AtmosphereSimulation({
                 const dir = i % 2 === 0 ? 1 : -1;
                 const dur = 9 + (i % 6) * 2.2;
                 const walkAnim = dir === 1 ? "atmo-walk-r" : "atmo-walk-l";
+                const dotH = (13 + 1 + 24) * scale;
                 return (
                   <div key={p.id} style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 10), animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}>
+                    {/* 성별 마커 */}
+                    <div
+                      aria-label={p.isFemale ? "여성" : "남성"}
+                      style={{
+                        position: "absolute",
+                        bottom: dotH + 2,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: 14,
+                        height: 14,
+                        borderRadius: "50%",
+                        background: p.isFemale ? "rgba(217,68,48,0.85)" : "rgba(36,57,138,0.82)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 10,
+                        color: "#fff",
+                        lineHeight: 1,
+                        pointerEvents: "none",
+                      }}
+                    >
+                      {p.isFemale ? "♀" : "♂"}
+                    </div>
                     <div style={{ transform: `scale(${scale}) scaleX(${dir})`, transformOrigin: "bottom center" }}>
                       <div style={{ animation: `atmo-bob ${1.6 + (i % 3) * 0.3}s ease-in-out infinite`, animationPlayState: playState, display: "flex", flexDirection: "column", alignItems: "center" }}>
                         <div style={{ width: 13, height: 13, borderRadius: "50%", background: p.color }} />
