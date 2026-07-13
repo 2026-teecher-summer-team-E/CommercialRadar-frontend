@@ -308,18 +308,16 @@ export default function AtmosphereSimulation({
 
   const shops = Array.from({ length: 7 });
   const shopCount = shops.length;
-  // 종료 시점 최대 영업 수 = shopCount - 시나리오별 최소 폐업 수.
+  // finalClosed: 타임랩스 종료 시점 폐업 수 = max(시나리오 최소값, 생존율 기반 계산값).
   const minClosed = SCENARIO_MIN_CLOSED[scenario];
-  const maxLitAtEnd = shopCount - minClosed;
-  // 타임랩스 진행(liveLit: 1.0→목표)에 따라 폐업 수를 0→finalClosed로 보간.
-  // finalClosed = max(minClosed, 생존율 기반 계산값).
   const survivalBasedClosed = shopCount - Math.floor(shopCount * litRatioFinal);
   const finalClosed = Math.max(minClosed, survivalBasedClosed);
-  // progress: 타임랩스 진행률(liveLit 1→목표 사이에서 0→1).
-  // liveLit=1이면 progress=0(전부 영업), liveLit=목표이면 progress=1.
+  // progress: 타임랩스 진행률 (liveLit 1.0→목표 구간에서 0→1).
+  // liveLit >= 1 이면 반드시 0 → 시작 시 전부 영업.
   const litProgress = liveLit >= 1 ? 0 : Math.min(1, (1 - liveLit) / Math.max(0.001, 1 - litRatioFinal));
+  // currentClosed: 현재 폐업 수. progress=0 → 0곳, progress=1 → finalClosed곳.
   const currentClosed = Math.round(litProgress * finalClosed);
-  const litCount = Math.min(maxLitAtEnd, shopCount - currentClosed);
+  const litCount = shopCount - currentClosed;
   // 꺼지는 순서: (i*5+2)%7 순열로 결정적 섞기 — litCount보다 높은 순위 점포가 꺼짐.
   const SHOP_ORDER: number[] = Array.from({ length: shopCount }, (_, i) => (i * 5 + 2) % shopCount);
   // shopOn[i] = 이 점포가 켜져 있는지 (litCount개 점포만 영업)
