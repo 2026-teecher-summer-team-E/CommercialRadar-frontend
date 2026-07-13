@@ -125,7 +125,7 @@ export default function SangkwonPanel({
         </div>
       </div>
 
-      {loading && <div className={styles.panelState}>불러오는 중…</div>}
+      {loading && <div className={styles.panelState}>지도 데이터를 불러오는 중…</div>}
       {error && !loading && (
         <div className={styles.panelState}>상권 정보를 불러오지 못했습니다.</div>
       )}

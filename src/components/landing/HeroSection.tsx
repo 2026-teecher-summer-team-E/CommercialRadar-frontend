@@ -15,14 +15,14 @@ export default function HeroSection() {
           <span className={styles.heroTitleAccent}>데이터로 보는 진짜 상권</span>
         </h1>
         <p className={styles.heroSub}>
-          원하는 지역만 검색하세요. 유동인구부터 생존율, 매출 예측까지 한눈에 확인합니다.
+          원하는 지역만 검색하세요. 유동인구부터 생존율, 매출 예측까지 바로 확인합니다.
         </p>
 
         <div className={styles.searchBar}>
           <input
             className={styles.searchInput}
             type="text"
-            placeholder="지역명과 원하는 상권을 입력해 보세요!"
+            placeholder="예: 성수동, 홍대, 연남동"
             aria-label="상권 검색"
           />
           <Link to="/" className={`${styles.btnPrimary} ${styles.searchBtn}`}>

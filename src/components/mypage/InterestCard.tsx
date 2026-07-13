@@ -78,7 +78,7 @@ export default function InterestCard({
               className={styles.memoInput}
               value={draft}
               maxLength={MEMO_MAX}
-              placeholder="메모를 입력하세요"
+              placeholder="임대료, 방문 소감 등 기억할 것"
               rows={2}
               autoFocus
               disabled={busy}
