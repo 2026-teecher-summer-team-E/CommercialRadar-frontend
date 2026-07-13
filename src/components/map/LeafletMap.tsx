@@ -112,6 +112,7 @@ export default function LeafletMap({
       mapRef.current = null;
       markersRef.current.clear();
       polysRef.current.clear();
+      resizeObserver.disconnect();
     };
   }, []);
 

@@ -1,10 +1,34 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { apiClient } from "../../lib/apiClient";
+import type { DistrictSearchResult } from "../map/mapData";
 import styles from "../../pages/LandingPage.module.css";
 import { POPULAR_SEARCHES } from "./data";
 import { SearchIcon } from "./icons";
 
 /** 히어로: 지도 배경 + 헤드라인 + 검색바 + 인기 검색어. */
 export default function HeroSection() {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+
+  // 검색어로 상권을 찾아 그 상권의 지도 화면으로 이동. 결과 없으면 기본 지도로만 이동.
+  const goToDistrict = async (keyword: string) => {
+    const trimmed = keyword.trim();
+    if (!trimmed) {
+      navigate("/");
+      return;
+    }
+    try {
+      const res = await apiClient.get<DistrictSearchResult[]>("/api/commercial-districts/search", {
+        params: { q: trimmed },
+      });
+      const first = res.data[0];
+      navigate(first ? `/?district=${first.id}` : "/");
+    } catch {
+      navigate("/");
+    }
+  };
+
   return (
     <section className={styles.hero}>
       <div className={styles.heroGrid} aria-hidden="true" />
@@ -24,19 +48,33 @@ export default function HeroSection() {
             type="text"
             placeholder="예: 성수동, 홍대, 연남동"
             aria-label="상권 검색"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") goToDistrict(query);
+            }}
           />
-          <Link to="/" className={`${styles.btnPrimary} ${styles.searchBtn}`}>
+          <button
+            type="button"
+            className={`${styles.btnPrimary} ${styles.searchBtn}`}
+            onClick={() => goToDistrict(query)}
+          >
             <SearchIcon size={15} />
             상권 분석하기
-          </Link>
+          </button>
         </div>
 
         <div className={styles.popular}>
           <span className={styles.popularLabel}>인기 검색:</span>
           {POPULAR_SEARCHES.map((term) => (
-            <Link key={term} to="/" className={styles.popularChip}>
+            <button
+              key={term}
+              type="button"
+              className={styles.popularChip}
+              onClick={() => goToDistrict(term)}
+            >
               {term}
-            </Link>
+            </button>
           ))}
         </div>
       </div>
