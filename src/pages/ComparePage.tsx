@@ -80,7 +80,10 @@ export default function ComparePage() {
       Promise.all(selectedIds.map((id) => commercialApi.radar(id, snapshotParams))),
       Promise.all(
         selectedIds.map((id) =>
-          commercialApi.timeSeries(id, selectedCategory ? { category_name: selectedCategory } : undefined),
+          commercialApi.timeSeries(id, {
+            metrics: "survival_rate",
+            category_name: selectedCategory || undefined,
+          }),
         ),
       ),
       selectedIds.length > 0
@@ -111,11 +114,11 @@ export default function ComparePage() {
     };
   }, [selectedIds, selectedQuarter, selectedCategory]);
 
-  // 비교 대상 모두에게 데이터가 있는 분기만 선택지로 제공한다.
   useEffect(() => {
     let alive = true;
     setQuarterOptionsLoading(true);
     setFilterOptionsError(false);
+
     Promise.all(
       selectedIds.map((id) => commercialApi.timeSeries(id, { metrics: "survival_rate" })),
     )
@@ -135,12 +138,12 @@ export default function ComparePage() {
       .finally(() => {
         if (alive) setQuarterOptionsLoading(false);
       });
+
     return () => {
       alive = false;
     };
   }, [selectedIds]);
 
-  // 선택 분기(또는 비교 API가 결정한 공통 최신 분기)에 모든 대상 상권이 보유한 업종만 노출한다.
   useEffect(() => {
     const targetQuarter = selectedQuarter || data?.compare.year_quarter || "";
     if (!targetQuarter) {
@@ -152,6 +155,7 @@ export default function ComparePage() {
     let alive = true;
     setCategoryOptionsLoading(true);
     setFilterOptionsError(false);
+
     Promise.all(
       selectedIds.map((id) => commercialApi.categoryStats(id, { year_quarter: targetQuarter })),
     )
@@ -171,6 +175,7 @@ export default function ComparePage() {
       .finally(() => {
         if (alive) setCategoryOptionsLoading(false);
       });
+
     return () => {
       alive = false;
     };
