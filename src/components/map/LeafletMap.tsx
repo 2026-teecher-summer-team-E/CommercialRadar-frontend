@@ -11,6 +11,7 @@ interface LeafletMapProps {
   geojson: GeoJSON.FeatureCollection | null;
   mode: MapMode;
   selectedId: number;
+  guFilter: string;
   activeName: string | null;
   activeType: string | null;
   activeScore: number | null;
@@ -20,12 +21,12 @@ interface LeafletMapProps {
 
 /** 상권유형별 색상. */
 const TYPE_COLORS: Record<string, string> = {
-  골목상권: "#2447c7",
-  발달상권: "#e8833a",
-  전통시장: "#1b8a5a",
-  관광특구: "#9333ea",
+  골목상권: "#24398a",   // standard navy — primary
+  발달상권: "#939084",   // body-mid — warm neutral gray
+  전통시장: "#201515",   // coffee ink — dark neutral
+  관광특구: "#3d54a8",   // accent navy — secondary
 };
-const colorOf = (type: string | null | undefined) => TYPE_COLORS[type ?? ""] ?? "#6b7590";
+const colorOf = (type: string | null | undefined) => TYPE_COLORS[type ?? ""] ?? "#939084";
 
 const SEOUL_CENTER: L.LatLngExpression = [37.5665, 126.978];
 
@@ -34,6 +35,7 @@ export default function LeafletMap({
   geojson,
   mode,
   selectedId,
+  guFilter,
   activeName,
   activeType,
   activeScore,
@@ -98,7 +100,14 @@ export default function LeafletMap({
     rendererRef.current = L.canvas({ padding: 0.5 });
     mapRef.current = map;
     setTimeout(() => map.invalidateSize(), 0);
+
+    // 사이드바 접힘/펼침 등 부모 크기 변화를 Leaflet이 스스로 감지하지 못해 지도가 잘리므로,
+    // 컨테이너 크기 변화를 직접 관찰해 invalidateSize를 호출한다(트랜지션 도중에도 계속 맞춰짐).
+    const resizeObserver = new ResizeObserver(() => map.invalidateSize());
+    resizeObserver.observe(containerRef.current);
+
     return () => {
+      resizeObserver.disconnect();
       map.remove();
       mapRef.current = null;
       markersRef.current.clear();
@@ -216,6 +225,32 @@ export default function LeafletMap({
     }
     // points/geojson도 의존성에 포함: 데이터가 늦게 도착해 selectedId의 마커/구역이 뒤늦게 생기는 경우를 다시 시도한다.
   }, [selectedId, mode, activeName, activeType, activeScore, points, geojson]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 5) 자치구 필터 변경 시 해당 자치구 범위로 카메라 이동
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (guFilter === "전체") {
+      map.flyTo(SEOUL_CENTER, 12, { duration: 0.8 });
+      return;
+    }
+    if (points.length === 0) return;
+    const bounds = L.latLngBounds(points.map((p) => [p.lat, p.lng] as [number, number]));
+    map.flyToBounds(bounds, { padding: [64, 64], maxZoom: 16, duration: 0.8 });
+  }, [guFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 5) 자치구 필터 변경 시 해당 자치구 범위로 카메라 이동
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (guFilter === "전체") {
+      map.flyTo(SEOUL_CENTER, 12, { duration: 0.8 });
+      return;
+    }
+    if (points.length === 0) return;
+    const bounds = L.latLngBounds(points.map((p) => [p.lat, p.lng] as [number, number]));
+    map.flyToBounds(bounds, { padding: [64, 64], maxZoom: 16, duration: 0.8 });
+  }, [guFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div ref={containerRef} className={styles.map} aria-label="상권 지도" />;
 }

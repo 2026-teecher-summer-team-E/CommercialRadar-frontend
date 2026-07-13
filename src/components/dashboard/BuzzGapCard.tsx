@@ -26,35 +26,22 @@ function gap(v: number | null): string {
  * gap<0(소비가 화제성에 못 미침)이면 "거품 주의" 경고.
  */
 export default function BuzzGapCard({ buzzTopPct, footTopPct, spendTopPct, visitGap, spendGap }: BuzzGapCardProps) {
-  const bubbleWarn = spendGap != null && spendGap < 0;
-
   return (
     <div className={styles.card}>
-      <div className={styles.head}>
-        <div>
-          <h3 className={styles.title}>화제성 Gap</h3>
-          <p className={styles.sub}>검색 화제성 vs 실측 지표 백분위</p>
-        </div>
-      </div>
-
       <p className={styles.headline}>화제성 상위 {pctl(buzzTopPct)}</p>
 
       <GaugeRow
         label={`유동인구 상위 ${pctl(footTopPct)}`}
         topPct={footTopPct}
-        gapLabel={`gap ${gap(visitGap)}`}
+        gapLabel={gap(visitGap)}
         positive={visitGap != null && visitGap >= 0}
       />
       <GaugeRow
         label={`인당 소비 상위 ${pctl(spendTopPct)}`}
         topPct={spendTopPct}
-        gapLabel={`gap ${gap(spendGap)}`}
+        gapLabel={gap(spendGap)}
         positive={spendGap != null && spendGap >= 0}
       />
-
-      <div className={bubbleWarn ? styles.warn : styles.info}>
-        ⚠ {bubbleWarn ? "화제성 대비 인당 소비 저조 — 거품 주의" : "화제성과 실측 지표가 균형적입니다"}
-      </div>
     </div>
   );
 }

@@ -50,7 +50,7 @@ export default function GangnamCafeDemoPage() {
         <button onClick={() => setMetric("survival")} disabled={metric === "survival"}>생존율</button>
       </div>
 
-      {loading && <p>불러오는 중…</p>}
+      {loading && <p>데모 데이터를 분석하는 중…</p>}
       {!!error && <p>데이터를 불러오지 못했습니다.</p>}
       {data && (data.history.length > 0 || data.forecast.length > 0) ? (
         <>

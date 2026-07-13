@@ -236,8 +236,18 @@ export default function MapPage() {
 
   return (
     <div className={styles.page}>
-      {/* 상단 검색 바 + 자동완성 결과 (앱 네비 사이드바는 AppLayout이 담당) */}
-      <div className={styles.searchBar} style={{ position: "relative" }} ref={searchBarRef}>
+      {/* 상단: 필터(자치구/상권유형/유동인구) + 검색 바를 한 줄로 통합 (앱 네비 사이드바는 AppLayout이 담당) */}
+      <div className={styles.topRow}>
+        <FilterBar
+          typeFilter={typeFilter}
+          onTypeFilterChange={setTypeFilter}
+          guFilter={guFilter}
+          onGuFilterChange={setGuFilter}
+          popFilter={popFilter}
+          onPopFilterChange={setPopFilter}
+        />
+
+        <div className={styles.searchBar} style={{ position: "relative" }} ref={searchBarRef}>
         <span className={styles.searchIcon} aria-hidden>
           ⌕
         </span>
@@ -369,16 +379,8 @@ export default function MapPage() {
             ))}
           </ul>
         )}
+        </div>
       </div>
-
-      <FilterBar
-        typeFilter={typeFilter}
-        onTypeFilterChange={setTypeFilter}
-        guFilter={guFilter}
-        onGuFilterChange={setGuFilter}
-        popFilter={popFilter}
-        onPopFilterChange={setPopFilter}
-      />
 
       <div className={styles.body}>
         <SangkwonPanel
@@ -432,6 +434,7 @@ export default function MapPage() {
             geojson={filteredGeojson}
             mode={mode}
             selectedId={selectedId}
+            guFilter={guFilter}
             activeName={summary?.detail?.district_name ?? null}
             activeType={summary?.detail?.type_name ?? null}
             activeScore={activeScore}

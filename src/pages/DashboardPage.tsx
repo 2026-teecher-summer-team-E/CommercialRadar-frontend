@@ -408,7 +408,7 @@ export default function DashboardPage() {
       <div className={styles.page}>
         <PageNav />
         <Header name={null} region={null} typeName={null} />
-        <div className={styles.empty}>대시보드 데이터를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</div>
+        <div className={styles.empty}>상권 데이터를 불러오는 데 실패했어요. 새로고침하거나 다른 상권을 선택해보세요.</div>
       </div>
     );
   }
@@ -481,7 +481,7 @@ export default function DashboardPage() {
           {data.heatmap ? (
             <PopulationHeatmap byTime={data.heatmap.by_time} byDay={data.heatmap.by_day} />
           ) : (
-            <div className={styles.empty}>유동인구 데이터가 없어요.</div>
+            <div className={styles.empty}>이 상권의 유동인구 기록이 아직 없습니다.</div>
           )}
         </div>
 
@@ -567,6 +567,8 @@ export default function DashboardPage() {
           footTraffic={simFootTraffic}
           dayDominant={simDayDominant}
           daySalesPct={simDaySalesPct}
+          foreignerPct={data.foreign?.foreigner_pct ?? null}
+          startQuarter={survivalForecast[0]?.year_quarter ?? null}
           onClose={() => setSim(null)}
         />
       )}
