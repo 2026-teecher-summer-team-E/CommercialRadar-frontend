@@ -10,6 +10,39 @@
   flex-direction: column;
   padding: 22px 16px 20px;
   gap: 8px;
+  transition: width 0.2s ease;
+}
+.sidebar.collapsed {
+  width: 80px;
+}
+
+.toggleBtn {
+  position: absolute;
+  top: 24px;
+  right: -13px;
+  z-index: 2;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  color: var(--color-muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.toggleBtn:hover {
+  background: var(--color-chip);
+  color: var(--color-text);
+}
+.toggleBtn svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.2s ease;
+}
+.collapsed .toggleBtn svg {
+  transform: rotate(180deg);
 }
 
 .logo {
@@ -27,11 +60,22 @@
   place-items: center;
   flex-shrink: 0;
 }
+/* display:none 대신 opacity+max-width로 폭 트랜지션과 같은 타이밍에 서서히 사라지게 한다.
+   (display:none은 애니메이션이 안 돼 폭이 줄어들기도 전에 순간 사라져 "튐"으로 보였다) */
 .logoText {
   font-weight: 700;
   font-size: 18px;
   letter-spacing: -0.3px;
   color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 200px;
+  opacity: 1;
+  transition: opacity 0.15s ease, max-width 0.2s ease;
+}
+.collapsed .logoText {
+  opacity: 0;
+  max-width: 0;
 }
 
 .nav {
@@ -41,6 +85,7 @@
   padding-top: 10px;
 }
 .item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -49,7 +94,7 @@
   font-size: 14px;
   font-weight: 500;
   color: var(--color-muted);
-  transition: background 0.12s, color 0.12s;
+  transition: background 0.12s, color 0.12s, padding-left 0.2s ease;
 }
 .item:hover {
   background: var(--color-chip);
@@ -63,6 +108,34 @@
   background: var(--color-primary-light);
   color: var(--color-primary);
   font-weight: 700;
+}
+/* 선택 표시 세로 바 — 사이드바 패딩 안쪽 가장자리까지 확장, 접힘 여부와 무관하게 항상 표시. */
+.active::before {
+  content: "";
+  position: absolute;
+  left: -16px;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--color-primary);
+}
+
+/* justify-content는 애니메이션이 안 되므로 쓰지 않고, 아이콘이 접힌 폭(80px)에서
+   가운데 오도록 padding-left만 살짝 조정한다 — width 트랜지션과 함께 자연스럽게 이동. */
+.collapsed .item {
+  padding-left: 14px;
+}
+.itemLabel {
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 140px;
+  opacity: 1;
+  transition: opacity 0.15s ease, max-width 0.2s ease;
+}
+.collapsed .itemLabel {
+  opacity: 0;
+  max-width: 0;
 }
 
 .spacer {
@@ -79,6 +152,13 @@
   text-align: left;
   border: 1px solid transparent;
   width: 100%;
+  transition: padding-left 0.2s ease;
+}
+/* 아바타(34px)를 접힌 폭(80px)에서 가운데로 — padding-left만 조정, 세로 높이는 절대 안 바꾼다.
+   (profileInfo가 avatar보다 키가 커서, 예전처럼 display:none으로 없애면 행 높이가 순간 줄어들며
+   아래로 스냅 튀는 현상이 있었다. opacity+max-width만 쓰고 높이엔 관여하지 않게 해서 고쳤다) */
+.collapsed .profile {
+  padding-left: 7px;
 }
 .avatar {
   width: 34px;
@@ -96,7 +176,14 @@
 .profileInfo {
   flex: 1;
   min-width: 0;
-  display: block;
+  max-width: 200px;
+  opacity: 1;
+  overflow: hidden;
+  transition: opacity 0.15s ease, max-width 0.2s ease;
+}
+.collapsed .profileInfo {
+  opacity: 0;
+  max-width: 0;
 }
 .profileName {
   display: block;
@@ -108,6 +195,10 @@
   text-overflow: ellipsis;
 }
 .profilePlan {
+  display: block;
   font-size: 11px;
   color: var(--color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
