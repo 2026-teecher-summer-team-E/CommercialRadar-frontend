@@ -20,6 +20,23 @@ type TabKey = "reports" | "interests" | "shared";
 
 const REPORTS_LIMIT = 20;
 
+/**
+ * compare API(한 번에 2~5개 id 허용)에 맞춰 id 목록을 청크로 나눈다.
+ * 마지막에 1개만 남으면 앞 청크의 마지막 id를 겹쳐 2개로 만들고(결과는 Map 으로 dedup 되어 무해),
+ * 전체가 1개뿐이면 임의의 동반 id 를 붙여 최소 2개를 만든다.
+ */
+function buildCompareChunks(ids: number[]): number[][] {
+  if (ids.length === 0) return [];
+  if (ids.length === 1) return [[ids[0], ids[0] === 1 ? 2 : 1]];
+  const chunks: number[][] = [];
+  for (let i = 0; i < ids.length; i += 5) {
+    const chunk = ids.slice(i, i + 5);
+    if (chunk.length === 1) chunk.unshift(ids[i - 1]); // 마지막 1개 → 앞 id 겹쳐 2개
+    chunks.push(chunk);
+  }
+  return chunks;
+}
+
 export default function MyPage() {
   const [user, setUser] = useState<UserMe | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
@@ -68,19 +85,18 @@ export default function MyPage() {
           if (alive) setInterests([]);
           return;
         }
-        // 랭킹 페이지처럼 compare API로 상권 이름을 채운다. (compare는 한 번에 최대 5개)
+        // 랭킹 페이지처럼 compare API로 상권 이름을 채운다.
+        // compare 는 한 번에 2~5개만 허용하므로, 청크마다 최소 2개를 보장한다.
+        // (관심 상권이 1개거나 개수가 5n+1 이면 마지막 청크가 1개가 되어 호출이 실패함)
         const ids = [...new Set(list.map((it) => it.commercial_district_id))];
-        const chunks: number[][] = [];
-        for (let i = 0; i < ids.length; i += 5) chunks.push(ids.slice(i, i + 5));
+        const chunks = buildCompareChunks(ids);
         const nameById = new Map<number, string>();
-        try {
-          const resArr = await Promise.all(chunks.map((c) => commercialApi.compare(c)));
-          resArr.forEach((res) =>
-            res.data.districts.forEach((d) => nameById.set(d.id, d.district_name)),
-          );
-        } catch {
-          /* 이름 조회 실패 시 기존 값(폴백) 유지 */
-        }
+        // allSettled: 한 청크가 실패해도 나머지 이름은 채운다.
+        const resArr = await Promise.allSettled(chunks.map((c) => commercialApi.compare(c)));
+        resArr.forEach((res) => {
+          if (res.status === "fulfilled")
+            res.value.data.districts.forEach((d) => nameById.set(d.id, d.district_name));
+        });
         if (alive)
           setInterests(
             list.map((it) => ({
