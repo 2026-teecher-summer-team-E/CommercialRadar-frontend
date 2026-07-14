@@ -6,7 +6,6 @@ import { queryKeys, useDistrictSearch } from "../hooks/queries";
 import { useRecentSearches, type RecentSearchItem } from "../hooks/useRecentSearches";
 import SangkwonPanel from "../components/map/SangkwonPanel";
 import FilterBar from "../components/map/FilterBar";
-import type { MapMode } from "../components/map/LeafletMap";
 import PageLoader from "../components/common/PageLoader";
 
 // leaflet은 무거우므로 지도 화면에 실제로 진입할 때만 로드.
@@ -80,9 +79,8 @@ export default function MapPage() {
   const [searchFocused, setSearchFocused] = useState(false);
   const searchBarRef = useRef<HTMLDivElement | null>(null);
   const { items: recentSearches, addSearch, removeSearch } = useRecentSearches();
-  const [mode, setMode] = useState<MapMode>("regions");
 
-  // 지도 필터(마커/구역 실필터): 상권유형/자치구/유동인구.
+  // 지도 필터(구역 실필터): 상권유형/자치구/유동인구.
   const [typeFilter, setTypeFilter] = useState<string>("전체");
   const [guFilter, setGuFilter] = useState<string>("전체");
   const [popFilter, setPopFilter] = useState<PopulationBucket>("전체");
@@ -90,7 +88,7 @@ export default function MapPage() {
   // 업종 필터(선택 상권 지표만 재조회, 마커/지도는 그대로).
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
-  // 전 상권 좌표(핀) + 경계 폴리곤(구역). 전역 캐시라 페이지 재진입 시 재요청 없음.
+  // 전 상권 좌표(자치구 필터 카메라 이동용) + 경계 폴리곤(구역 표시). 전역 캐시라 페이지 재진입 시 재요청 없음.
   const geoQuery = useQuery({
     queryKey: queryKeys.geo,
     queryFn: async () => (await commercialApi.geo()).data,
@@ -365,48 +363,11 @@ export default function MapPage() {
           categoryFilter={categoryFilter}
           onCategoryFilterChange={setCategoryFilter}
         />
-        <div style={{ flex: 1, position: "relative", display: "flex", minWidth: 0 }}>
-          <div
-            style={{
-              position: "absolute",
-              top: 12,
-              right: 12,
-              zIndex: 1000,
-              display: "flex",
-              gap: 2,
-              background: "var(--color-surface)",
-              border: "1px solid var(--color-border)",
-              borderRadius: 8,
-              padding: 3,
-              boxShadow: "0 1px 2px rgba(15,23,42,.1)",
-            }}
-          >
-            {(["regions", "pins"] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setMode(m)}
-                style={{
-                  padding: "6px 14px",
-                  border: "none",
-                  borderRadius: 6,
-                  fontSize: 12,
-                  fontWeight: 700,
-                  fontFamily: "var(--font-sans)",
-                  cursor: "pointer",
-                  background: mode === m ? "var(--color-primary-light)" : "transparent",
-                  color: mode === m ? "var(--color-primary)" : "var(--color-muted)",
-                }}
-              >
-                {m === "regions" ? "구역" : "핀"}
-              </button>
-            ))}
-          </div>
+        <div style={{ position: "absolute", inset: 0, display: "flex", minWidth: 0 }}>
           <Suspense fallback={<PageLoader fullScreen={false} />}>
             <LeafletMap
               points={filteredGeo}
               geojson={filteredGeojson}
-              mode={mode}
               selectedId={selectedId}
               guFilter={guFilter}
               activeName={summary?.detail?.district_name ?? null}
