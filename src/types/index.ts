@@ -107,6 +107,22 @@ export interface SurvivalForecastResponse {
   forecast: SurvivalForecastPoint[];
 }
 
+// ── 매출 예측 (GET /api/commercial-districts/{id}/sales-forecast) ──
+export interface SalesForecastPoint {
+  year_quarter: string;
+  total_sales: number | null; // 분기 총매출(원)
+  tx_count: number | null;
+  low: number | null; // 비관 P10
+  high: number | null; // 낙관 P90
+  confidence: number | null;
+}
+export interface SalesForecastResponse {
+  district_id: number;
+  model: string | null;
+  category_name: string | null;
+  forecast: SalesForecastPoint[];
+}
+
 // ── 레이더 (GET /api/commercial-districts/{id}/radar) [신규] ──
 export interface RadarAxis {
   key: string;

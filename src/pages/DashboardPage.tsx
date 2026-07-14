@@ -20,6 +20,7 @@ import AgeGenderCard from "../components/dashboard/AgeGenderCard";
 import RentCard from "../components/dashboard/RentCard";
 import type { RentBar } from "../components/dashboard/RentCard";
 import BuzzGapCard from "../components/dashboard/BuzzGapCard";
+import SalesForecastCard from "../components/dashboard/SalesForecastCard";
 import { DayNightCard, ForeignCard, PerCapitaCard, WeekendCard } from "../components/dashboard/StatCards";
 import ExpandModal from "../components/dashboard/ExpandModal";
 import { quarterShort } from "../components/dashboard/format";
@@ -261,6 +262,14 @@ export default function DashboardPage() {
     enabled: id != null && selCategory != null,
   });
 
+  // 매출 예측(업종 선택 시 그 업종, 아니면 상권 전체 __ALL__). 생존율 예측과 같은 대상.
+  const salesForecastQuery = useQuery({
+    queryKey: ["sales-forecast", id ?? -1, selCategory ?? ""] as const,
+    queryFn: () =>
+      mlApi.salesForecast(id as number, selCategory != null ? { category_name: selCategory } : undefined).then((r) => r.data),
+    enabled: id != null,
+  });
+
   // ── 파생 값 ─────────────────────────────────────────────
   const d = data?.district ?? null;
   const stats = d?.latest_stats ?? null;
@@ -344,6 +353,19 @@ export default function DashboardPage() {
   }, [activeForecastRaw, activeStats]);
   const survivalHistory = survivalCum.history;
   const survivalForecast = survivalCum.forecast;
+
+  // 매출 예측 시계열(value=분기 총매출 원). 업종 선택 시 그 업종, 아니면 상권 전체.
+  const salesForecastSeries = useMemo<TimeseriesPoint[]>(() => {
+    const fc = salesForecastQuery.data?.forecast ?? [];
+    return fc
+      .filter((p) => p.total_sales != null)
+      .map((p) => ({ year_quarter: p.year_quarter, value: p.total_sales, low: p.low, mid: p.total_sales, high: p.high }));
+  }, [salesForecastQuery.data]);
+  const salesFallbackNote =
+    selCategory != null && !salesForecastQuery.isPending && salesForecastSeries.length === 0
+      ? "이 업종은 매출 예측 준비 중입니다."
+      : null;
+  const salesCategoryLabel = selCategory ?? "전체 상권";
 
   // 카드 헤로: 폴백이면 현재 생존율만, 아니면 창업 시점 100% → 4분기 후 누적 생존율.
   const survivalStartPct = isFallback ? fallbackCurrentPct : survivalHistory.length > 0 ? 100 : null;
@@ -597,6 +619,11 @@ export default function DashboardPage() {
       {/* 매출·소비 */}
       <section className={styles.section}>
         <SectionTitle title="매출·소비" subtitle="고객은 얼마나, 어떻게 지갑을 여는가" />
+        <SalesForecastCard
+          forecast={salesForecastSeries}
+          categoryLabel={salesCategoryLabel}
+          fallbackNote={salesFallbackNote}
+        />
         <div className={styles.duoGrid}>
           <PerCapitaCard wonValue={data.perCapita?.per_capita_sales ?? null} />
           <WeekendCard pct={data.popRatios?.weekend_pct ?? null} days={data.heatmap?.by_day ?? null} />
