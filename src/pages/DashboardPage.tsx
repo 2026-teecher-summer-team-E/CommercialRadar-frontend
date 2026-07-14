@@ -249,9 +249,31 @@ export default function DashboardPage() {
     enabled: id != null && selCategory != null,
   });
 
+  // 선택 업종의 현재 지표(생존율·폐업률·매장수·점수). 종합점수/생존율 예측 카드의 좌측 수치 갱신용.
+  const categoryStatsQuery = useQuery({
+    queryKey: ["category-stats", id ?? -1, selCategory ?? ""] as const,
+    queryFn: () => commercialApi.categoryStats(id as number, { category_name: selCategory as string }).then((r) => r.data),
+    enabled: id != null && selCategory != null,
+  });
+
   // ── 파생 값 ─────────────────────────────────────────────
   const d = data?.district ?? null;
   const stats = d?.latest_stats ?? null;
+
+  // 활성 지표: 전체 상권(null)은 상권 latest_stats, 업종 선택 시 그 업종의 category-stats로 교체.
+  // 유동인구·연령/성별·임대료 등 업종별 데이터가 없는 지표는 상권 전체값을 그대로 둔다.
+  const catStat = categoryStatsQuery.data?.categories?.[0] ?? null;
+  const activeStats = useMemo(() => {
+    if (selCategory == null || catStat == null) return stats;
+    return {
+      ...stats,
+      survival_rate: catStat.survival_rate,
+      closure_rate: catStat.closure_rate,
+      total_business: catStat.total_business,
+      district_score: catStat.district_score,
+      year_quarter: categoryStatsQuery.data?.year_quarter ?? stats?.year_quarter ?? null,
+    };
+  }, [selCategory, catStat, stats, categoryStatsQuery.data]);
 
   // 생존율 예측 API는 survival_rate를 비율(0~1)로 반환하지만 latest_stats는 퍼센트(0~100)다.
   // 단위를 %로 통일한다(비율이면 ×100).
@@ -280,8 +302,8 @@ export default function DashboardPage() {
   const forecastPoints: ForecastPoint[] = useMemo(() => {
     const fc = activeForecastRaw;
     const pts: ForecastPoint[] = [];
-    if (stats?.survival_rate != null && stats.year_quarter) {
-      pts.push({ label: quarterShort(stats.year_quarter), value: stats.survival_rate, forecast: false });
+    if (activeStats?.survival_rate != null && activeStats.year_quarter) {
+      pts.push({ label: quarterShort(activeStats.year_quarter), value: activeStats.survival_rate, forecast: false });
     }
     fc.forEach((p) => {
       pts.push({
@@ -293,7 +315,7 @@ export default function DashboardPage() {
       });
     });
     return pts;
-  }, [activeForecastRaw, stats]);
+  }, [activeForecastRaw, activeStats]);
 
   // GangnamForecastChart용 시계열(unit="ratio" → 0~1 스케일 필수).
   // latest_stats.survival_rate는 0~100 이므로 /100. forecast는 이미 0~1.
@@ -301,7 +323,7 @@ export default function DashboardPage() {
   // 낙관(high)·비관(low) 밴드도 각각 누적해 시간이 갈수록 벌어진다.
   const survivalCum = useMemo(() => {
     const fc = activeForecastRaw;
-    const anchorQ = stats?.year_quarter ?? null;
+    const anchorQ = activeStats?.year_quarter ?? null;
     const history: TimeseriesPoint[] = anchorQ ? [{ year_quarter: anchorQ, value: 1 }] : [];
     let cv = 1;
     let cl = 1;
@@ -314,7 +336,7 @@ export default function DashboardPage() {
       return { year_quarter: p.year_quarter, value: cv, low: cl, mid: cv, high: ch };
     });
     return { history, forecast, finalPct: forecast.length > 0 ? cv * 100 : null };
-  }, [activeForecastRaw, stats]);
+  }, [activeForecastRaw, activeStats]);
   const survivalHistory = survivalCum.history;
   const survivalForecast = survivalCum.forecast;
 
@@ -474,10 +496,10 @@ export default function DashboardPage() {
           districtName={d.district_name}
           typeName={d.type_name}
           regionLine={regionLine}
-          score={stats?.district_score ?? null}
+          score={activeStats?.district_score ?? null}
           badges={scoreBadges}
-          survivalRate={stats?.survival_rate ?? null}
-          closureRate={stats?.closure_rate ?? null}
+          survivalRate={activeStats?.survival_rate ?? null}
+          closureRate={activeStats?.closure_rate ?? null}
           avgPopulation={d.avg_population}
           weekdayPct={flow?.weekday ?? null}
           weekendPct={flow?.weekend ?? null}
@@ -491,8 +513,8 @@ export default function DashboardPage() {
           history={survivalHistory}
           forecastSeries={survivalForecast}
           onScenarioClick={setSim}
-          totalBusiness={stats?.total_business ?? null}
-          closureRate={stats?.closure_rate ?? null}
+          totalBusiness={activeStats?.total_business ?? null}
+          closureRate={activeStats?.closure_rate ?? null}
           onExpand={() => setModal("forecast")}
           categoryOptions={categoryOptions}
           selectedCategory={selCategory}
@@ -583,8 +605,8 @@ export default function DashboardPage() {
               history={survivalHistory}
               forecastSeries={survivalForecast}
               onScenarioClick={setSim}
-              totalBusiness={stats?.total_business ?? null}
-              closureRate={stats?.closure_rate ?? null}
+              totalBusiness={activeStats?.total_business ?? null}
+              closureRate={activeStats?.closure_rate ?? null}
               categoryOptions={categoryOptions}
               selectedCategory={selCategory}
               onCategoryChange={setSelCategory}
