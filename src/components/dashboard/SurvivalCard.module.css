@@ -78,6 +78,107 @@
   font-size: 13px;
   color: var(--color-muted);
 }
+.headRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.categoryWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.categoryLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+/* 트리거 버튼 — 서비스 표준 드롭다운(TrendsPage .select) 토큰. */
+.categoryTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 118px;
+  max-width: 190px;
+  padding: 9px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.categoryTrigger:hover {
+  border-color: var(--color-border-strong);
+}
+.categoryTrigger:focus-visible {
+  outline: none;
+  border-color: var(--color-primary);
+}
+.categoryTrigger[aria-expanded="true"] {
+  border-color: var(--color-primary);
+}
+.categoryValue {
+  flex: 1;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.categoryChevron {
+  flex: none;
+  color: var(--color-muted);
+  transition: transform 0.18s ease;
+}
+.categoryTrigger[aria-expanded="true"] .categoryChevron {
+  transform: rotate(180deg);
+}
+/* 열린 메뉴 — 카드 톤(surface/border/radius)과 동일. */
+.categoryMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  min-width: 100%;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card-hover, 0 10px 28px rgba(15, 23, 42, 0.14));
+  animation: surv-fade-up 0.16s ease-out both;
+}
+.categoryOption {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.categoryOption:hover {
+  background: var(--color-chip);
+}
+.categoryOptionSel {
+  background: var(--color-primary-light, var(--color-chip));
+  color: var(--color-primary);
+  font-weight: 700;
+}
 .expandBtn {
   flex: none;
   border: 1px solid var(--color-border);
@@ -143,6 +244,17 @@
   font-family: var(--font-num);
   animation: surv-pill-pop 0.5s ease-out both;
   animation-delay: 0.55s;
+}
+
+.fallbackNote {
+  margin: 0;
+  align-self: flex-start;
+  max-width: 320px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-muted);
+  animation: surv-fade-up 0.5s ease-out both;
+  animation-delay: 0.2s;
 }
 
 .stats {
@@ -286,7 +398,12 @@
   .hero,
   .arrow,
   .deltaPill,
+  .fallbackNote,
+  .categoryMenu,
   .statBox {
     animation: none;
+  }
+  .categoryChevron {
+    transition: none;
   }
 }

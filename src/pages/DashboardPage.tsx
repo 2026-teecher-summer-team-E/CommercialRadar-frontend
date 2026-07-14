@@ -24,7 +24,7 @@ import { DayNightCard, ForeignCard, PerCapitaCard, WeekendCard } from "../compon
 import ExpandModal from "../components/dashboard/ExpandModal";
 import { quarterShort } from "../components/dashboard/format";
 import { useFavoriteDistrict } from "../hooks/useFavoriteDistrict";
-import { queryKeys } from "../hooks/queries";
+import { queryKeys, useCategoryRanking } from "../hooks/queries";
 import FavoriteStar from "../components/common/FavoriteStar";
 import PageLoader from "../components/common/PageLoader";
 import styles from "./DashboardPage.module.css";
@@ -206,6 +206,8 @@ export default function DashboardPage() {
 
   const [modal, setModal] = useState<"forecast" | "heatmap" | null>(null);
   const [sim, setSim] = useState<"low" | "mid" | "high" | null>(null);
+  // 생존율 예측 업종 필터. null = 전체 상권(기존 기본 동작).
+  const [selCategory, setSelCategory] = useState<string | null>(null);
 
   const dashboardQuery = useQuery({
     queryKey: queryKeys.dashboard(id ?? -1),
@@ -216,6 +218,37 @@ export default function DashboardPage() {
   const loading = id != null && dashboardQuery.isPending;
   const error = id == null || dashboardQuery.isError;
 
+  // 업종 옵션 + 폴백 현재값(0~100) 소스: 업종 랭킹.
+  const rankingQuery = useCategoryRanking(id ?? -1);
+  const rankingItems = useMemo(
+    () => (id != null ? (rankingQuery.data?.ranking ?? []) : []),
+    [id, rankingQuery.data],
+  );
+  // total_business 순 상위 30개 업종명(예측/폴백 조회 대상).
+  const categoryOptions = useMemo(() => {
+    const names = rankingItems
+      .filter((it) => it.category_name != null)
+      .sort((a, b) => (b.total_business ?? 0) - (a.total_business ?? 0))
+      .slice(0, 30)
+      .map((it) => it.category_name as string);
+    return [...new Set(names)];
+  }, [rankingItems]);
+  // 업종명 → 현재 생존율(0~100). 예측이 비었을 때 폴백값으로 사용.
+  const rankingSurvivalMap = useMemo(() => {
+    const m = new Map<string, number>();
+    rankingItems.forEach((it) => {
+      if (it.category_name != null && it.survival_rate != null) m.set(it.category_name, it.survival_rate);
+    });
+    return m;
+  }, [rankingItems]);
+
+  // 선택 업종의 예측 곡선. 전체 상권(null)일 땐 요청하지 않고 기존 data.forecast를 그대로 쓴다.
+  const categoryForecastQuery = useQuery({
+    queryKey: ["survival-forecast", id ?? -1, selCategory ?? ""] as const,
+    queryFn: () => mlApi.survivalForecast(id as number, { category_name: selCategory as string }).then((r) => r.data),
+    enabled: id != null && selCategory != null,
+  });
+
   // ── 파생 값 ─────────────────────────────────────────────
   const d = data?.district ?? null;
   const stats = d?.latest_stats ?? null;
@@ -225,8 +258,27 @@ export default function DashboardPage() {
   const toPct = (v: number | null | undefined): number | null =>
     v == null ? null : v <= 1 ? v * 100 : v;
 
+  // 업종 예측 로딩 중에는 폴백 판정을 보류(빈 예측을 폴백으로 오인해 깜빡이지 않게).
+  const categoryForecastLoading = selCategory != null && categoryForecastQuery.isPending;
+
+  // 활성 예측 결정: 전체 상권(null)은 기존 data.forecast, 업종 선택 시 그 업종 예측.
+  // 업종 예측이 비어 있으면 랭킹의 현재 생존율(0~100)로 폴백(차트 없이 현재값만 표시).
+  const { activeForecastRaw, fallbackCurrentPct } = useMemo(() => {
+    if (selCategory == null) {
+      return { activeForecastRaw: data?.forecast?.forecast ?? [], fallbackCurrentPct: null as number | null };
+    }
+    const catFc = categoryForecastQuery.data?.forecast ?? [];
+    if (catFc.length > 0) return { activeForecastRaw: catFc, fallbackCurrentPct: null as number | null };
+    return { activeForecastRaw: [], fallbackCurrentPct: rankingSurvivalMap.get(selCategory) ?? null };
+  }, [selCategory, data, categoryForecastQuery.data, rankingSurvivalMap]);
+
+  // 폴백 활성 여부: 업종 선택 + 로딩 완료 + 예측 없음 + 현재값 존재.
+  const isFallback =
+    selCategory != null && !categoryForecastLoading && activeForecastRaw.length === 0 && fallbackCurrentPct != null;
+  const fallbackNote = isFallback ? "이 업종은 예측 준비 중이라 현재 생존율을 표시합니다." : null;
+
   const forecastPoints: ForecastPoint[] = useMemo(() => {
-    const fc = data?.forecast?.forecast ?? [];
+    const fc = activeForecastRaw;
     const pts: ForecastPoint[] = [];
     if (stats?.survival_rate != null && stats.year_quarter) {
       pts.push({ label: quarterShort(stats.year_quarter), value: stats.survival_rate, forecast: false });
@@ -241,14 +293,14 @@ export default function DashboardPage() {
       });
     });
     return pts;
-  }, [data, stats]);
+  }, [activeForecastRaw, stats]);
 
   // GangnamForecastChart용 시계열(unit="ratio" → 0~1 스케일 필수).
   // latest_stats.survival_rate는 0~100 이므로 /100. forecast는 이미 0~1.
   // 누적 생존율: 창업 시점=100%, 분기별 생존율(0~1)을 복리로 곱해 점점 감소.
   // 낙관(high)·비관(low) 밴드도 각각 누적해 시간이 갈수록 벌어진다.
   const survivalCum = useMemo(() => {
-    const fc = data?.forecast?.forecast ?? [];
+    const fc = activeForecastRaw;
     const anchorQ = stats?.year_quarter ?? null;
     const history: TimeseriesPoint[] = anchorQ ? [{ year_quarter: anchorQ, value: 1 }] : [];
     let cv = 1;
@@ -262,13 +314,13 @@ export default function DashboardPage() {
       return { year_quarter: p.year_quarter, value: cv, low: cl, mid: cv, high: ch };
     });
     return { history, forecast, finalPct: forecast.length > 0 ? cv * 100 : null };
-  }, [data, stats]);
+  }, [activeForecastRaw, stats]);
   const survivalHistory = survivalCum.history;
   const survivalForecast = survivalCum.forecast;
 
-  // 카드 헤로: 창업 시점 100% → 4분기 후 누적 생존율.
-  const survivalStartPct = survivalHistory.length > 0 ? 100 : null;
-  const forecastNextPct = survivalCum.finalPct;
+  // 카드 헤로: 폴백이면 현재 생존율만, 아니면 창업 시점 100% → 4분기 후 누적 생존율.
+  const survivalStartPct = isFallback ? fallbackCurrentPct : survivalHistory.length > 0 ? 100 : null;
+  const forecastNextPct = isFallback ? null : survivalCum.finalPct;
   const forecastDelta =
     survivalStartPct != null && forecastNextPct != null
       ? Number((forecastNextPct - survivalStartPct).toFixed(1))
@@ -442,6 +494,10 @@ export default function DashboardPage() {
           totalBusiness={stats?.total_business ?? null}
           closureRate={stats?.closure_rate ?? null}
           onExpand={() => setModal("forecast")}
+          categoryOptions={categoryOptions}
+          selectedCategory={selCategory}
+          onCategoryChange={setSelCategory}
+          fallbackNote={fallbackNote}
         />
       </section>
 
@@ -529,6 +585,10 @@ export default function DashboardPage() {
               onScenarioClick={setSim}
               totalBusiness={stats?.total_business ?? null}
               closureRate={stats?.closure_rate ?? null}
+              categoryOptions={categoryOptions}
+              selectedCategory={selCategory}
+              onCategoryChange={setSelCategory}
+              fallbackNote={fallbackNote}
             />
           </div>
         </ExpandModal>
