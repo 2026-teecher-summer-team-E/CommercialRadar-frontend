@@ -436,9 +436,7 @@ export default function ComparePage() {
                         <strong>{result.district_name}</strong>
                         {location && <small>{location}</small>}
                       </span>
-                      <span className={styles.resultAction}>
-                        {alreadySelected ? "선택됨" : "추가"}
-                      </span>
+                      {alreadySelected && <span className={styles.resultAction}>선택됨</span>}
                     </button>
                   );
                 })}
