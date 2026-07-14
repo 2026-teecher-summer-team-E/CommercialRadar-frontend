@@ -556,7 +556,7 @@ export default function AtmosphereSimulation({
             </div>
             {liveTraffic != null && (
               <div style={{ fontSize: 11, color: SCENE_COLORS.hudText }}>
-                유동인구 &nbsp;<span style={{ color: SCENE_COLORS.traffic, fontWeight: 600 }}>{Math.round(liveTraffic / MONTHS_PER_QUARTER).toLocaleString()}명·월</span>
+                유동인구 &nbsp;<span style={{ color: "var(--color-on-primary)", fontWeight: 600 }}>{Math.round(liveTraffic / MONTHS_PER_QUARTER).toLocaleString()}명·월</span>
               </div>
             )}
           </div>
