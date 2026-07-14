@@ -1,17 +1,24 @@
 import { Link } from "react-router-dom";
+import { buildSignInPath, clerkEnabled, useAuth } from "../../lib/auth";
 import styles from "../../pages/LandingPage.module.css";
 
 /** 랜딩 자체 상단 헤더 (사이드바 없는 독립 레이아웃). 메인 앱 사이드바 로고와 아이콘/크기 통일. */
 export default function LandingHeader() {
+  const { isLoaded, isSignedIn } = useAuth();
+  const appEntryPath = clerkEnabled && isLoaded && !isSignedIn ? buildSignInPath("/") : "/";
+
   return (
     <header className={styles.header}>
       <Link to="/landing" className={styles.brand}>
         <span className={styles.brandMark}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path
-              d="M12 6c-2.8 0-5 2.2-5 5 0 3.5 5 9 5 9s5-5.5 5-9c0-2.8-2.2-5-5-5zm0 6.8a1.8 1.8 0 110-3.6 1.8 1.8 0 010 3.6z"
-              fill="#fff"
+              d="M10.8 17.1a6.3 6.3 0 1 0 0-12.6 6.3 6.3 0 0 0 0 12.6Z"
+              stroke="#fff"
+              strokeWidth="2.2"
             />
+            <path d="m15.4 15.4 4.1 4.1" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
+            <path d="M8.4 9.1a3.2 3.2 0 0 1 2.4-1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
           </svg>
         </span>
         상권레이더
@@ -20,7 +27,7 @@ export default function LandingHeader() {
         <Link to="/sign-in" className={styles.loginLink}>
           로그인
         </Link>
-        <Link to="/" className={styles.btnPrimary}>
+        <Link to={appEntryPath} className={styles.btnPrimary}>
           시작하기
         </Link>
       </div>
