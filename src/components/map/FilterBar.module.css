@@ -4,6 +4,8 @@
   flex: none;
   display: flex;
   align-items: center;
+  /* topRow 좌측 모서리(둥근 테두리)와 첫 필터 텍스트 사이 여백이 부족해 보여 살짝 띄운다. */
+  padding-left: 6px;
 }
 
 .resetBtn {
