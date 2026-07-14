@@ -24,8 +24,8 @@ export default function LandingHeader() {
         상권레이더
       </Link>
       <div className={styles.headerActions}>
-        <Link to="/sign-in" className={styles.loginLink}>
-          로그인
+        <Link to={isSignedIn ? "/mypage" : "/sign-in"} className={styles.loginLink}>
+          {isSignedIn ? "마이페이지" : "로그인"}
         </Link>
         <Link to={appEntryPath} className={styles.btnPrimary}>
           시작하기
