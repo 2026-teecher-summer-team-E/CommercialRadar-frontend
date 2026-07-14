@@ -1,9 +1,13 @@
-import GangnamForecastChart from "../charts/GangnamForecastChart";
+import { lazy, Suspense } from "react";
 import type { ForecastPoint } from "../charts/ForecastChart";
 import type { TimeseriesPoint } from "../../types";
 import { useCountUp } from "../../hooks/useCountUp";
 import { fmtPct, fmtInt } from "./format";
+import PageLoader from "../common/PageLoader";
 import styles from "./SurvivalCard.module.css";
+
+// recharts가 들어있어 무거움 — 카드가 실제로 차트를 그릴 때만 로드.
+const GangnamForecastChart = lazy(() => import("../charts/GangnamForecastChart"));
 
 interface SurvivalCardProps {
   /** 현재(첫) 생존율 %. */
@@ -117,16 +121,18 @@ export default function SurvivalCard({
 
       {hasChart ? (
         <div className={styles.chart}>
-          <GangnamForecastChart
-            history={hist}
-            forecast={fc}
-            unit="ratio"
-            onScenarioClick={onScenarioClick}
-            height={240}
-            yDomain={yDomain}
-            endLabels
-            sequentialDraw
-          />
+          <Suspense fallback={<PageLoader fullScreen={false} />}>
+            <GangnamForecastChart
+              history={hist}
+              forecast={fc}
+              unit="ratio"
+              onScenarioClick={onScenarioClick}
+              height={240}
+              yDomain={yDomain}
+              endLabels
+              sequentialDraw
+            />
+          </Suspense>
           {onScenarioClick && (
             <div className={styles.scenarioBar}>
               <span className={styles.scenarioHint}>미래 거리 미리보기</span>
@@ -137,7 +143,7 @@ export default function SurvivalCard({
                   onClick={() => onScenarioClick("high")}
                   aria-label="잘풀린 미래 시뮬레이션 열기"
                 >
-                  <span className={styles.scenarioDot} style={{ background: "#16a34a" }} />
+                  <span className={styles.scenarioDot} style={{ background: "var(--color-green)" }} />
                   잘풀린 미래
                 </button>
                 <button
@@ -146,7 +152,7 @@ export default function SurvivalCard({
                   onClick={() => onScenarioClick("mid")}
                   aria-label="보통 미래 시뮬레이션 열기"
                 >
-                  <span className={styles.scenarioDot} style={{ background: "#2563eb" }} />
+                  <span className={styles.scenarioDot} style={{ background: "var(--series-1)" }} />
                   보통 미래
                 </button>
                 <button
@@ -155,7 +161,7 @@ export default function SurvivalCard({
                   onClick={() => onScenarioClick("low")}
                   aria-label="안풀린 미래 시뮬레이션 열기"
                 >
-                  <span className={styles.scenarioDot} style={{ background: "#dc2626" }} />
+                  <span className={styles.scenarioDot} style={{ background: "var(--color-red)" }} />
                   안풀린 미래
                 </button>
               </div>

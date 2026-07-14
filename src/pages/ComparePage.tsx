@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { commercialApi } from "../services/commercialApi";
+import { queryKeys, useDistrictSearch } from "../hooks/queries";
 import type {
   DistrictCompareResponse,
   RadarResponse,
@@ -34,171 +36,233 @@ interface CompareData {
 const EXPAND_ICON = "⤢";
 const MIN_DISTRICTS = 2;
 const MAX_DISTRICTS = 5;
+const COMPARE_PAGE_STORAGE_KEY = "commercialradar.comparePage.v1";
+
+interface PersistedComparePageState {
+  selectedIds: number[];
+  selectedDistrictNames: Record<number, string>;
+  selectedQuarter: string;
+  selectedCategory: string;
+  modal: ModalKind;
+}
+
+const DEFAULT_COMPARE_PAGE_STATE: PersistedComparePageState = {
+  selectedIds: [1, 2, 3],
+  selectedDistrictNames: {},
+  selectedQuarter: "",
+  selectedCategory: "",
+  modal: null,
+};
+
+function readComparePageState(): PersistedComparePageState {
+  if (typeof window === "undefined") return DEFAULT_COMPARE_PAGE_STATE;
+
+  try {
+    const raw = window.localStorage.getItem(COMPARE_PAGE_STORAGE_KEY);
+    if (!raw) return DEFAULT_COMPARE_PAGE_STATE;
+
+    const parsed = JSON.parse(raw) as Partial<PersistedComparePageState>;
+    const selectedIds = Array.from(
+      new Set(
+        (Array.isArray(parsed.selectedIds) ? parsed.selectedIds : [])
+          .map((id) => Number(id))
+          .filter((id) => Number.isInteger(id) && id > 0),
+      ),
+    ).slice(0, MAX_DISTRICTS);
+    const names: Record<number, string> = {};
+    if (parsed.selectedDistrictNames && typeof parsed.selectedDistrictNames === "object") {
+      Object.entries(parsed.selectedDistrictNames).forEach(([id, name]) => {
+        const numericId = Number(id);
+        if (Number.isInteger(numericId) && typeof name === "string" && name.trim()) {
+          names[numericId] = name;
+        }
+      });
+    }
+    const modal = parsed.modal === "radar" || parsed.modal === "trend" ? parsed.modal : null;
+
+    return {
+      selectedIds,
+      selectedDistrictNames: names,
+      selectedQuarter: typeof parsed.selectedQuarter === "string" ? parsed.selectedQuarter : "",
+      selectedCategory: typeof parsed.selectedCategory === "string" ? parsed.selectedCategory : "",
+      modal: selectedIds.length >= MIN_DISTRICTS ? modal : null,
+    };
+  } catch {
+    return DEFAULT_COMPARE_PAGE_STATE;
+  }
+}
 
 export default function ComparePage() {
-  const [selectedIds, setSelectedIds] = useState<number[]>([1, 2, 3]);
-  const [selectedQuarter, setSelectedQuarter] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [availableQuarters, setAvailableQuarters] = useState<string[]>([]);
-  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
-  const [data, setData] = useState<CompareData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [modal, setModal] = useState<ModalKind>(null);
+  const [initialState] = useState(readComparePageState);
+  const [selectedIds, setSelectedIds] = useState<number[]>(initialState.selectedIds);
+  const [selectedDistrictNames, setSelectedDistrictNames] = useState<Record<number, string>>(
+    initialState.selectedDistrictNames,
+  );
+  const [selectedQuarter, setSelectedQuarter] = useState(initialState.selectedQuarter);
+  const [selectedCategory, setSelectedCategory] = useState(initialState.selectedCategory);
+  const [modal, setModal] = useState<ModalKind>(initialState.modal);
   const [isAdding, setIsAdding] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<CommercialDistrictSearchResult[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [searchError, setSearchError] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
 
   useEffect(() => {
-    const keyword = searchQuery.trim();
-    if (!isAdding || !keyword) {
-      setSearchResults([]);
-      setSearchLoading(false);
-      setSearchError(false);
+    try {
+      const state: PersistedComparePageState = {
+        selectedIds,
+        selectedDistrictNames,
+        selectedQuarter,
+        selectedCategory,
+        modal: selectedIds.length >= MIN_DISTRICTS ? modal : null,
+      };
+      window.localStorage.setItem(COMPARE_PAGE_STORAGE_KEY, JSON.stringify(state));
+    } catch {
+      // localStorage 접근 불가 환경에서는 저장 없이 현재 화면 상태만 유지한다.
+    }
+  }, [selectedIds, selectedDistrictNames, selectedQuarter, selectedCategory, modal]);
+
+  // 검색어 250ms 디바운스: 입력이 멈춘 뒤에만 쿼리 키가 바뀌어 요청이 나간다.
+  const keyword = searchQuery.trim();
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQuery(keyword), 250);
+    return () => window.clearTimeout(timer);
+  }, [keyword]);
+
+  const search = useDistrictSearch(debouncedQuery, isAdding);
+  const searchResults: CommercialDistrictSearchResult[] =
+    (isAdding && keyword && debouncedQuery ? search.data : undefined) ?? [];
+  // 디바운스 대기 중에도 로딩으로 표시해 기존 UX(타이핑 즉시 "찾고 있습니다") 유지.
+  const searchLoading = isAdding && !!keyword && (keyword !== debouncedQuery || search.isFetching);
+  const searchError = search.isError;
+
+  // 선택 상권들이 공통으로 가진 분기 목록.
+  const quartersQuery = useQuery({
+    queryKey: queryKeys.compareQuarters(selectedIds),
+    enabled: selectedIds.length > 0,
+    queryFn: async () => {
+      const responses = await Promise.all(
+        selectedIds.map((id) => commercialApi.timeSeries(id, { metrics: "survival_rate" })),
+      );
+      const commonQuarters = responses
+        .map((response) => new Set(response.data.data.map((item) => item.year_quarter)))
+        .reduce<Set<string>>((common, quarters, index) => {
+          if (index === 0) return new Set(quarters);
+          return new Set([...common].filter((quarter) => quarters.has(quarter)));
+        }, new Set<string>());
+      return [...commonQuarters].sort((a, b) => b.localeCompare(a));
+    },
+    // 상권 변경으로 재조회하는 동안 이전 목록을 유지해 선택 분기가 리셋되지 않게 한다.
+    placeholderData: keepPreviousData,
+  });
+  const availableQuarters = selectedIds.length > 0 ? (quartersQuery.data ?? []) : [];
+
+  // 분기 목록 갱신 시 현재 선택이 유효하지 않으면 최신 분기로 보정.
+  useEffect(() => {
+    if (selectedIds.length === 0) {
+      setSelectedQuarter("");
       return;
     }
+    const quarters = quartersQuery.data;
+    if (!quarters) return;
+    setSelectedQuarter((current) =>
+      current && quarters.includes(current) ? current : (quarters[0] ?? ""),
+    );
+  }, [quartersQuery.data, selectedIds.length]);
 
-    let alive = true;
-    setSearchLoading(true);
-    setSearchError(false);
-
-    const timer = window.setTimeout(() => {
-      commercialApi
-        .searchDistricts(keyword)
-        .then((response) => {
-          if (alive) setSearchResults(response.data);
-        })
-        .catch(() => {
-          if (alive) {
-            setSearchResults([]);
-            setSearchError(true);
-          }
-        })
-        .finally(() => {
-          if (alive) setSearchLoading(false);
-        });
-    }, 250);
-
-    return () => {
-      alive = false;
-      window.clearTimeout(timer);
-    };
-  }, [isAdding, searchQuery]);
-
-  useEffect(() => {
-    let alive = true;
-
-    Promise.all(
-      selectedIds.map((id) => commercialApi.timeSeries(id, { metrics: "survival_rate" })),
-    )
-      .then((responses) => {
-        if (!alive) return;
-
-        const commonQuarters = responses
-          .map((response) => new Set(response.data.data.map((item) => item.year_quarter)))
-          .reduce<Set<string>>((common, quarters, index) => {
-            if (index === 0) return new Set(quarters);
-            return new Set([...common].filter((quarter) => quarters.has(quarter)));
-          }, new Set<string>());
-        const quarters = [...commonQuarters].sort((a, b) => b.localeCompare(a));
-
-        setAvailableQuarters(quarters);
-        setSelectedQuarter((current) =>
-          current && quarters.includes(current) ? current : (quarters[0] ?? ""),
-        );
-      })
-      .catch(() => {
-        if (alive) setAvailableQuarters([]);
-      });
-
-    return () => {
-      alive = false;
-    };
-  }, [selectedIds]);
-
-  useEffect(() => {
-    let alive = true;
-
-    Promise.all(
-      selectedIds.map((id) =>
-        commercialApi.categoryStats(id, {
-          year_quarter: selectedQuarter || undefined,
-        }),
-      ),
-    )
-      .then((responses) => {
-        if (!alive) return;
-
-        const categories = Array.from(
-          new Set(
-            responses.flatMap((response) =>
-              response.data.categories.map((category) => category.category_name),
-            ),
-          ),
-        ).sort((a, b) => a.localeCompare(b, "ko"));
-
-        setAvailableCategories(categories);
-        setSelectedCategory((current) =>
-          current && !categories.includes(current) ? "" : current,
-        );
-      })
-      .catch(() => {
-        if (alive) setAvailableCategories([]);
-      });
-
-    return () => {
-      alive = false;
-    };
-  }, [selectedIds, selectedQuarter]);
-
-  useEffect(() => {
-    let alive = true;
-    setLoading(true);
-    setError(false);
-
-    const comparisonParams = {
-      year_quarter: selectedQuarter || undefined,
-      category_name: selectedCategory || undefined,
-    };
-    const timeSeriesParams = {
-      to_quarter: selectedQuarter || undefined,
-      category_name: selectedCategory || undefined,
-    };
-
-    Promise.all([
-      commercialApi.compare(selectedIds, comparisonParams),
-      Promise.all(selectedIds.map((id) => commercialApi.radar(id, comparisonParams))),
-      Promise.all(selectedIds.map((id) => commercialApi.timeSeries(id, timeSeriesParams))),
-      selectedIds.length > 0
-        ? commercialApi.categoryRanking(selectedIds[0], {
+  // 선택 상권들의 업종 목록(분기 기준).
+  const categoriesQuery = useQuery({
+    queryKey: queryKeys.compareCategories(selectedIds, selectedQuarter),
+    enabled: selectedIds.length > 0,
+    queryFn: async () => {
+      const responses = await Promise.all(
+        selectedIds.map((id) =>
+          commercialApi.categoryStats(id, {
             year_quarter: selectedQuarter || undefined,
-          })
-        : Promise.resolve(null),
-    ])
-      .then(([compareRes, radarRes, tsRes, rankingRes]) => {
-        if (!alive) return;
-        setData({
-          compare: compareRes.data,
-          radars: radarRes.map((r) => r.data),
-          timeSeries: tsRes.map((r) => r.data),
-          ranking: rankingRes ? rankingRes.data : null,
-        });
-      })
-      .catch(() => {
-        if (alive) setError(true);
-      })
-      .finally(() => {
-        if (alive) setLoading(false);
+          }),
+        ),
+      );
+      return Array.from(
+        new Set(
+          responses.flatMap((response) =>
+            response.data.categories.map((category) => category.category_name),
+          ),
+        ),
+      ).sort((a, b) => a.localeCompare(b, "ko"));
+    },
+    placeholderData: keepPreviousData,
+  });
+  const availableCategories = selectedIds.length > 0 ? (categoriesQuery.data ?? []) : [];
+
+  // 업종 목록 갱신 시 사라진 업종이 선택돼 있으면 "전체 업종"으로 보정.
+  useEffect(() => {
+    if (selectedIds.length === 0) {
+      setSelectedCategory("");
+      return;
+    }
+    const categories = categoriesQuery.data;
+    if (!categories) return;
+    setSelectedCategory((current) => (current && !categories.includes(current) ? "" : current));
+  }, [categoriesQuery.data, selectedIds.length]);
+
+  const canCompare = selectedIds.length >= MIN_DISTRICTS;
+
+  // 본문 데이터: 비교표 + 레이더 + 생존율 추이 + 업종 순위.
+  const compareQuery = useQuery({
+    queryKey: queryKeys.comparePage(selectedIds, selectedQuarter, selectedCategory),
+    enabled: canCompare,
+    queryFn: async (): Promise<CompareData> => {
+      const comparisonParams = {
+        year_quarter: selectedQuarter || undefined,
+        category_name: selectedCategory || undefined,
+      };
+      const timeSeriesParams = {
+        to_quarter: selectedQuarter || undefined,
+        category_name: selectedCategory || undefined,
+      };
+
+      const [compareRes, radarRes, tsRes, rankingRes] = await Promise.all([
+        commercialApi.compare(selectedIds, comparisonParams),
+        Promise.all(selectedIds.map((id) => commercialApi.radar(id, comparisonParams))),
+        Promise.all(selectedIds.map((id) => commercialApi.timeSeries(id, timeSeriesParams))),
+        selectedIds.length > 0
+          ? commercialApi.categoryRanking(selectedIds[0], {
+              year_quarter: selectedQuarter || undefined,
+            })
+          : Promise.resolve(null),
+      ]);
+
+      return {
+        compare: compareRes.data,
+        radars: radarRes.map((r) => r.data),
+        timeSeries: tsRes.map((r) => r.data),
+        ranking: rankingRes ? rankingRes.data : null,
+      };
+    },
+  });
+  const data = canCompare ? (compareQuery.data ?? null) : null;
+  const loading = canCompare && compareQuery.isPending;
+  const error = canCompare && compareQuery.isError;
+
+  const districts = useMemo(() => data?.compare.districts ?? [], [data]);
+  useEffect(() => {
+    if (districts.length === 0) return;
+    setSelectedDistrictNames((current) => {
+      const next = { ...current };
+      districts.forEach((district) => {
+        next[district.id] = district.district_name;
       });
+      return next;
+    });
+  }, [districts]);
 
-    return () => {
-      alive = false;
-    };
-  }, [selectedIds, selectedQuarter, selectedCategory]);
+  useEffect(() => {
+    if (selectedIds.length < MIN_DISTRICTS) setModal(null);
+    if (selectedIds.length === 0) setIsAdding(false);
+  }, [selectedIds.length]);
 
-  const districts = data?.compare.districts ?? [];
+  const chipDistricts = selectedIds.map((id) => ({
+    id,
+    district_name: selectedDistrictNames[id] ?? `상권 ${id}`,
+  }));
   const names = districts.map((d) => d.district_name);
 
   // 레이더: 모든 상권의 축 라벨은 동일하다고 가정, 첫 상권 축을 기준으로 사용.
@@ -231,15 +295,14 @@ export default function ComparePage() {
   }, [data, names, trendLabels]);
 
   const removeDistrict = (id: number) => {
-    if (selectedIds.length <= MIN_DISTRICTS) return;
     setSelectedIds((current) => current.filter((selectedId) => selectedId !== id));
   };
 
   const addDistrict = (district: CommercialDistrictSearchResult) => {
     if (selectedIds.includes(district.id) || selectedIds.length >= MAX_DISTRICTS) return;
+    setSelectedDistrictNames((current) => ({ ...current, [district.id]: district.district_name }));
     setSelectedIds((current) => [...current, district.id]);
     setSearchQuery("");
-    setSearchResults([]);
     setIsAdding(false);
   };
 
@@ -247,34 +310,10 @@ export default function ComparePage() {
     if (selectedIds.length >= MAX_DISTRICTS) return;
     setIsAdding((current) => !current);
     setSearchQuery("");
-    setSearchResults([]);
-    setSearchError(false);
   };
 
   const activeQuarter = selectedQuarter || data?.compare.year_quarter || "";
   const filterSummary = `${formatQuarter(activeQuarter)} · ${selectedCategory || "전체 업종"}`;
-
-  if (loading) {
-    return (
-      <div className={styles.page}>
-        <Header />
-        <div className={styles.skeletonWrap}>
-          <div className={styles.skeleton} />
-          <div className={styles.skeleton} />
-          <div className={styles.skeleton} />
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <div className={styles.page}>
-        <Header />
-        <div className={styles.empty}>비교 데이터를 받아오지 못했습니다. 페이지를 새로고침해보세요.</div>
-      </div>
-    );
-  }
 
   return (
     <div className={styles.page}>
@@ -283,7 +322,7 @@ export default function ComparePage() {
       {/* 컨트롤 바 */}
       <div className={styles.controlBar}>
         <div className={styles.chips}>
-          {districts.map((d, i) => (
+          {chipDistricts.map((d, i) => (
             <span key={d.id} className={styles.chip}>
               <span className={styles.chipDot} style={{ background: seriesColor(i) }} />
               {d.district_name}
@@ -292,8 +331,7 @@ export default function ComparePage() {
                 className={styles.chipClose}
                 aria-label={`${d.district_name} 제거`}
                 onClick={() => removeDistrict(d.id)}
-                disabled={selectedIds.length <= MIN_DISTRICTS}
-                title={selectedIds.length <= MIN_DISTRICTS ? "비교하려면 상권이 2개 이상 필요합니다" : "상권 제거"}
+                title="상권 제거"
               >
                 ×
               </button>
@@ -409,7 +447,35 @@ export default function ComparePage() {
         )}
       </div>
 
+      {selectedIds.length === 0 && (
+        <div className={styles.emptyState}>
+          <h2>비교할 상권을 추가하세요</h2>
+          <p>상권을 선택하면 아래에 지표표, 레이더, 업종 순위, 생존율 추이가 표시됩니다.</p>
+        </div>
+      )}
+
+      {selectedIds.length === 1 && (
+        <div className={styles.emptyState}>
+          <h2>상권을 1개 더 추가하세요</h2>
+          <p>상권 비교 데이터는 2개 이상 선택했을 때 표시됩니다.</p>
+        </div>
+      )}
+
+      {loading && (
+        <div className={styles.skeletonWrap}>
+          <div className={styles.skeleton} />
+          <div className={styles.skeleton} />
+          <div className={styles.skeleton} />
+        </div>
+      )}
+
+      {canCompare && !loading && (error || !data) && (
+        <div className={styles.empty}>비교 데이터를 받아오지 못했습니다. 페이지를 새로고침해보세요.</div>
+      )}
+
       {/* 핵심 지표 비교표 */}
+      {canCompare && !loading && !error && data && (
+        <>
       <section className={styles.section}>
         <SectionTitle title="핵심 지표 비교" subtitle={`${filterSummary} 기준 상권별 대표 지표`} />
         <div className={styles.card}>
@@ -494,6 +560,8 @@ export default function ComparePage() {
             <LineChartSvg labels={trendLabels} series={trendSeries} width={760} height={360} />
           </div>
         </ExpandModal>
+      )}
+        </>
       )}
     </div>
   );
