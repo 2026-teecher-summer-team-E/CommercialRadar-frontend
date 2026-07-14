@@ -1,0 +1,218 @@
+.wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+  width: 100%;
+}
+
+/* 떠다니는 키워드 영역 */
+.cloud {
+  position: relative;
+  flex: 1 1 55%;
+  min-width: 0;
+  height: 420px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--color-chip), var(--color-surface));
+  overflow: hidden;
+}
+
+.keyword {
+  position: absolute;
+  transform: translate(-50%, -50%) scale(var(--kw-scale, 1));
+  padding: 9px 18px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  animation-name: kw-float;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.keyword:hover {
+  box-shadow: var(--shadow-pop);
+}
+.keyword.selected {
+  border-color: currentColor;
+  box-shadow: var(--shadow-pop);
+}
+
+@keyframes kw-float {
+  0% {
+    transform: translate(-50%, -50%) scale(var(--kw-scale, 1)) translateY(0);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(var(--kw-scale, 1)) translateY(-10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .keyword {
+    animation: none;
+  }
+}
+
+/* 오른쪽 설명 패널 */
+.panel {
+  flex: 1 1 45%;
+  min-width: 220px;
+  max-width: 560px;
+  height: 420px;
+  overflow-y: auto;
+}
+
+/* 상세 정보 카드 */
+.detailCard {
+  background: var(--color-chip);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.detailHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rankBadge {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-num);
+}
+.detailName {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.detailMetrics {
+  display: flex;
+  gap: 18px;
+}
+.relatedIntro {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.relatedList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.relatedRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+}
+.relatedRowTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.relatedRowBottom {
+  display: flex;
+  gap: 16px;
+}
+.relatedName {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.relatedCorrBadge {
+  flex: none;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-primary);
+  font-family: var(--font-num);
+}
+.relatedMetric {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 56px;
+}
+.relatedMetricLabel {
+  font-size: 10px;
+  color: var(--color-muted);
+}
+.relatedMetricValue {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+  font-family: var(--font-num);
+}
+.relatedSkeleton {
+  height: 96px;
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, var(--color-line) 25%, var(--color-chip) 50%, var(--color-line) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.detailPlaceholder {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  background: var(--color-chip);
+  text-align: center;
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+@media (max-width: 720px) {
+  .wrap {
+    flex-direction: column;
+  }
+  .cloud {
+    flex: none;
+  }
+  .panel {
+    max-width: none;
+    height: auto;
+    max-height: 420px;
+  }
+}

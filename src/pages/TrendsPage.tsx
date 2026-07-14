@@ -1,67 +1,35 @@
 import { useEffect, useMemo, useState } from "react";
 import { commercialApi } from "../services/commercialApi";
-import type {
-  DistrictTimeSeriesResponse,
-  CategoryRankingResponse,
-  DistrictQuarterMetrics,
-} from "../types";
-import TrendLineChart from "../components/trends/TrendLineChart";
-import {
-  METRICS,
-  METRIC_ORDER,
-  fmtPct,
-  fmtCount,
-  type MetricKey,
-} from "../components/trends/trendsFormat";
+import type { CategorySearchTrendRankingResponse, PopularCategoriesResponse } from "../types";
+import KeywordCloud from "../components/trends/KeywordCloud";
+import TrendValue from "../components/trends/TrendValue";
+import { fmtCountMagnitude, fmtIndex, fmtPctMagnitude } from "../components/trends/trendsFormat";
 import styles from "./TrendsPage.module.css";
 
-/** 상권 선택 드롭다운용 정적 목록. 검색 API가 없으므로 대표 상권 몇 개를 고정 제공한다. */
-const DISTRICT_OPTIONS: { id: number; name: string }[] = [
-  { id: 1, name: "역삼역" },
-  { id: 2, name: "강남역" },
-  { id: 3, name: "홍대입구역" },
-  { id: 4, name: "성수역" },
-  { id: 5, name: "여의도역" },
-];
-
-interface TrendData {
-  timeSeries: DistrictTimeSeriesResponse;
-  ranking: CategoryRankingResponse | null;
-}
-
-/** 분기 지표에서 선택 지표의 값을 뽑는다. population 은 total, 나머지는 동명 필드. */
-function metricValue(q: DistrictQuarterMetrics, key: MetricKey): number | null {
-  switch (key) {
-    case "survival":
-      return q.survival_rate;
-    case "population":
-      return q.population?.total ?? null;
-    case "sales":
-      return q.sales;
-    default:
-      return null;
-  }
-}
+const KEYWORD_LIMIT = 6;
+/** 백엔드가 반환 가능한 업종 전체 수만큼 요청해 rising/sinking을 클라이언트에서 양끝으로 슬라이스한다. */
+const RANKING_FETCH_LIMIT = 100;
+const POPULAR_LIMIT = 9;
 
 export default function TrendsPage() {
-  const [districtId, setDistrictId] = useState<number>(1);
-  const [metric, setMetric] = useState<MetricKey>("survival");
-  const [data, setData] = useState<TrendData | null>(null);
+  const [ranking, setRanking] = useState<CategorySearchTrendRankingResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  const [popular, setPopular] = useState<PopularCategoriesResponse | null>(null);
+  const [popularLoading, setPopularLoading] = useState(true);
+  const [popularError, setPopularError] = useState(false);
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
     setError(false);
 
-    Promise.all([
-      commercialApi.timeSeries(districtId),
-      commercialApi.categoryRanking(districtId),
-    ])
-      .then(([tsRes, rankingRes]) => {
+    commercialApi
+      .searchTrendRanking({ limit: RANKING_FETCH_LIMIT })
+      .then((res) => {
         if (!alive) return;
-        setData({ timeSeries: tsRes.data, ranking: rankingRes.data });
+        setRanking(res.data);
       })
       .catch(() => {
         if (alive) setError(true);
@@ -73,159 +41,159 @@ export default function TrendsPage() {
     return () => {
       alive = false;
     };
-  }, [districtId]);
+  }, []);
 
-  const quarters = useMemo(() => data?.timeSeries.data ?? [], [data]);
-  const meta = METRICS[metric];
+  useEffect(() => {
+    let alive = true;
+    setPopularLoading(true);
+    setPopularError(false);
 
-  const labels = useMemo(() => quarters.map((q) => q.year_quarter), [quarters]);
-  const points = useMemo(
-    () => quarters.map((q) => metricValue(q, metric)),
-    [quarters, metric],
-  );
+    commercialApi
+      .popularCategories({ limit: POPULAR_LIMIT })
+      .then((res) => {
+        if (!alive) return;
+        setPopular(res.data);
+      })
+      .catch(() => {
+        if (alive) setPopularError(true);
+      })
+      .finally(() => {
+        if (alive) setPopularLoading(false);
+      });
 
-  // 최근 분기 대비 증감(Δ): 값이 있는 마지막 두 지점 비교.
-  const delta = useMemo(() => {
-    const present = points
-      .map((v, i) => ({ v, i }))
-      .filter((p): p is { v: number; i: number } => p.v != null && !Number.isNaN(p.v));
-    if (present.length < 2) return null;
-    const last = present[present.length - 1];
-    const prev = present[present.length - 2];
-    return { current: last.v, diff: last.v - prev.v };
-  }, [points]);
+    return () => {
+      alive = false;
+    };
+  }, []);
 
-  const districtName =
-    DISTRICT_OPTIONS.find((d) => d.id === districtId)?.name ?? `상권 ${districtId}`;
+  // 백엔드가 이미 검색 관심도 변화율(trend_pct) 내림차순으로 정렬해 주므로,
+  // 앞쪽은 뜨는 업종, 뒤쪽은 지는 업종이다.
+  const allItems = ranking?.ranking ?? [];
+  const rising = useMemo(() => allItems.slice(0, KEYWORD_LIMIT), [allItems]);
+  const sinking = useMemo(() => [...allItems].slice(-KEYWORD_LIMIT).reverse(), [allItems]);
 
-  const rising = data?.ranking?.ranking ?? [];
+  const popularItems = popular?.items ?? [];
 
   return (
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>트렌드</h1>
-          <p className={styles.subtitle}>
-            숫자로 읽는 상권의 오늘과 내일
-          </p>
+          <p className={styles.subtitle}>네이버 검색 관심도로 읽는 서울 전체 상권의 오늘과 내일</p>
         </div>
-        <label className={styles.districtSelect}>
-          <span className={styles.districtLabel}>상권</span>
-          <select
-            className={styles.select}
-            value={districtId}
-            onChange={(e) => setDistrictId(Number(e.target.value))}
-          >
-            {DISTRICT_OPTIONS.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
 
-      {/* 지표 추이 카드 */}
+      {/* 키워드 */}
       <section className={styles.section}>
         <div className={styles.sectionTitle}>
           <span className={styles.accentBar} />
           <div>
-            <h2 className={styles.sectionHeading}>지표 추이</h2>
-            <p className={styles.sectionSub}>{districtName}의 분기별 변화</p>
+            <h2 className={styles.sectionHeading}>업종 키워드</h2>
+            <p className={styles.sectionSub}>
+              많이 검색된 업종을 키워드로 살펴보고, 클릭하면 함께 움직이는 관련 업종을 확인해보세요
+            </p>
           </div>
         </div>
 
         <div className={styles.card}>
-          <div className={styles.cardHead}>
-            <div className={styles.toggle} role="tablist" aria-label="지표 선택">
-              {METRIC_ORDER.map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  role="tab"
-                  aria-selected={metric === key}
-                  className={`${styles.toggleBtn} ${metric === key ? styles.toggleActive : ""}`}
-                  onClick={() => setMetric(key)}
-                >
-                  {METRICS[key].label}
-                </button>
-              ))}
-            </div>
+          {popularLoading ? (
+            <div className={styles.skeleton} />
+          ) : popularError ? (
+            <div className={styles.empty}>키워드 데이터를 불러오지 못했어요.</div>
+          ) : (
+            <KeywordCloud items={popularItems} />
+          )}
+        </div>
+      </section>
 
-            {delta && (
-              <div className={styles.deltaBox}>
-                <span className={styles.deltaCurrent}>{meta.format(delta.current)}</span>
-                <span
-                  className={`${styles.deltaTag} ${
-                    delta.diff > 0
-                      ? styles.deltaUp
-                      : delta.diff < 0
-                        ? styles.deltaDown
-                        : styles.deltaFlat
-                  }`}
-                >
-                  {delta.diff > 0 ? "▲" : delta.diff < 0 ? "▼" : "─"}{" "}
-                  {meta.format(Math.abs(delta.diff))}
-                </span>
-                <span className={styles.deltaSub}>최근 분기 대비</span>
-              </div>
+      {/* 떠오르는 업종 / 침몰하는 업종 */}
+      <div className={styles.rankingGrid}>
+        <section className={styles.section}>
+          <div className={styles.sectionTitle}>
+            <span className={styles.accentBar} />
+            <div>
+              <h2 className={styles.sectionHeading}>떠오르는 업종</h2>
+            </div>
+          </div>
+
+          <div className={styles.card}>
+            {loading ? (
+              <div className={styles.skeleton} />
+            ) : error ? (
+              <div className={styles.empty}>업종 데이터를 불러오지 못했어요.</div>
+            ) : rising.length === 0 ? (
+              <div className={styles.empty}>업종 순위 데이터가 아직 집계되지 않았습니다.</div>
+            ) : (
+              <ul className={styles.risingList}>
+                {rising.map((item) => (
+                  <li key={`rising-${item.rank}-${item.category_name}`} className={styles.risingRow}>
+                    <span className={styles.risingName}>{item.category_name}</span>
+                    <span className={styles.risingMetric}>
+                      <span className={styles.risingMetricLabel}>변화율</span>
+                      <span className={styles.risingMetricValue}>
+                        <TrendValue value={item.trend_pct} format={fmtPctMagnitude} />
+                      </span>
+                    </span>
+                    <span className={styles.risingMetric}>
+                      <span className={styles.risingMetricLabel}>검색지수</span>
+                      <span className={styles.risingMetricValue}>{fmtIndex(item.latest_ratio)}</span>
+                    </span>
+                    <span className={styles.risingMetric}>
+                      <span className={styles.risingMetricLabel}>전분기 대비</span>
+                      <span className={styles.risingMetricValue}>
+                        <TrendValue value={item.qoq_business_change} format={fmtCountMagnitude} />
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
+        </section>
 
-          {loading ? (
-            <div className={styles.skeleton} />
-          ) : error ? (
-            <div className={styles.empty}>지표 데이터를 받아오지 못했어요. 잠시 후 다시 확인해주세요.</div>
-          ) : labels.length === 0 ? (
-            <div className={styles.empty}>이 상권의 분기 기록이 아직 없습니다.</div>
-          ) : (
-            <div className={styles.chartBody}>
-              <TrendLineChart labels={labels} points={points} meta={meta} />
+        <section className={styles.section}>
+          <div className={styles.sectionTitle}>
+            <span className={styles.accentBar} />
+            <div>
+              <h2 className={styles.sectionHeading}>침몰중인 업종</h2>
             </div>
-          )}
-        </div>
-      </section>
-
-      {/* 떠오르는 업종 */}
-      <section className={styles.section}>
-        <div className={styles.sectionTitle}>
-          <span className={styles.accentBar} />
-          <div>
-            <h2 className={styles.sectionHeading}>떠오르는 업종</h2>
-            <p className={styles.sectionSub}>{districtName}에서 생존율이 높은 상위 업종</p>
           </div>
-        </div>
 
-        <div className={styles.card}>
-          {loading ? (
-            <div className={styles.skeleton} />
-          ) : error ? (
-            <div className={styles.empty}>업종 데이터를 불러오지 못했어요.</div>
-          ) : rising.length === 0 ? (
-            <div className={styles.empty}>이 상권의 업종 순위 데이터가 아직 집계되지 않았습니다.</div>
-          ) : (
-            <ul className={styles.risingList}>
-              {rising.slice(0, 6).map((item) => (
-                <li
-                  key={`${item.rank}-${item.category_name ?? ""}`}
-                  className={styles.risingRow}
-                >
-                  <span className={styles.rankBadge}>{item.rank}</span>
-                  <span className={styles.risingName}>{item.category_name ?? "-"}</span>
-                  <span className={styles.risingMetric}>
-                    <span className={styles.risingMetricLabel}>생존율</span>
-                    <span className={styles.risingMetricValue}>{fmtPct(item.survival_rate)}</span>
-                  </span>
-                  <span className={styles.risingMetric}>
-                    <span className={styles.risingMetricLabel}>점포수</span>
-                    <span className={styles.risingMetricValue}>{fmtCount(item.total_business)}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </section>
+          <div className={styles.card}>
+            {loading ? (
+              <div className={styles.skeleton} />
+            ) : error ? (
+              <div className={styles.empty}>업종 데이터를 불러오지 못했어요.</div>
+            ) : sinking.length === 0 ? (
+              <div className={styles.empty}>업종 순위 데이터가 아직 집계되지 않았습니다.</div>
+            ) : (
+              <ul className={styles.risingList}>
+                {sinking.map((item) => (
+                  <li key={`sinking-${item.rank}-${item.category_name}`} className={styles.risingRow}>
+                    <span className={styles.risingName}>{item.category_name}</span>
+                    <span className={styles.risingMetric}>
+                      <span className={styles.risingMetricLabel}>변화율</span>
+                      <span className={styles.risingMetricValue}>
+                        <TrendValue value={item.trend_pct} format={fmtPctMagnitude} />
+                      </span>
+                    </span>
+                    <span className={styles.risingMetric}>
+                      <span className={styles.risingMetricLabel}>검색지수</span>
+                      <span className={styles.risingMetricValue}>{fmtIndex(item.latest_ratio)}</span>
+                    </span>
+                    <span className={styles.risingMetric}>
+                      <span className={styles.risingMetricLabel}>전분기 대비</span>
+                      <span className={styles.risingMetricValue}>
+                        <TrendValue value={item.qoq_business_change} format={fmtCountMagnitude} />
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,15 @@
+.up {
+  color: var(--color-green);
+  font-weight: 700;
+}
+.down {
+  color: var(--color-red);
+  font-weight: 700;
+}
+.flat {
+  color: var(--color-muted);
+  font-weight: 700;
+}
+.arrow {
+  font-size: 0.75em;
+}

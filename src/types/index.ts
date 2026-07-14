@@ -78,6 +78,54 @@ export interface CategoryRankingResponse {
   ranking: CategoryRankingItem[];
 }
 
+// ── 전체 상권 집계 업종 랭킹 (GET /api/categories/ranking) ──
+export interface CityCategoryRankingResponse {
+  year_quarter: string | null;
+  ranking: CategoryRankingItem[];
+}
+
+// ── 업종 네이버 검색어 트렌드 랭킹 (GET /api/categories/search-trend-ranking) ──
+export interface CategorySearchTrendItem {
+  rank: number;
+  category_name: string;
+  trend_pct: number;
+  latest_ratio: number;
+  periods: number;
+  business_trend_pct: number;
+  qoq_business_change: number;
+}
+export interface CategorySearchTrendRankingResponse {
+  period_from: string | null;
+  period_to: string | null;
+  ranking: CategorySearchTrendItem[];
+}
+
+// ── 많이 검색된 업종 (GET /api/categories/popular) ──
+export interface PopularCategoryItem {
+  rank: number;
+  category_name: string;
+  popularity_index: number;
+  trend_pct: number | null;
+  qoq_business_change: number | null;
+}
+export interface PopularCategoriesResponse {
+  period: string | null;
+  anchor: string;
+  items: PopularCategoryItem[];
+}
+
+// ── 검색 추이가 비슷한 업종 (GET /api/categories/{category_name}/related) ──
+export interface RelatedCategoryItem {
+  category_name: string;
+  correlation: number;
+  trend_pct: number | null;
+  qoq_business_change: number | null;
+}
+export interface RelatedCategoriesResponse {
+  category_name: string;
+  related: RelatedCategoryItem[];
+}
+
 // ── 생존율 예측 (GET /api/commercial-districts/{id}/survival-forecast) ──
 export interface SurvivalForecastPoint {
   year_quarter: string;

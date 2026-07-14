@@ -3,6 +3,10 @@ import type {
   DistrictCompareResponse,
   DistrictTimeSeriesResponse,
   CategoryRankingResponse,
+  CityCategoryRankingResponse,
+  CategorySearchTrendRankingResponse,
+  PopularCategoriesResponse,
+  RelatedCategoriesResponse,
   DistrictCategoryStatsResponse,
   RadarResponse,
   PopulationHeatmapResponse,
@@ -31,6 +35,25 @@ export const commercialApi = {
 
   categoryRanking: (id: number | string, params?: QP) =>
     apiClient.get<CategoryRankingResponse>(`/api/commercial-districts/${id}/category-ranking`, { params }),
+
+  /** 특정 상권에 국한하지 않는 전체 상권 집계 업종 랭킹. */
+  cityCategoryRanking: (params?: QP) =>
+    apiClient.get<CityCategoryRankingResponse>("/api/categories/ranking", { params }),
+
+  /** 업종명을 네이버 데이터랩 검색어로 조회한 검색 관심도 변화율 랭킹. */
+  searchTrendRanking: (params?: QP) =>
+    apiClient.get<CategorySearchTrendRankingResponse>("/api/categories/search-trend-ranking", { params }),
+
+  /** 앵커 업종 대비 재정규화된 검색 상대지수 기준, 가장 많이 검색된 업종. */
+  popularCategories: (params?: QP) =>
+    apiClient.get<PopularCategoriesResponse>("/api/categories/popular", { params }),
+
+  /** 기준 업종과 검색 추이(피어슨 상관계수)가 비슷한 업종. */
+  relatedCategories: (categoryName: string, params?: QP) =>
+    apiClient.get<RelatedCategoriesResponse>(
+      `/api/categories/${encodeURIComponent(categoryName)}/related`,
+      { params },
+    ),
 
   /** 상권 1개 + 특정 업종 하나의 생존율/폐업률/매출/점수. 업종 필터 선택 시 좌측 패널 갱신용. */
   categoryStats: (id: number | string, params?: { year_quarter?: string; category_name?: string }) =>
