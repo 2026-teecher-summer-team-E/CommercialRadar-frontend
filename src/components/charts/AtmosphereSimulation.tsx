@@ -54,15 +54,23 @@ const AGE_FALLBACK: AgeSlice[] = [
 
 // 연령 라벨 → 색. 백엔드 원본 라벨("60대이상")과 표기 변형("60대+") 모두 커버.
 const AGE_COLORS: Record<string, string> = {
-  "10대": "#a78bfa",
-  "20대": "#7c6ef0",
-  "30대": "#2fbf87",
-  "40대": "#5b9bf0",
-  "50대": "#f0a020",
-  "60대+": "#f0685f",
-  "60대이상": "#f0685f",
+  "10대": "var(--series-4)",
+  "20대": "var(--series-1)",
+  "30대": "var(--series-5)",
+  "40대": "var(--series-3)",
+  "50대": "var(--series-6)",
+  "60대+": "var(--series-7)",
+  "60대이상": "var(--series-7)",
 };
-const PALETTE = ["#7c6ef0", "#2fbf87", "#5b9bf0", "#f0a020", "#f0685f", "#a78bfa", "#22d3ee"];
+const PALETTE = [
+  "var(--series-1)",
+  "var(--series-5)",
+  "var(--series-3)",
+  "var(--series-6)",
+  "var(--series-7)",
+  "var(--series-4)",
+  "var(--color-accent)",
+];
 
 /**
  * 연령 버킷별 시각/속도 특성.
@@ -113,13 +121,50 @@ const FILE_FOOT_PAD: Record<string, number> = {
 const FOOT_BASE_PAD = 0.108; // 기준(기본 남성). 이 값 대비 초과 여백만큼 캐릭터를 내려 정렬.
 const FOOT_BOX_H = 112; // DotLottie 박스 높이(px, scale 전)
 
+/**
+ * footTraffic(유동인구)은 API의 분기 총합(avg_population)이라 그대로 표기하면
+ * "하루 145만 명"처럼 비현실적으로 보인다. HUD 표시용으로만 월 평균(÷3)으로 환산한다.
+ * (군중 수 계산 trafficBase는 원값을 그대로 사용 — 스케일 튜닝 유지)
+ */
+const MONTHS_PER_QUARTER = 3;
+
 /** 타임랩스 종료 시점 보장 최소 폐업 점포 수. */
 const SCENARIO_MIN_CLOSED: Record<AtmoScenario, number> = { high: 1, mid: 2, low: 3 };
 
 const SCENARIO = {
-  high: { title: "잘풀린 미래", mood: "활기찬 상권", count: 16, lit: 0.65, street: "#c8d0dc", accent: "#16a34a", desc: "사람이 북적이는 미래 — 유동인구가 몰립니다." },
-  mid:  { title: "보통 미래",   mood: "무난한 상권", count: 9,  lit: 0.4,  street: "#c2c8d4", accent: "#1876f2", desc: "평소 수준의 미래 — 꾸준한 발걸음." },
-  low:  { title: "안풀린 미래", mood: "한산한 상권", count: 4,  lit: 0.15, street: "#b7bcc7", accent: "#dc2626", desc: "발길이 뜸한 미래 — 거리가 비어갑니다." },
+  high: { title: "잘풀린 미래", mood: "활기찬 상권", count: 16, lit: 0.65, street: "var(--color-border-strong)", accent: "var(--color-green)", desc: "사람이 북적이는 미래 — 유동인구가 몰립니다." },
+  mid:  { title: "보통 미래",   mood: "무난한 상권", count: 9,  lit: 0.4,  street: "var(--color-border)", accent: "var(--series-1)", desc: "평소 수준의 미래 — 꾸준한 발걸음." },
+  low:  { title: "안풀린 미래", mood: "한산한 상권", count: 4,  lit: 0.15, street: "var(--color-faint)", accent: "var(--color-red)", desc: "발길이 뜸한 미래 — 거리가 비어갑니다." },
+} as const;
+
+const SCENE_COLORS = {
+  overlay: "color-mix(in srgb, var(--series-2) 72%, transparent)",
+  modalShadow: "0 20px 60px color-mix(in srgb, var(--series-2) 30%, transparent)",
+  skyDay: "linear-gradient(var(--series-4-bg), var(--color-surface))",
+  skyNight: "var(--series-2)",
+  skylineDay: "linear-gradient(var(--series-4), var(--series-1-bg))",
+  skylineNight: "linear-gradient(var(--series-2), var(--color-primary-dark))",
+  cloudStrong: "color-mix(in srgb, var(--color-surface) 90%, transparent)",
+  cloudSoft: "color-mix(in srgb, var(--color-surface) 72%, transparent)",
+  sun: "var(--color-amber)",
+  sunGlow: "0 0 18px color-mix(in srgb, var(--color-amber) 55%, transparent)",
+  moon: "var(--color-primary-light)",
+  moonGlow: "0 0 12px color-mix(in srgb, var(--color-primary-light) 55%, transparent)",
+  streetEnd: "var(--color-bg)",
+  glassOnDay: "var(--color-gold-bg)",
+  glassOnNight: "var(--color-amber)",
+  glassOffDay: "var(--color-primary-soft)",
+  glassOffNight: "var(--color-primary-dark)",
+  doorDay: "var(--color-muted)",
+  doorNight: "var(--series-2)",
+  stampBg: "var(--color-surface)",
+  hudBg: "color-mix(in srgb, var(--series-2) 72%, transparent)",
+  hudText: "var(--color-faint)",
+  hudStrong: "var(--color-primary-light)",
+  hudBase: "var(--color-muted)",
+  traffic: "var(--color-accent)",
+  nightChipBg: "color-mix(in srgb, var(--series-1) 18%, transparent)",
+  dayChipBg: "color-mix(in srgb, var(--color-amber) 18%, transparent)",
 } as const;
 
 interface Person {
@@ -298,7 +343,7 @@ export default function AtmosphereSimulation({
     return (rnd: number): string => {
       let acc = 0;
       for (const a of ages) { acc += a.pct / total; if (rnd <= acc) return a.color; }
-      return ages[ages.length - 1]?.color ?? "#7c6ef0";
+      return ages[ages.length - 1]?.color ?? "var(--series-1)";
     };
   }, [ages]);
 
@@ -370,19 +415,27 @@ export default function AtmosphereSimulation({
   SHOP_ORDER.slice(0, litCount).forEach((idx) => { shopOn[idx] = true; });
 
   const playState = playing ? "running" : "paused";
-  const AWNING = ["#e05a5a", "#e0894a", "#4a9de0", "#3fb984", "#7c6ef0", "#e0b84a", "#e05a8a"];
+  const AWNING = [
+    "var(--series-7)",
+    "var(--series-6)",
+    "var(--series-1)",
+    "var(--series-5)",
+    "var(--series-4)",
+    "var(--color-gold)",
+    "var(--color-red)",
+  ];
   const STARS: [number, number][] = [
     [8, 20], [17, 42], [25, 14], [34, 32], [45, 22], [53, 46],
     [62, 16], [71, 36], [79, 24], [88, 44], [93, 18], [40, 54],
   ];
 
   // HUD 색상: 생존율이 낮을수록 붉어짐
-  const hudRateColor = liveRate >= 80 ? "#4ade80" : liveRate >= 60 ? "#facc15" : "#f87171";
+  const hudRateColor = liveRate >= 80 ? "var(--color-green)" : liveRate >= 60 ? "var(--color-amber)" : "var(--color-red)";
 
   return (
     <div
       onClick={onClose}
-      style={{ position: "fixed", inset: 0, background: "rgba(16,20,30,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, fontFamily: '"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif' }}
+      style={{ position: "fixed", inset: 0, background: SCENE_COLORS.overlay, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, fontFamily: '"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif' }}
     >
       <style>{`
         @keyframes atmo-bob  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
@@ -392,49 +445,49 @@ export default function AtmosphereSimulation({
         @keyframes atmo-stamp { 0%{transform:scale(1.6) rotate(var(--rot));opacity:0} 60%{opacity:1} 100%{transform:scale(1) rotate(var(--rot));opacity:1} }
       `}</style>
 
-      <div onClick={(e) => e.stopPropagation()} style={{ width: 560, background: "#fff", borderRadius: 18, padding: "20px 22px", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: 560, background: "var(--color-surface)", borderRadius: 18, padding: "20px 22px", boxShadow: SCENE_COLORS.modalShadow }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <div style={{ fontSize: 12, color: "#8b90a0" }}>상권 분위기 시뮬레이션</div>
+            <div style={{ fontSize: 12, color: "var(--color-muted)" }}>상권 분위기 시뮬레이션</div>
             <div style={{ fontSize: 18, fontWeight: 800, color: cfg.accent, marginTop: 2 }}>
-              {cfg.title} <span style={{ color: "#1a1d29", fontWeight: 700 }}>· {cfg.mood}</span>
+              {cfg.title} <span style={{ color: "var(--color-text)", fontWeight: 700 }}>· {cfg.mood}</span>
             </div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => setPlaying((p) => !p)} style={{ border: "1px solid #e2e5ec", background: "#fff", borderRadius: 8, padding: "6px 12px", fontSize: 13, cursor: "pointer" }}>
+            <button onClick={() => setPlaying((p) => !p)} style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)", borderRadius: 8, padding: "6px 12px", fontSize: 13, cursor: "pointer" }}>
               {playing ? "⏸ 정지" : "▶ 재생"}
             </button>
-            <button onClick={onClose} style={{ border: "1px solid #e2e5ec", background: "#fff", borderRadius: 8, width: 32, cursor: "pointer", fontSize: 15 }}>✕</button>
+            <button onClick={onClose} style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)", borderRadius: 8, width: 32, cursor: "pointer", fontSize: 15 }}>✕</button>
           </div>
         </div>
 
         {/* 낮/밤 칩 */}
         {dayDominant != null && (
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 10, padding: "4px 10px", borderRadius: 20, background: isDay ? "rgba(252,211,77,0.18)" : "rgba(99,102,241,0.18)", fontSize: 12, color: isDay ? "#92400e" : "#a5b4fc" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 10, padding: "4px 10px", borderRadius: 20, background: isDay ? SCENE_COLORS.dayChipBg : SCENE_COLORS.nightChipBg, fontSize: 12, color: isDay ? "var(--color-gold)" : "var(--series-1)" }}>
             {isDay
               ? `☀️ 낮 매출${daySalesPct != null ? ` ${daySalesPct.toFixed(1)}%` : ""} — 낮이 유리한 상권`
               : `🌙 밤 매출${daySalesPct != null ? ` ${daySalesPct.toFixed(1)}%` : ""} — 밤이 유리한 상권`}
           </div>
         )}
 
-        <div style={{ position: "relative", height: 300, marginTop: 14, borderRadius: 14, overflow: "hidden", background: isDay ? "linear-gradient(#aecdf0,#e3eefc)" : "#0f1626" }}>
+        <div style={{ position: "relative", height: 300, marginTop: 14, borderRadius: 14, overflow: "hidden", background: isDay ? SCENE_COLORS.skyDay : SCENE_COLORS.skyNight }}>
           {/* 낮 테마: 해 */}
           {isDay && (
-            <div style={{ position: "absolute", top: 14, right: 18, width: 26, height: 26, borderRadius: "50%", background: "#fcd34d", boxShadow: "0 0 18px #fcd34d88", zIndex: 5 }} />
+            <div style={{ position: "absolute", top: 14, right: 18, width: 26, height: 26, borderRadius: "50%", background: SCENE_COLORS.sun, boxShadow: SCENE_COLORS.sunGlow, zIndex: 5 }} />
           )}
 
           {/* 상가 영역 */}
-          <div style={{ position: "absolute", inset: 0, height: "45%", overflow: "hidden", background: isDay ? "linear-gradient(#7fb0e8,#cfe4fb)" : "linear-gradient(#0b1224,#1a2540)" }}>
+          <div style={{ position: "absolute", inset: 0, height: "45%", overflow: "hidden", background: isDay ? SCENE_COLORS.skylineDay : SCENE_COLORS.skylineNight }}>
             {isDay ? (
               <>
-                <div style={{ position: "absolute", top: "20%", left: "12%", width: 56, height: 16, borderRadius: 20, background: "rgba(255,255,255,0.9)", filter: "blur(1px)" }} />
-                <div style={{ position: "absolute", top: "40%", left: "58%", width: 42, height: 13, borderRadius: 20, background: "rgba(255,255,255,0.72)", filter: "blur(1px)" }} />
+                <div style={{ position: "absolute", top: "20%", left: "12%", width: 56, height: 16, borderRadius: 20, background: SCENE_COLORS.cloudStrong, filter: "blur(1px)" }} />
+                <div style={{ position: "absolute", top: "40%", left: "58%", width: 42, height: 13, borderRadius: 20, background: SCENE_COLORS.cloudSoft, filter: "blur(1px)" }} />
               </>
             ) : (
               <>
-                <div style={{ position: "absolute", top: 12, right: 22, width: 20, height: 20, borderRadius: "50%", background: "#e8ecf5", boxShadow: "0 0 12px #e8ecf588" }} />
+                <div style={{ position: "absolute", top: 12, right: 22, width: 20, height: 20, borderRadius: "50%", background: SCENE_COLORS.moon, boxShadow: SCENE_COLORS.moonGlow }} />
                 {STARS.map(([l, t], i) => (
-                  <div key={i} style={{ position: "absolute", left: `${l}%`, top: `${t}%`, width: 2, height: 2, borderRadius: "50%", background: "#fff", opacity: 0.85, animation: `atmo-glow ${2 + (i % 3)}s ease-in-out ${i * 0.2}s infinite`, animationPlayState: playState }} />
+                  <div key={i} style={{ position: "absolute", left: `${l}%`, top: `${t}%`, width: 2, height: 2, borderRadius: "50%", background: "var(--color-surface)", opacity: 0.85, animation: `atmo-glow ${2 + (i % 3)}s ease-in-out ${i * 0.2}s infinite`, animationPlayState: playState }} />
                 ))}
               </>
             )}
@@ -442,17 +495,17 @@ export default function AtmosphereSimulation({
               {shops.map((_, i) => {
                 const on = shopOn[i] ?? false;
                 const awning = AWNING[i % AWNING.length];
-                const glass = on ? (isDay ? "#fff4cf" : "#ffd873") : isDay ? "#9fb0c8" : "#243149";
-                const door = isDay ? "#5a6a86" : "#151d30";
+                const glass = on ? (isDay ? SCENE_COLORS.glassOnDay : SCENE_COLORS.glassOnNight) : isDay ? SCENE_COLORS.glassOffDay : SCENE_COLORS.glassOffNight;
+                const door = isDay ? SCENE_COLORS.doorDay : SCENE_COLORS.doorNight;
                 // 팻말 기울기: 인덱스 기반 결정적 (-6~+6deg)
                 const rot = ((i * 137 + 42) % 13) - 6;
                 return (
                   <div key={i} style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
                     {/* 차양: 폐업 시 채도·불투명도 죽임 */}
-                    <div style={{ height: 16, background: awning, borderRadius: "4px 4px 0 0", boxShadow: on ? `0 0 8px ${awning}88` : "none", filter: on ? "none" : "grayscale(0.85)", opacity: on ? 1 : 0.45 }} />
+                    <div style={{ height: 16, background: awning, borderRadius: "4px 4px 0 0", boxShadow: on ? `0 0 8px ${awning}` : "none", filter: on ? "none" : "grayscale(0.85)", opacity: on ? 1 : 0.45 }} />
                     {/* 통유리 */}
-                    <div style={{ flex: 1, position: "relative", background: glass, opacity: on ? 1 : 0.6, borderLeft: "1px solid rgba(0,0,0,0.12)", borderRight: "1px solid rgba(0,0,0,0.12)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-                      <div style={{ width: "46%", height: "48%", background: door, borderRadius: "3px 3px 0 0", borderLeft: "1px solid rgba(255,255,255,0.14)" }} />
+                    <div style={{ flex: 1, position: "relative", background: glass, opacity: on ? 1 : 0.6, borderLeft: "1px solid color-mix(in srgb, var(--series-2) 12%, transparent)", borderRight: "1px solid color-mix(in srgb, var(--series-2) 12%, transparent)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                      <div style={{ width: "46%", height: "48%", background: door, borderRadius: "3px 3px 0 0", borderLeft: "1px solid color-mix(in srgb, var(--color-surface) 14%, transparent)" }} />
                       {/* 폐업 팻말: 불이 꺼진 점포에만 표시, 쾅 스탬프 애니메이션 */}
                       {!on && (
                         <div style={{
@@ -462,16 +515,16 @@ export default function AtmosphereSimulation({
                           ["--rot" as string]: `${rot}deg`,
                           animation: "atmo-stamp 0.25s ease-out both",
                           animationPlayState: playState,
-                          background: "#fffbf0",
-                          border: "1.5px solid #e53e3e",
+                          background: SCENE_COLORS.stampBg,
+                          border: "1.5px solid var(--color-red)",
                           borderRadius: 3,
                           padding: "2px 4px",
                           textAlign: "center",
                           whiteSpace: "nowrap",
                           zIndex: 2,
                         }}>
-                          <div style={{ fontSize: 7, fontWeight: 800, color: "#c53030", letterSpacing: "0.03em", lineHeight: 1.3 }}>임대</div>
-                          <div style={{ fontSize: 6, fontWeight: 700, color: "#c53030", letterSpacing: "0.02em", lineHeight: 1.3 }}>문의</div>
+                          <div style={{ fontSize: 7, fontWeight: 800, color: "var(--color-red)", letterSpacing: "0.03em", lineHeight: 1.3 }}>임대</div>
+                          <div style={{ fontSize: 6, fontWeight: 700, color: "var(--color-red)", letterSpacing: "0.02em", lineHeight: 1.3 }}>문의</div>
                         </div>
                       )}
                     </div>
@@ -482,28 +535,28 @@ export default function AtmosphereSimulation({
           </div>
 
           {/* 거리 */}
-          <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "56%", background: `linear-gradient(${cfg.street},#eef1f6)` }} />
+          <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "56%", background: `linear-gradient(${cfg.street}, ${SCENE_COLORS.streetEnd})` }} />
 
           {/* 게임 HUD 패널 — 씬 좌상단 */}
           <div style={{
             position: "absolute", top: 8, left: 8, zIndex: 20,
-            background: "rgba(10,14,26,0.72)", backdropFilter: "blur(4px)",
+            background: SCENE_COLORS.hudBg, backdropFilter: "blur(4px)",
             borderRadius: 8, padding: "7px 11px", display: "flex", flexDirection: "column", gap: 3,
             fontFamily: '"SF Mono","JetBrains Mono","Consolas",monospace',
           }}>
-            <div style={{ fontSize: 11, color: "#94a3b8", letterSpacing: "0.04em" }}>
-              분기 &nbsp;<span style={{ color: "#e2e8f0", fontWeight: 700 }}>{quarterLabel_(quarterIdx)}</span>
+            <div style={{ fontSize: 11, color: SCENE_COLORS.hudText, letterSpacing: "0.04em" }}>
+              분기 &nbsp;<span style={{ color: SCENE_COLORS.hudStrong, fontWeight: 700 }}>{quarterLabel_(quarterIdx)}</span>
             </div>
             <div style={{ fontSize: 13, fontWeight: 800, color: hudRateColor, letterSpacing: "0.02em" }}>
               생존율 &nbsp;{liveRate.toFixed(1)}%
             </div>
-            <div style={{ fontSize: 11, color: "#94a3b8" }}>
-              폐업 &nbsp;<span style={{ color: closedCount > 10 ? "#f87171" : "#cbd5e1", fontWeight: 600 }}>{closedCount}곳</span>
-              <span style={{ color: "#475569" }}> / 100곳 기준</span>
+            <div style={{ fontSize: 11, color: SCENE_COLORS.hudText }}>
+              폐업 &nbsp;<span style={{ color: closedCount > 10 ? "var(--color-red)" : SCENE_COLORS.hudStrong, fontWeight: 600 }}>{closedCount}곳</span>
+              <span style={{ color: SCENE_COLORS.hudBase }}> / 100곳 기준</span>
             </div>
             {liveTraffic != null && (
-              <div style={{ fontSize: 11, color: "#94a3b8" }}>
-                유동인구 &nbsp;<span style={{ color: "#7dd3fc", fontWeight: 600 }}>{liveTraffic.toLocaleString()}명/h</span>
+              <div style={{ fontSize: 11, color: SCENE_COLORS.hudText }}>
+                유동인구 &nbsp;<span style={{ color: "var(--color-on-primary)", fontWeight: 600 }}>{Math.round(liveTraffic / MONTHS_PER_QUARTER).toLocaleString()}명·월</span>
               </div>
             )}
           </div>
@@ -512,18 +565,24 @@ export default function AtmosphereSimulation({
           {useLottie
             ? people.slice(0, Math.min(people.length, 12)).map((p, i) => {
                 const ageStyle = AGE_STYLE[p.ageBucket] ?? AGE_STYLE_FALLBACK;
-                const rowScale = 0.62 + p.row * 0.5;
+                // 점포(건물) 대비 과대 방지: 앞줄 기준 약 16% 축소 (0.62~1.12 → 0.52~0.94).
+                const rowScale = 0.52 + p.row * 0.42;
                 const rawScale = rowScale * ageStyle.scaleBonus * (FILE_SCALE[p.lottieFile] ?? 1);
-                // 오피스맨은 최소 크기 하한을 둬(현재 최소의 약 2배) 뒷줄에서도 작게 안 보이게.
-                const scale = p.lottieFile === "/lottie/walking-6.json" ? Math.max(rawScale, 1.28) : rawScale;
+                // 오피스맨은 최소 크기 하한을 둬 뒷줄에서도 작게 안 보이게 (전체 축소에 맞춰 비례 하향).
+                const scale = p.lottieFile === "/lottie/walking-6.json" ? Math.max(rawScale, 1.07) : rawScale;
                 const bottom = 4 + (1 - p.row) * 52; // row 클수록(=큰/가까운) 화면 아래(앞)
                 const dir = i % 2 === 0 ? 1 : -1;
                 const baseDur = 9 + (i % 6) * 2.2;
                 const dur = baseDur / ageStyle.speedMult;
+                // 시작 위상을 의사난수로 분산 — 등간격(-i*1.7s)이면 속도 차 때문에 주기적으로 한곳에 뭉침.
+                const phase = ((i * 5749 + 1013) % 941) / 941;
+                const delay = -(phase * dur);
                 const walkAnim = dir === 1 ? "atmo-walk-r" : "atmo-walk-l";
                 const hueExtra = p.isFemale ? 5 : 0;
                 const brightnessExtra = p.isFemale ? 0.04 : 0;
-                const cssFilter = `hue-rotate(${ageStyle.hueRotate + hueExtra}deg) saturate(${ageStyle.saturate}) brightness(${ageStyle.brightness + brightnessExtra})`;
+                // 개인별 색 지터(±10°) — 같은 에셋·같은 연령 캐릭터가 나란히 걸을 때 '복제 스프라이트' 인상 완화.
+                const hueJitter = (((i * 2657 + 389) % 211) / 211) * 20 - 10;
+                const cssFilter = `hue-rotate(${(ageStyle.hueRotate + hueExtra + hueJitter).toFixed(1)}deg) saturate(${ageStyle.saturate}) brightness(${ageStyle.brightness + brightnessExtra})`;
                 const scaleXDir = dir * (FILE_FACING[p.lottieFile] ?? LOTTIE_FACING);
                 // 발밑 여백 정렬: 기준(기본 남성) 대비 초과 여백만큼 아래로 내려 모든 발을 같은 지면선에 맞춤.
                 const footNudge = Math.max(0, (FILE_FOOT_PAD[p.lottieFile] ?? 0.12) - FOOT_BASE_PAD) * FOOT_BOX_H;
@@ -531,7 +590,7 @@ export default function AtmosphereSimulation({
                   <div
                     key={p.id}
                     data-lf={p.lottieFile}
-                    style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 1000) + i, animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}
+                    style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 1000) + i, animation: `${walkAnim} ${dur}s linear ${delay.toFixed(2)}s infinite`, animationPlayState: playState }}
                   >
                     <div style={{ transform: `scale(${scale}) scaleX(${scaleXDir}) translateY(${footNudge}px)`, transformOrigin: "bottom center", display: "flex", flexDirection: "column", alignItems: "center" }}>
                       <DotLottieReact
@@ -554,14 +613,16 @@ export default function AtmosphereSimulation({
                 const bottom = 14 + (1 - p.row) * 96; // row 클수록(=큰/가까운) 화면 아래(앞)
                 const dir = i % 2 === 0 ? 1 : -1;
                 const dur = 9 + (i % 6) * 2.2;
+                // 시작 위상 의사난수 분산 (Lottie 경로와 동일한 뭉침 방지)
+                const delay = -(((i * 5749 + 1013) % 941) / 941) * dur;
                 const walkAnim = dir === 1 ? "atmo-walk-r" : "atmo-walk-l";
                 return (
-                  <div key={p.id} style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 1000) + i, animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}>
+                  <div key={p.id} style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 1000) + i, animation: `${walkAnim} ${dur}s linear ${delay.toFixed(2)}s infinite`, animationPlayState: playState }}>
                     <div style={{ transform: `scale(${scale}) scaleX(${dir})`, transformOrigin: "bottom center" }}>
                       <div style={{ animation: `atmo-bob ${1.6 + (i % 3) * 0.3}s ease-in-out infinite`, animationPlayState: playState, display: "flex", flexDirection: "column", alignItems: "center" }}>
                         <div style={{ width: 13, height: 13, borderRadius: "50%", background: p.color }} />
                         <div style={{ width: 20, height: 24, borderRadius: "9px 9px 5px 5px", background: p.color, marginTop: 1, position: "relative" }}>
-                          {p.bag && <div style={{ position: "absolute", right: -6, bottom: 2, width: 9, height: 11, borderRadius: 2, background: "#1c2333" }} />}
+                          {p.bag && <div style={{ position: "absolute", right: -6, bottom: 2, width: 9, height: 11, borderRadius: 2, background: "var(--series-2)" }} />}
                         </div>
                       </div>
                     </div>
@@ -571,7 +632,7 @@ export default function AtmosphereSimulation({
         </div>
 
         <div style={{ marginTop: 14 }}>
-          <div style={{ fontSize: 12, color: "#6b7180", marginBottom: 6 }}>유동인구 예상 연령 분포</div>
+          <div style={{ fontSize: 12, color: "var(--color-text-body)", marginBottom: 6 }}>유동인구 예상 연령 분포</div>
           <div style={{ display: "flex", height: 10, borderRadius: 6, overflow: "hidden" }}>
             {ages.map((a) => (
               <div key={a.name} style={{ width: `${a.pct}%`, background: a.color }} />
@@ -579,19 +640,19 @@ export default function AtmosphereSimulation({
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", marginTop: 8 }}>
             {ages.map((a) => (
-              <span key={a.name} style={{ fontSize: 12, color: "#4b5063", display: "inline-flex", alignItems: "center", gap: 5 }}>
+              <span key={a.name} style={{ fontSize: 12, color: "var(--color-text-body)", display: "inline-flex", alignItems: "center", gap: 5 }}>
                 <span style={{ width: 10, height: 10, borderRadius: 3, background: a.color }} /> {a.name} {a.pct}%
               </span>
             ))}
           </div>
-          <div style={{ fontSize: 11, color: "#a2a7b5", marginTop: 6 }}>
+          <div style={{ fontSize: 11, color: "var(--color-muted)", marginTop: 6 }}>
             {isReal ? "연령 구성비 · 최근 관측 실데이터" : "※ 연령 구성비 · 예시(관측 데이터 없음)"}
           </div>
         </div>
 
-        <div style={{ fontSize: 12, color: "#8b90a0", marginTop: 10 }}>{cfg.desc}</div>
+        <div style={{ fontSize: 12, color: "var(--color-muted)", marginTop: 10 }}>{cfg.desc}</div>
         {realBased && (
-          <div style={{ fontSize: 11, color: "#a2a7b5", marginTop: 4 }}>
+          <div style={{ fontSize: 11, color: "var(--color-muted)", marginTop: 4 }}>
             점포 불빛 = 분기별 누적 생존율 진행
             {footTraffic != null && footTraffic > 0
               ? dayDominant != null ? " · 인원 = 낮/밤 시간대 유동인구 기반" : " · 인원 = 평균 유동인구 기반"

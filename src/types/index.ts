@@ -46,6 +46,20 @@ export interface DistrictCompareResponse {
   districts: DistrictCompareItem[];
 }
 
+// ── 상권 랭킹 (GET /api/commercial-districts/ranking) ──
+export interface DistrictRankingItem {
+  rank: number;
+  rank_total: number | null;
+  percentile: number | null;
+  id: number;
+  district_name: string;
+  gu_name: string | null;
+  type_name: string | null;
+  district_score: number | null;
+  survival_rate: number | null; // 0~100 (%). 원본 이상치 가능 → 표시 전 가드 필요.
+  avg_population: number | null; // 분기 총 유동인구.
+}
+
 // ── 분기별 추이 (GET /api/commercial-districts/{id}/time-series) ──
 export interface PopulationMetric {
   total: number | null;
@@ -139,6 +153,22 @@ export interface SurvivalForecastResponse {
   model: string;
   category_name: string | null;
   forecast: SurvivalForecastPoint[];
+}
+
+// ── 매출 예측 (GET /api/commercial-districts/{id}/sales-forecast) ──
+export interface SalesForecastPoint {
+  year_quarter: string;
+  total_sales: number | null; // 분기 총매출(원)
+  tx_count: number | null;
+  low: number | null; // 비관 P10
+  high: number | null; // 낙관 P90
+  confidence: number | null;
+}
+export interface SalesForecastResponse {
+  district_id: number;
+  model: string | null;
+  category_name: string | null;
+  forecast: SalesForecastPoint[];
 }
 
 // ── 레이더 (GET /api/commercial-districts/{id}/radar) [신규] ──

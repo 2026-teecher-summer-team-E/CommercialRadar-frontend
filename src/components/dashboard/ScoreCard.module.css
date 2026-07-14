@@ -6,6 +6,9 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
+  /* 옆 카드 높이에 맞춰 늘어날 때, 늘어난 여백이 한 곳에 몰리지 않고 섹션 사이사이에
+     고르게 퍼지도록 한다(콘텐츠가 카드보다 작을 때만 작동, 평소엔 영향 없음). */
+  justify-content: space-between;
 }
 .head {
   display: flex;
@@ -67,7 +70,7 @@
   font-family: var(--font-num);
 }
 .topPillEmpty {
-  background: var(--color-bg-subtle, #f1f5f9);
+  background: var(--color-chip);
   color: var(--color-muted);
   font-weight: 600;
 }
@@ -116,7 +119,7 @@
   height: 84px;
   border-radius: 50%;
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
   display: flex;
   flex-direction: column;
   align-items: center;

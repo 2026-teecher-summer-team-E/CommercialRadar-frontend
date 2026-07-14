@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../lib/auth";
 import styles from "./Sidebar.module.css";
 
@@ -62,7 +62,15 @@ function GearIcon() {
 }
 
 const NAV = [
-  { to: "/", label: "지역 분석", Icon: MapIcon, end: true },
+  {
+    to: "/",
+    label: "지역 분석",
+    Icon: MapIcon,
+    end: true,
+    // 상세 분석 페이지(/dashboard/:id)는 지도에서 상권을 골라 들어가는 하위 화면이라
+    // "지역 분석" 메뉴가 계속 선택된 상태로 보여야 자연스럽다.
+    activeMatch: (pathname: string) => pathname === "/" || pathname.startsWith("/dashboard"),
+  },
   { to: "/compare", label: "상권 비교", Icon: CompareIcon },
   { to: "/ranking", label: "랭킹", Icon: RankIcon },
   { to: "/trends", label: "트렌드", Icon: TrendIcon },
@@ -71,6 +79,7 @@ const NAV = [
 
 export default function Sidebar() {
   const { user, isSignedIn } = useAuth();
+  const { pathname } = useLocation();
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSED_KEY) === "true");
 
   useEffect(() => {
@@ -94,28 +103,36 @@ export default function Sidebar() {
 
       <Link to="/landing" className={styles.logo} aria-label="랜딩 페이지로 이동">
         <span className={styles.logoMark}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path
-              d="M12 6c-2.8 0-5 2.2-5 5 0 3.5 5 9 5 9s5-5.5 5-9c0-2.8-2.2-5-5-5zm0 6.8a1.8 1.8 0 110-3.6 1.8 1.8 0 010 3.6z"
-              fill="#fff"
+              d="M10.8 17.1a6.3 6.3 0 1 0 0-12.6 6.3 6.3 0 0 0 0 12.6Z"
+              stroke="#fff"
+              strokeWidth="2.2"
             />
+            <path d="m15.4 15.4 4.1 4.1" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
+            <path d="M8.4 9.1a3.2 3.2 0 0 1 2.4-1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
           </svg>
         </span>
         <span className={styles.logoText}>상권레이더</span>
       </Link>
 
       <nav className={styles.nav}>
-        {NAV.filter((item) => !item.adminOnly || user?.isAdmin).map(({ to, label, Icon, end }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={end}
-            className={({ isActive }) => (isActive ? `${styles.item} ${styles.active}` : styles.item)}
-          >
-            <Icon />
-            <span className={styles.itemLabel}>{label}</span>
-          </NavLink>
-        ))}
+        {NAV.filter((item) => !item.adminOnly || user?.isAdmin).map(({ to, label, Icon, end, activeMatch }) => {
+          const forcedActive = activeMatch?.(pathname);
+          return (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) =>
+                (forcedActive ?? isActive) ? `${styles.item} ${styles.active}` : styles.item
+              }
+            >
+              <Icon />
+              <span className={styles.itemLabel}>{label}</span>
+            </NavLink>
+          );
+        })}
       </nav>
 
       <div className={styles.spacer} />

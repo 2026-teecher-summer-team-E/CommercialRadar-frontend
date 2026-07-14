@@ -36,6 +36,7 @@
   --color-orange: #e8a020;        /* amber 계열 — navy primary와 무관한 의미색 */
   --color-orange-bg: #fdf4dc;
   --color-red: #d94430;           /* navy와 충돌 없으므로 원래 톤 복원 */
+  --color-red-bg: #fbe9e5;        /* 지도 상권 "주의" 등급 카드 배경 */
 
   /* Accent — 보조 밝은 남색 */
   --color-accent: #3d54a8;
@@ -51,6 +52,14 @@
   --series-2-bg: #f1ece4;
   --series-3: #939084;   /* Body Mid — neutral gray */
   --series-3-bg: #f8f4f0;
+  --series-4: #3d54a8;
+  --series-4-bg: #e8ebf5;
+  --series-5: #4a9e5c;
+  --series-5-bg: #edf7f0;
+  --series-6: #e8a020;
+  --series-6-bg: #fdf4dc;
+  --series-7: #d94430;
+  --series-7-bg: #fbe9e5;
 
   /* Radius — Zapier 시그니처 미들 라디우스 */
   --radius-sm: 6px;

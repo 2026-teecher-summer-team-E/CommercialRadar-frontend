@@ -1,0 +1,6 @@
+/* 시나리오 점(dot)이 클릭 가능해 recharts가 내부적으로 focus를 받는 <g>를 만드는데,
+   그때 브라우저 기본 focus outline(파란 사각 테두리)이 그려져 지저분해 보였다.
+   클릭 피드백은 색/애니메이션으로 이미 충분하므로 outline만 없앤다. */
+.chartWrap :global(.recharts-wrapper) *:focus {
+  outline: none;
+}

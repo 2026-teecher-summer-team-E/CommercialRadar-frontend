@@ -1,6 +1,7 @@
 import { apiClient } from "../lib/apiClient";
 import type {
   DistrictCompareResponse,
+  DistrictRankingItem,
   DistrictTimeSeriesResponse,
   CategoryRankingResponse,
   CityCategoryRankingResponse,
@@ -54,6 +55,19 @@ export const commercialApi = {
       `/api/categories/${encodeURIComponent(categoryName)}/related`,
       { params },
     ),
+
+  /** 상권 종합 랭킹. scope=seoul|gu|type, sort=score|survival|population. 랭킹 페이지용. */
+  ranking: (params?: {
+    scope?: "seoul" | "gu" | "type";
+    gu_name?: string;
+    type_name?: string;
+    sort?: "score" | "survival" | "population";
+    limit?: number;
+    offset?: number;
+  }) =>
+    apiClient.get<DistrictRankingItem[]>("/api/commercial-districts/ranking", {
+      params: params as QP,
+    }),
 
   /** 상권 1개 + 특정 업종 하나의 생존율/폐업률/매출/점수. 업종 필터 선택 시 좌측 패널 갱신용. */
   categoryStats: (id: number | string, params?: { year_quarter?: string; category_name?: string }) =>

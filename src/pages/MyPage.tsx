@@ -1,14 +1,19 @@
 import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type {
-  UserMe,
   UserStats,
-  ReportListItem,
+  ReportListResponse,
   InterestDistrict,
 } from "../types";
-import { meApi } from "../services/meApi";
 import { reportsApi } from "../services/reportsApi";
 import { interestApi } from "../services/interestApi";
-import { commercialApi } from "../services/commercialApi";
+import {
+  queryKeys,
+  useInterestDistricts,
+  useMe,
+  useMyReports,
+  useMyStats,
+} from "../hooks/queries";
 import { formatJoinDate, initialOf } from "../components/mypage/format";
 import ReportCard from "../components/mypage/ReportCard";
 import InterestCard from "../components/mypage/InterestCard";
@@ -20,106 +25,33 @@ import { useAuth, clerkEnabled } from "../lib/auth";
 type TabKey = "reports" | "interests" | "shared";
 
 const REPORTS_LIMIT = 20;
-
-/**
- * compare API(한 번에 2~5개 id 허용)에 맞춰 id 목록을 청크로 나눈다.
- * 마지막에 1개만 남으면 앞 청크의 마지막 id를 겹쳐 2개로 만들고(결과는 Map 으로 dedup 되어 무해),
- * 전체가 1개뿐이면 임의의 동반 id 를 붙여 최소 2개를 만든다.
- */
-function buildCompareChunks(ids: number[]): number[][] {
-  if (ids.length === 0) return [];
-  if (ids.length === 1) return [[ids[0], ids[0] === 1 ? 2 : 1]];
-  const chunks: number[][] = [];
-  for (let i = 0; i < ids.length; i += 5) {
-    const chunk = ids.slice(i, i + 5);
-    if (chunk.length === 1) chunk.unshift(ids[i - 1]); // 마지막 1개 → 앞 id 겹쳐 2개
-    chunks.push(chunk);
-  }
-  return chunks;
-}
+const REPORTS_PARAMS = { page: 1, limit: REPORTS_LIMIT };
 
 export default function MyPage() {
   const { signOut } = useAuth();
-  const [user, setUser] = useState<UserMe | null>(null);
-  const [stats, setStats] = useState<UserStats | null>(null);
-  const [reports, setReports] = useState<ReportListItem[]>([]);
-  const [interests, setInterests] = useState<InterestDistrict[]>([]);
-  const [interestsLoaded, setInterestsLoaded] = useState(false);
+  const queryClient = useQueryClient();
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [tab, setTab] = useState<TabKey>("interests");
   const [busyId, setBusyId] = useState<number | null>(null);
   const [busyInterestId, setBusyInterestId] = useState<number | null>(null);
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const cancelBtnRef = useRef<HTMLButtonElement>(null);
 
-  // 마운트 시 me / stats / reports 병렬 fetch
-  useEffect(() => {
-    let alive = true;
-    setLoading(true);
-    setError(false);
+  // me / stats / reports 병렬 fetch. me 실패만 페이지 에러(stats·reports 는 없어도 렌더).
+  const meQuery = useMe();
+  const statsQuery = useMyStats();
+  const reportsQuery = useMyReports(REPORTS_PARAMS);
+  // 관심 상권은 탭 최초 진입 시 lazy fetch (이후엔 캐시 사용).
+  const interestsQuery = useInterestDistricts(tab === "interests");
 
-    Promise.allSettled([meApi.me(), meApi.stats(), reportsApi.list({ page: 1, limit: REPORTS_LIMIT })])
-      .then(([meRes, statsRes, reportsRes]) => {
-        if (!alive) return;
-        if (meRes.status === "fulfilled") setUser(meRes.value.data);
-        if (statsRes.status === "fulfilled") setStats(statsRes.value.data);
-        if (reportsRes.status === "fulfilled") setReports(reportsRes.value.data.reports ?? []);
-        // me 조회 실패는 페이지가 성립하지 않으므로 에러 처리
-        if (meRes.status === "rejected") setError(true);
-      })
-      .finally(() => {
-        if (alive) setLoading(false);
-      });
+  const user = meQuery.data ?? null;
+  const stats = statsQuery.data ?? null;
+  const reports = reportsQuery.data?.reports ?? [];
+  const interests = interestsQuery.data ?? [];
+  const interestsLoaded = interestsQuery.isSuccess || interestsQuery.isError;
 
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  // 관심 상권 탭 최초 진입 시 lazy fetch
-  useEffect(() => {
-    if (tab !== "interests" || interestsLoaded) return;
-    let alive = true;
-    interestApi
-      .list()
-      .then(async (r) => {
-        const list = r.data ?? [];
-        if (list.length === 0) {
-          if (alive) setInterests([]);
-          return;
-        }
-        // 랭킹 페이지처럼 compare API로 상권 이름을 채운다.
-        // compare 는 한 번에 2~5개만 허용하므로, 청크마다 최소 2개를 보장한다.
-        // (관심 상권이 1개거나 개수가 5n+1 이면 마지막 청크가 1개가 되어 호출이 실패함)
-        const ids = [...new Set(list.map((it) => it.commercial_district_id))];
-        const chunks = buildCompareChunks(ids);
-        const nameById = new Map<number, string>();
-        // allSettled: 한 청크가 실패해도 나머지 이름은 채운다.
-        const resArr = await Promise.allSettled(chunks.map((c) => commercialApi.compare(c)));
-        resArr.forEach((res) => {
-          if (res.status === "fulfilled")
-            res.value.data.districts.forEach((d) => nameById.set(d.id, d.district_name));
-        });
-        if (alive)
-          setInterests(
-            list.map((it) => ({
-              ...it,
-              district_name: nameById.get(it.commercial_district_id) ?? it.district_name,
-            })),
-          );
-      })
-      .catch(() => {
-        /* 방어적: 실패해도 빈 상태 유지 */
-      })
-      .finally(() => {
-        if (alive) setInterestsLoaded(true);
-      });
-    return () => {
-      alive = false;
-    };
-  }, [tab, interestsLoaded]);
+  const loading = meQuery.isPending || statsQuery.isPending || reportsQuery.isPending;
+  const error = meQuery.isError;
 
   // 모달 열릴 때 취소 버튼에 포커스, ESC 로 닫기
   useEffect(() => {
@@ -144,30 +76,36 @@ export default function MyPage() {
 
   const handleMemoSave = (id: number, memo: string | null) => {
     setBusyInterestId(id);
-    const prev = interests;
-    // 낙관적 갱신
-    setInterests((list) => list.map((it) => (it.id === id ? { ...it, memo } : it)));
+    const prev = queryClient.getQueryData<InterestDistrict[]>(queryKeys.interests);
+    // 낙관적 갱신: 캐시를 직접 수정
+    queryClient.setQueryData<InterestDistrict[]>(queryKeys.interests, (list) =>
+      list?.map((it) => (it.id === id ? { ...it, memo } : it)),
+    );
     interestApi
       .update(id, { memo })
       .catch(() => {
-        setInterests(prev); // 실패 시 롤백
+        queryClient.setQueryData(queryKeys.interests, prev); // 실패 시 롤백
       })
       .finally(() => setBusyInterestId(null));
   };
 
   const handleRemove = (id: number) => {
     setBusyId(id);
-    const prev = reports;
-    setReports((rs) => rs.filter((r) => r.id !== id)); // 낙관적 제거
+    const reportsKey = queryKeys.myReports(REPORTS_PARAMS);
+    const prev = queryClient.getQueryData<ReportListResponse>(reportsKey);
+    // 낙관적 제거: 캐시에서 바로 지운다
+    queryClient.setQueryData<ReportListResponse>(reportsKey, (cur) =>
+      cur ? { ...cur, reports: cur.reports.filter((r) => r.id !== id) } : cur,
+    );
     reportsApi
       .remove(id)
       .then(() => {
-        setStats((s) =>
+        queryClient.setQueryData<UserStats>(queryKeys.myStats, (s) =>
           s ? { ...s, saved_reports: Math.max(0, s.saved_reports - 1) } : s,
         );
       })
       .catch(() => {
-        setReports(prev); // 롤백
+        queryClient.setQueryData(reportsKey, prev); // 롤백
       })
       .finally(() => setBusyId(null));
   };
