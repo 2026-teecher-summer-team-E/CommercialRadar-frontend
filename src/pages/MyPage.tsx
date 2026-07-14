@@ -184,7 +184,7 @@ export default function MyPage() {
     return (
       <div className={styles.page}>
         <div className={styles.state}>
-          정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
+          정보를 가져오지 못했습니다. 새로고침해보세요.
         </div>
       </div>
     );

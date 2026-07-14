@@ -55,7 +55,7 @@ export default function IngestionConsole() {
         } else {
           setResult({
             kind: "err",
-            message: `요청에 실패했습니다${status ? ` (${status})` : ""}. 잠시 후 다시 시도해 주세요.`,
+            message: `요청이 실패했습니다${status ? ` (${status})` : ""}. 다시 시도해 주세요.`,
           });
         }
       });
