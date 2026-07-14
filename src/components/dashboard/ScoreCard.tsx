@@ -21,6 +21,8 @@ interface ScoreCardProps {
   weekdayPct: number | null;
   /** 유입 비율(주말) 0~100. 실데이터 없으면 null → 지표없음. */
   weekendPct: number | null;
+  /** 유동인구 피크 시간대 라벨(예: "17~21시"). 없으면 지표없음. */
+  peakLabel?: string | null;
   onExpand?: () => void;
 }
 
@@ -45,6 +47,7 @@ export default function ScoreCard({
   avgPopulation,
   weekdayPct,
   weekendPct,
+  peakLabel,
   onExpand,
 }: ScoreCardProps) {
   return (
@@ -116,7 +119,11 @@ export default function ScoreCard({
 
       <div className={styles.growthRow}>
         <span className={styles.growthTag}>{typeName ?? "상권"}</span>
-        <span className={styles.peakTag}>피크 지표없음</span>
+        {peakLabel ? (
+          <span className={styles.peakTag}>피크 {peakLabel}</span>
+        ) : (
+          <span className={styles.peakTag}>피크 지표없음</span>
+        )}
       </div>
 
       {weekdayPct != null && weekendPct != null ? (
