@@ -7,6 +7,8 @@ import styles from "./SalesForecastCard.module.css";
 const GangnamForecastChart = lazy(() => import("../charts/GangnamForecastChart"));
 
 interface SalesForecastCardProps {
+  /** 직전 분기 실적 앵커(보통 1점). 세 시나리오가 모두 이 점에서 출발한다. */
+  history?: TimeseriesPoint[];
   /** 예측 시계열(value=분기 총매출 원, low/high 신뢰구간). */
   forecast: TimeseriesPoint[];
   /** 헤더에 표기할 대상(예: "전체 상권" 또는 선택 업종명). */
@@ -16,7 +18,7 @@ interface SalesForecastCardProps {
 }
 
 /** 업종/상권 매출 예측 카드. 생존율 카드의 업종 선택과 연동되어 같은 대상의 매출 곡선을 보여준다. */
-export default function SalesForecastCard({ forecast, categoryLabel, fallbackNote }: SalesForecastCardProps) {
+export default function SalesForecastCard({ history = [], forecast, categoryLabel, fallbackNote }: SalesForecastCardProps) {
   const hasChart = !fallbackNote && forecast.length >= 2;
   const first = forecast[0]?.value ?? null;
   const last = forecast[forecast.length - 1]?.value ?? null;
@@ -26,8 +28,8 @@ export default function SalesForecastCard({ forecast, categoryLabel, fallbackNot
       : null;
   const deltaUp = (delta ?? 0) >= 0;
 
-  // Y축을 데이터 범위로 좁혀 곡선이 눌리지 않게(신뢰구간 하한~상한 여유).
-  const vals = forecast
+  // Y축을 데이터 범위로 좁혀 곡선이 눌리지 않게(신뢰구간 하한~상한 여유). 앵커(실적)값도 포함해 시작점이 잘리지 않게.
+  const vals = [...history, ...forecast]
     .flatMap((p) => [p.value, p.low ?? null, p.high ?? null])
     .filter((v): v is number => v != null);
   const yDomain: [number, number] | undefined =
@@ -60,7 +62,7 @@ export default function SalesForecastCard({ forecast, categoryLabel, fallbackNot
           {hasChart ? (
             <div className={styles.chart}>
               <Suspense fallback={<PageLoader fullScreen={false} />}>
-                <GangnamForecastChart history={[]} forecast={forecast} unit="won" height={220} yDomain={yDomain} endLabels />
+                <GangnamForecastChart history={history} forecast={forecast} unit="won" height={220} yDomain={yDomain} endLabels />
               </Suspense>
             </div>
           ) : (
