@@ -1,11 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { apiClient } from "../lib/apiClient";
 import { commercialApi } from "../services/commercialApi";
 import { useRecentSearches, type RecentSearchItem } from "../hooks/useRecentSearches";
 import SangkwonPanel from "../components/map/SangkwonPanel";
 import FilterBar from "../components/map/FilterBar";
-import LeafletMap, { type MapMode } from "../components/map/LeafletMap";
+import type { MapMode } from "../components/map/LeafletMap";
+import PageLoader from "../components/common/PageLoader";
+
+// leaflet은 무거우므로 지도 화면에 실제로 진입할 때만 로드.
+const LeafletMap = lazy(() => import("../components/map/LeafletMap"));
 import {
   populationBucket,
   toScore,
@@ -429,18 +433,20 @@ export default function MapPage() {
               </button>
             ))}
           </div>
-          <LeafletMap
-            points={filteredGeo}
-            geojson={filteredGeojson}
-            mode={mode}
-            selectedId={selectedId}
-            guFilter={guFilter}
-            activeName={summary?.detail?.district_name ?? null}
-            activeType={summary?.detail?.type_name ?? null}
-            activeScore={activeScore}
-            onSelect={setSelectedId}
-            onOpenProfile={openProfile}
-          />
+          <Suspense fallback={<PageLoader fullScreen={false} />}>
+            <LeafletMap
+              points={filteredGeo}
+              geojson={filteredGeojson}
+              mode={mode}
+              selectedId={selectedId}
+              guFilter={guFilter}
+              activeName={summary?.detail?.district_name ?? null}
+              activeType={summary?.detail?.type_name ?? null}
+              activeScore={activeScore}
+              onSelect={setSelectedId}
+              onOpenProfile={openProfile}
+            />
+          </Suspense>
         </div>
       </div>
     </div>

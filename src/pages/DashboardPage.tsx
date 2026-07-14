@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiClient } from "../lib/apiClient";
 import { commercialApi } from "../services/commercialApi";
@@ -14,7 +14,6 @@ import type {
 import type { ForecastPoint } from "../components/charts/ForecastChart";
 import ScoreCard from "../components/dashboard/ScoreCard";
 import SurvivalCard from "../components/dashboard/SurvivalCard";
-import AtmosphereSimulation from "../components/charts/AtmosphereSimulation";
 import PopulationHeatmap from "../components/dashboard/PopulationHeatmap";
 import AgeGenderCard from "../components/dashboard/AgeGenderCard";
 import RentCard from "../components/dashboard/RentCard";
@@ -25,7 +24,11 @@ import ExpandModal from "../components/dashboard/ExpandModal";
 import { quarterShort } from "../components/dashboard/format";
 import { useFavoriteDistrict } from "../hooks/useFavoriteDistrict";
 import FavoriteStar from "../components/common/FavoriteStar";
+import PageLoader from "../components/common/PageLoader";
 import styles from "./DashboardPage.module.css";
+
+// recharts + lottie가 들어있어 무거움 — 시나리오 클릭(모달) 시점에만 로드.
+const AtmosphereSimulation = lazy(() => import("../components/charts/AtmosphereSimulation"));
 
 /** getDistrict 응답(서비스가 제네릭 없이 any 반환) — 페이지 내부 로컬 타입. */
 interface DistrictLatestStats {
@@ -560,17 +563,19 @@ export default function DashboardPage() {
 
       {/* 상권 분위기 시뮬레이션: 생존율 예측 시나리오 선 클릭 시 */}
       {sim && (
-        <AtmosphereSimulation
-          scenario={sim}
-          ageDistribution={ageSlices}
-          survivalPct={survivalScenarioPct ? survivalScenarioPct[sim] : null}
-          footTraffic={simFootTraffic}
-          dayDominant={simDayDominant}
-          daySalesPct={simDaySalesPct}
-          foreignerPct={data.foreign?.foreigner_pct ?? null}
-          startQuarter={survivalForecast[0]?.year_quarter ?? null}
-          onClose={() => setSim(null)}
-        />
+        <Suspense fallback={<PageLoader />}>
+          <AtmosphereSimulation
+            scenario={sim}
+            ageDistribution={ageSlices}
+            survivalPct={survivalScenarioPct ? survivalScenarioPct[sim] : null}
+            footTraffic={simFootTraffic}
+            dayDominant={simDayDominant}
+            daySalesPct={simDaySalesPct}
+            foreignerPct={data.foreign?.foreigner_pct ?? null}
+            startQuarter={survivalForecast[0]?.year_quarter ?? null}
+            onClose={() => setSim(null)}
+          />
+        </Suspense>
       )}
     </div>
   );
