@@ -3,6 +3,7 @@ import type { ForecastPoint } from "../charts/ForecastChart";
 import type { TimeseriesPoint } from "../../types";
 import { useCountUp } from "../../hooks/useCountUp";
 import { fmtPct, fmtInt } from "./format";
+import { ExpandIcon } from "../landing/icons";
 import styles from "./SurvivalCard.module.css";
 
 interface SurvivalCardProps {
@@ -78,7 +79,7 @@ export default function SurvivalCard({
         </div>
         {onExpand && hasChart && (
           <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="생존율 예측 확대">
-            ⤢
+            <ExpandIcon />
           </button>
         )}
       </div>

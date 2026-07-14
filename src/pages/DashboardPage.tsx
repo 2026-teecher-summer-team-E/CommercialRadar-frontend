@@ -22,6 +22,7 @@ import type { RentBar } from "../components/dashboard/RentCard";
 import BuzzGapCard from "../components/dashboard/BuzzGapCard";
 import { DayNightCard, ForeignCard, PerCapitaCard, WeekendCard } from "../components/dashboard/StatCards";
 import ExpandModal from "../components/dashboard/ExpandModal";
+import { ExpandIcon } from "../components/landing/icons";
 import { quarterShort } from "../components/dashboard/format";
 import { useFavoriteDistrict } from "../hooks/useFavoriteDistrict";
 import FavoriteStar from "../components/common/FavoriteStar";
@@ -474,7 +475,7 @@ export default function DashboardPage() {
                 onClick={() => setModal("heatmap")}
                 aria-label="유동인구 확대"
               >
-                ⤢
+                <ExpandIcon />
               </button>
             )}
           </div>

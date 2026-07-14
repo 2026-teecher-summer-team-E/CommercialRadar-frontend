@@ -13,6 +13,7 @@ import LineChartSvg from "../components/compare/LineChartSvg";
 import type { LineSeries } from "../components/compare/LineChartSvg";
 import Legend from "../components/compare/Legend";
 import ExpandModal from "../components/compare/ExpandModal";
+import { ExpandIcon } from "../components/landing/icons";
 import {
   seriesColor,
   fmtNum,
@@ -31,7 +32,6 @@ interface CompareData {
   ranking: CategoryRankingResponse | null;
 }
 
-const EXPAND_ICON = "⤢";
 const MIN_DISTRICTS = 2;
 const MAX_DISTRICTS = 5;
 
@@ -543,7 +543,7 @@ function ChartHeader({ title, onExpand }: { title: string; onExpand: () => void 
     <div className={styles.chartHeader}>
       <h3 className={styles.chartTitle}>{title}</h3>
       <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label={`${title} 확대`}>
-        {EXPAND_ICON}
+        <ExpandIcon />
       </button>
     </div>
   );

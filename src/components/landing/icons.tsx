@@ -85,6 +85,28 @@ export function ArrowRightIcon({ size = 16, className }: IconProps) {
   );
 }
 
+export function ExpandIcon({ size = 15, className }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M15 3h6v6" />
+      <path d="m14 10 7-7" />
+      <path d="M9 21H3v-6" />
+      <path d="m10 14-7 7" />
+    </svg>
+  );
+}
+
 export function DownloadIcon({ size = 10, className }: IconProps) {
   return (
     <svg

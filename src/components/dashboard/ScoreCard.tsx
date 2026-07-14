@@ -1,4 +1,5 @@
 import { fmtPct, fmtManUnit, closureRiskLabel, riskColor } from "./format";
+import { ExpandIcon } from "../landing/icons";
 import styles from "./ScoreCard.module.css";
 
 export interface ScoreBadge {
@@ -53,7 +54,7 @@ export default function ScoreCard({
         <h3 className={styles.title}>종합 점수</h3>
         {onExpand && (
           <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="종합 점수 확대">
-            ⤢
+            <ExpandIcon />
           </button>
         )}
       </div>

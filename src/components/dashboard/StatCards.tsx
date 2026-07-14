@@ -1,3 +1,4 @@
+import { ExpandIcon } from "../landing/icons";
 import styles from "./StatCards.module.css";
 
 const WEEKEND_AVG_PCT = 28.4;
@@ -70,7 +71,7 @@ export function ForeignCard({ pct = null, onExpand }: { pct?: number | null; onE
         </div>
         {onExpand && (
           <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="외국인 확대">
-            ⤢
+            <ExpandIcon />
           </button>
         )}
       </div>
@@ -96,7 +97,7 @@ export function PerCapitaCard({ wonValue = null, onExpand }: { wonValue?: number
         </div>
         {onExpand && (
           <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="인당 소비 확대">
-            ⤢
+            <ExpandIcon />
           </button>
         )}
       </div>
@@ -133,7 +134,7 @@ export function WeekendCard({
         </div>
         {onExpand && (
           <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="요일별 매출 확대">
-            ⤢
+            <ExpandIcon />
           </button>
         )}
       </div>
