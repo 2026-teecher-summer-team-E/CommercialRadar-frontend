@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { commercialApi } from "../services/commercialApi";
+import { useMemo, useState } from "react";
+import { useCompareDistricts } from "../hooks/queries";
 import type { DistrictCompareItem } from "../types";
 import Leaderboard, { type SortableKey, type SortState } from "../components/ranking/Leaderboard";
 import styles from "./RankingPage.module.css";
@@ -26,9 +26,6 @@ function sortDistricts(districts: DistrictCompareItem[], sort: SortState): Distr
 }
 
 export default function RankingPage() {
-  const [districts, setDistricts] = useState<DistrictCompareItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [sort, setSort] = useState<SortState>({ key: "score", direction: "desc" });
 
   const handleSort = (key: SortableKey) => {
@@ -37,33 +34,8 @@ export default function RankingPage() {
     );
   };
 
-  useEffect(() => {
-    let alive = true;
-    setLoading(true);
-    setError(false);
-
-    // compare API는 한 번에 2~5개만 허용 → 5개씩 나눠 호출 후 병합.
-    const chunks: number[][] = [];
-    for (let i = 0; i < DISTRICT_IDS.length; i += 5) chunks.push(DISTRICT_IDS.slice(i, i + 5));
-
-    Promise.all(chunks.map((c) => commercialApi.compare(c)))
-      .then((resArr) => {
-        if (!alive) return;
-        const merged = new Map<number, DistrictCompareItem>();
-        resArr.forEach((res) => res.data.districts.forEach((d) => merged.set(d.id, d)));
-        setDistricts([...merged.values()]);
-      })
-      .catch(() => {
-        if (alive) setError(true);
-      })
-      .finally(() => {
-        if (alive) setLoading(false);
-      });
-
-    return () => {
-      alive = false;
-    };
-  }, []);
+  // compare API는 한 번에 2~5개만 허용 → 훅 내부에서 5개씩 나눠 호출 후 병합.
+  const { data: districts = [], isPending: loading, isError: error } = useCompareDistricts(DISTRICT_IDS);
 
   const sorted = useMemo(() => sortDistricts(districts, sort), [districts, sort]);
 
