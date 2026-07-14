@@ -21,7 +21,7 @@ import RentCard from "../components/dashboard/RentCard";
 import type { RentBar } from "../components/dashboard/RentCard";
 import BuzzGapCard from "../components/dashboard/BuzzGapCard";
 import SalesForecastCard from "../components/dashboard/SalesForecastCard";
-import { DayNightCard, ForeignCard, PerCapitaCard, WeekendCard } from "../components/dashboard/StatCards";
+import { DayNightCard, ForeignCard, PerCapitaCard, PopulationRhythmCard, WeekendCard } from "../components/dashboard/StatCards";
 import ExpandModal from "../components/dashboard/ExpandModal";
 import { quarterShort } from "../components/dashboard/format";
 import { useFavoriteDistrict } from "../hooks/useFavoriteDistrict";
@@ -125,6 +125,7 @@ interface DashboardData {
   heatmap: PopulationHeatmapResponse | null;
   tsAge: DistrictTimeSeriesResponse | null;
   tsGender: DistrictTimeSeriesResponse | null;
+  tsSales: DistrictTimeSeriesResponse | null;
   forecast: SurvivalForecastResponse | null;
   rent: RentResponse | null;
   buzz: BuzzGapResponse | null;
@@ -162,6 +163,7 @@ async function fetchDashboard(id: number): Promise<DashboardData> {
     heatmapR,
     tsAgeR,
     tsGenderR,
+    tsSalesR,
     forecastR,
     rentR,
     buzzR,
@@ -175,6 +177,7 @@ async function fetchDashboard(id: number): Promise<DashboardData> {
     commercialApi.heatmap(id),
     commercialApi.timeSeries(id, { metrics: "population", breakdown: "age" }),
     commercialApi.timeSeries(id, { metrics: "population", breakdown: "gender" }),
+    commercialApi.timeSeries(id, { metrics: "sales" }),
     mlApi.survivalForecast(id),
     apiClient.get<RentResponse>(`/api/commercial-districts/${id}/rent`),
     apiClient.get<BuzzGapResponse>("/api/buzz-gap"),
@@ -193,6 +196,7 @@ async function fetchDashboard(id: number): Promise<DashboardData> {
     heatmap: pick<PopulationHeatmapResponse>(heatmapR),
     tsAge: pick<DistrictTimeSeriesResponse>(tsAgeR),
     tsGender: pick<DistrictTimeSeriesResponse>(tsGenderR),
+    tsSales: pick<DistrictTimeSeriesResponse>(tsSalesR),
     forecast: pick<SurvivalForecastResponse>(forecastR),
     rent: pick<RentResponse>(rentR),
     buzz: pick<BuzzGapResponse>(buzzR),
@@ -366,6 +370,21 @@ export default function DashboardPage() {
       ? "이 업종은 매출 예측 준비 중입니다."
       : null;
   const salesCategoryLabel = selCategory ?? "전체 상권";
+
+  // 매출 예측 시작 앵커: 직전 분기(2025-Q4) 실적 한 점. 세 시나리오(p10/p50/p90)가 모두 여기서 출발한다.
+  // 업종 선택 시 그 업종 실적(category-stats total_sales), 전체 상권은 매출 실적 시계열의 최신 분기.
+  const salesHistory = useMemo<TimeseriesPoint[]>(() => {
+    if (selCategory != null) {
+      const q = categoryStatsQuery.data?.year_quarter ?? stats?.year_quarter ?? null;
+      const v = catStat?.total_sales ?? null;
+      return q != null && v != null ? [{ year_quarter: q, value: v }] : [];
+    }
+    const rows = data?.tsSales?.data ?? [];
+    for (let i = rows.length - 1; i >= 0; i--) {
+      if (rows[i].sales != null) return [{ year_quarter: rows[i].year_quarter, value: rows[i].sales }];
+    }
+    return [];
+  }, [selCategory, categoryStatsQuery.data, catStat, data?.tsSales]);
 
   // 카드 헤로: 폴백이면 현재 생존율만, 아니면 창업 시점 100% → 4분기 후 누적 생존율.
   const survivalStartPct = isFallback ? fallbackCurrentPct : survivalHistory.length > 0 ? 100 : null;
@@ -581,28 +600,35 @@ export default function DashboardPage() {
       {/* 유동인구 */}
       <section className={styles.section}>
         <SectionTitle title="유동인구" subtitle="누가, 언제 이 상권에 오는가" />
-        <div className={styles.card}>
-          <div className={styles.cardHead}>
-            <div>
-              <h3 className={styles.cardTitle}>유동인구 시간·요일 패턴</h3>
-              <p className={styles.cardSub}>시간대 × 요일 평균 유동인구</p>
+        <div className={styles.popTopGrid}>
+          <div className={styles.card}>
+            <div className={styles.cardHead}>
+              <div>
+                <h3 className={styles.cardTitle}>유동인구 시간·요일 패턴</h3>
+                <p className={styles.cardSub}>시간대 × 요일 평균 유동인구</p>
+              </div>
+              {data.heatmap && data.heatmap.by_time.length > 0 && data.heatmap.by_day.length > 0 && (
+                <button
+                  type="button"
+                  className={styles.expandBtn}
+                  onClick={() => setModal("heatmap")}
+                  aria-label="유동인구 확대"
+                >
+                  ⤢
+                </button>
+              )}
             </div>
-            {data.heatmap && data.heatmap.by_time.length > 0 && data.heatmap.by_day.length > 0 && (
-              <button
-                type="button"
-                className={styles.expandBtn}
-                onClick={() => setModal("heatmap")}
-                aria-label="유동인구 확대"
-              >
-                ⤢
-              </button>
+            {data.heatmap ? (
+              <PopulationHeatmap byTime={data.heatmap.by_time} byDay={data.heatmap.by_day} />
+            ) : (
+              <div className={styles.empty}>이 상권의 유동인구 기록이 아직 없습니다.</div>
             )}
           </div>
-          {data.heatmap ? (
-            <PopulationHeatmap byTime={data.heatmap.by_time} byDay={data.heatmap.by_day} />
-          ) : (
-            <div className={styles.empty}>이 상권의 유동인구 기록이 아직 없습니다.</div>
-          )}
+          <PopulationRhythmCard
+            peakLabel={peakLabel}
+            dayPct={data.popRatios?.daytime_pct ?? null}
+            nightPct={data.popRatios?.nighttime_pct ?? null}
+          />
         </div>
 
         <div className={styles.trioGrid}>
@@ -620,6 +646,7 @@ export default function DashboardPage() {
       <section className={styles.section}>
         <SectionTitle title="매출·소비" subtitle="고객은 얼마나, 어떻게 지갑을 여는가" />
         <SalesForecastCard
+          history={salesHistory}
           forecast={salesForecastSeries}
           categoryLabel={salesCategoryLabel}
           fallbackNote={salesFallbackNote}

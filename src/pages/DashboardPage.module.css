@@ -1,4 +1,8 @@
 .page {
+  /* 와이드(27인치+) 모니터에서 카드·예측 차트가 화면 끝까지 늘어져 밋밋해 보이는 것 방지: 최대폭 + 중앙 정렬. */
+  max-width: 1560px;
+  margin: 0 auto;
+  width: 100%;
   padding: 26px 30px 44px;
   display: flex;
   flex-direction: column;
@@ -165,6 +169,19 @@
 }
 @media (max-width: 980px) {
   .topGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 유동인구 상단: 시간·요일 히트맵 + 리듬 카드 2열. 와이드 화면에서 히트맵이 가로로 과하게 늘어지는 것 방지. */
+.popTopGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr);
+  gap: 22px;
+  align-items: stretch;
+}
+@media (max-width: 980px) {
+  .popTopGrid {
     grid-template-columns: 1fr;
   }
 }

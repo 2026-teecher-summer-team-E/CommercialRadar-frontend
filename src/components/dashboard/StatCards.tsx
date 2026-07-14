@@ -59,6 +59,46 @@ export function DayNightCard({
   );
 }
 
+/**
+ * 유동인구 리듬 카드. 시간·요일 히트맵 옆에 배치해 "언제 붐비나"를 요약한다.
+ * peakLabel = heatmap by_time 최댓값 시간대, day/nightPct = population-ratios 유동인구 낮/밤 비중(매출 아님).
+ */
+export function PopulationRhythmCard({
+  peakLabel = null,
+  dayPct = null,
+  nightPct = null,
+}: {
+  peakLabel?: string | null;
+  dayPct?: number | null;
+  nightPct?: number | null;
+}) {
+  const hasDN = dayPct != null && nightPct != null;
+  return (
+    <div className={styles.card}>
+      <div className={styles.head}>
+        <div>
+          <h3 className={styles.title}>유동인구 리듬</h3>
+          <p className={styles.sub}>언제 붐비나</p>
+        </div>
+      </div>
+      <p className={styles.miniLabel}>가장 붐비는 시간</p>
+      <div className={styles.bigNum}>{peakLabel ?? "—"}</div>
+      <p className={styles.miniLabel}>낮 vs 밤 유동인구</p>
+      <div className={styles.dnHero}>
+        <span className={styles.dnBig}>낮 {hasDN ? `${dayPct}%` : "—"}</span>
+        <span className={styles.dnBig}>밤 {hasDN ? `${nightPct}%` : "—"}</span>
+      </div>
+      <div className={styles.dnBar}>
+        <span className={styles.dnFill} style={{ width: `${hasDN ? dayPct : 50}%` }} />
+      </div>
+      <div className={styles.dnLegend}>
+        <span>낮</span>
+        <span>밤</span>
+      </div>
+    </div>
+  );
+}
+
 /** 외국인 비중 카드. pct는 foreign-ratio API 실데이터(생활인구 중 외국인 %). */
 export function ForeignCard({ pct = null, onExpand }: { pct?: number | null; onExpand?: () => void }) {
   return (
