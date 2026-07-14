@@ -36,6 +36,7 @@
   --color-orange: #e8a020;        /* amber 계열 — navy primary와 무관한 의미색 */
   --color-orange-bg: #fdf4dc;
   --color-red: #d94430;           /* navy와 충돌 없으므로 원래 톤 복원 */
+  --color-red-bg: #fbe9e5;        /* 지도 상권 "주의" 등급 카드 배경 */
 
   /* Accent — 보조 밝은 남색 */
   --color-accent: #3d54a8;

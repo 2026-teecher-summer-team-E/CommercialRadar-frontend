@@ -168,7 +168,7 @@
   background: var(--color-primary-light);
 }
 .scoreCard_low {
-  background: var(--color-orange-bg);
+  background: var(--color-red-bg);
 }
 .scoreLabel {
   margin: 0;
@@ -195,7 +195,7 @@
   color: var(--color-primary);
 }
 .scoreNum_low {
-  color: var(--color-orange);
+  color: var(--color-red);
 }
 .scoreUnit {
   font-size: 16px;
@@ -222,7 +222,7 @@
 }
 .grade_low {
   background: var(--color-surface);
-  color: var(--color-orange);
+  color: var(--color-red);
 }
 
 .divider {
