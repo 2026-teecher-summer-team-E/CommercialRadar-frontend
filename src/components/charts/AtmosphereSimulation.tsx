@@ -121,6 +121,13 @@ const FILE_FOOT_PAD: Record<string, number> = {
 const FOOT_BASE_PAD = 0.108; // 기준(기본 남성). 이 값 대비 초과 여백만큼 캐릭터를 내려 정렬.
 const FOOT_BOX_H = 112; // DotLottie 박스 높이(px, scale 전)
 
+/**
+ * footTraffic(유동인구)은 API의 분기 총합(avg_population)이라 그대로 표기하면
+ * "하루 145만 명"처럼 비현실적으로 보인다. HUD 표시용으로만 일 평균(÷365/4)으로 환산한다.
+ * (군중 수 계산 trafficBase는 원값을 그대로 사용 — 스케일 튜닝 유지)
+ */
+const DAYS_PER_QUARTER = 365 / 4;
+
 /** 타임랩스 종료 시점 보장 최소 폐업 점포 수. */
 const SCENARIO_MIN_CLOSED: Record<AtmoScenario, number> = { high: 1, mid: 2, low: 3 };
 
@@ -156,8 +163,6 @@ const SCENE_COLORS = {
   hudStrong: "var(--color-primary-light)",
   hudBase: "var(--color-muted)",
   traffic: "var(--color-accent)",
-  femaleMarker: "color-mix(in srgb, var(--color-red) 85%, transparent)",
-  maleMarker: "color-mix(in srgb, var(--series-1) 82%, transparent)",
   nightChipBg: "color-mix(in srgb, var(--series-1) 18%, transparent)",
   dayChipBg: "color-mix(in srgb, var(--color-amber) 18%, transparent)",
 } as const;
@@ -551,7 +556,7 @@ export default function AtmosphereSimulation({
             </div>
             {liveTraffic != null && (
               <div style={{ fontSize: 11, color: SCENE_COLORS.hudText }}>
-                유동인구 &nbsp;<span style={{ color: SCENE_COLORS.traffic, fontWeight: 600 }}>{liveTraffic.toLocaleString()}명/h</span>
+                유동인구 &nbsp;<span style={{ color: SCENE_COLORS.traffic, fontWeight: 600 }}>{Math.round(liveTraffic / DAYS_PER_QUARTER).toLocaleString()}명·일</span>
               </div>
             )}
           </div>
@@ -560,54 +565,33 @@ export default function AtmosphereSimulation({
           {useLottie
             ? people.slice(0, Math.min(people.length, 12)).map((p, i) => {
                 const ageStyle = AGE_STYLE[p.ageBucket] ?? AGE_STYLE_FALLBACK;
-                const rowScale = 0.62 + p.row * 0.5;
+                // 점포(건물) 대비 과대 방지: 앞줄 기준 약 16% 축소 (0.62~1.12 → 0.52~0.94).
+                const rowScale = 0.52 + p.row * 0.42;
                 const rawScale = rowScale * ageStyle.scaleBonus * (FILE_SCALE[p.lottieFile] ?? 1);
-                // 오피스맨은 최소 크기 하한을 둬(현재 최소의 약 2배) 뒷줄에서도 작게 안 보이게.
-                const scale = p.lottieFile === "/lottie/walking-6.json" ? Math.max(rawScale, 1.28) : rawScale;
+                // 오피스맨은 최소 크기 하한을 둬 뒷줄에서도 작게 안 보이게 (전체 축소에 맞춰 비례 하향).
+                const scale = p.lottieFile === "/lottie/walking-6.json" ? Math.max(rawScale, 1.07) : rawScale;
                 const bottom = 4 + (1 - p.row) * 52; // row 클수록(=큰/가까운) 화면 아래(앞)
                 const dir = i % 2 === 0 ? 1 : -1;
                 const baseDur = 9 + (i % 6) * 2.2;
                 const dur = baseDur / ageStyle.speedMult;
+                // 시작 위상을 의사난수로 분산 — 등간격(-i*1.7s)이면 속도 차 때문에 주기적으로 한곳에 뭉침.
+                const phase = ((i * 5749 + 1013) % 941) / 941;
+                const delay = -(phase * dur);
                 const walkAnim = dir === 1 ? "atmo-walk-r" : "atmo-walk-l";
                 const hueExtra = p.isFemale ? 5 : 0;
                 const brightnessExtra = p.isFemale ? 0.04 : 0;
-                const cssFilter = `hue-rotate(${ageStyle.hueRotate + hueExtra}deg) saturate(${ageStyle.saturate}) brightness(${ageStyle.brightness + brightnessExtra})`;
+                // 개인별 색 지터(±10°) — 같은 에셋·같은 연령 캐릭터가 나란히 걸을 때 '복제 스프라이트' 인상 완화.
+                const hueJitter = (((i * 2657 + 389) % 211) / 211) * 20 - 10;
+                const cssFilter = `hue-rotate(${(ageStyle.hueRotate + hueExtra + hueJitter).toFixed(1)}deg) saturate(${ageStyle.saturate}) brightness(${ageStyle.brightness + brightnessExtra})`;
                 const scaleXDir = dir * (FILE_FACING[p.lottieFile] ?? LOTTIE_FACING);
                 // 발밑 여백 정렬: 기준(기본 남성) 대비 초과 여백만큼 아래로 내려 모든 발을 같은 지면선에 맞춤.
                 const footNudge = Math.max(0, (FILE_FOOT_PAD[p.lottieFile] ?? 0.12) - FOOT_BASE_PAD) * FOOT_BOX_H;
-                const charH = 112 * scale;
-                const markerSize = Math.max(14, 15 * scale);
-                const markerBottom = charH + footNudge + 2;
                 return (
                   <div
                     key={p.id}
                     data-lf={p.lottieFile}
-                    style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 1000) + i, animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}
+                    style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 1000) + i, animation: `${walkAnim} ${dur}s linear ${delay.toFixed(2)}s infinite`, animationPlayState: playState }}
                   >
-                    {/* 성별 마커 — scaleX 뒤집힘 영향 밖에 배치 */}
-                    <div
-                      aria-label={p.isFemale ? "여성" : "남성"}
-                      style={{
-                        position: "absolute",
-                        bottom: markerBottom,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        width: markerSize,
-                        height: markerSize,
-                        borderRadius: "50%",
-                        background: p.isFemale ? SCENE_COLORS.femaleMarker : SCENE_COLORS.maleMarker,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: Math.max(10, 11 * scale),
-                        color: "var(--color-on-primary)",
-                        lineHeight: 1,
-                        pointerEvents: "none",
-                        zIndex: 1,
-                      }}
-                    >
-                      {p.isFemale ? "♀" : "♂"}
-                    </div>
                     <div style={{ transform: `scale(${scale}) scaleX(${scaleXDir}) translateY(${footNudge}px)`, transformOrigin: "bottom center", display: "flex", flexDirection: "column", alignItems: "center" }}>
                       <DotLottieReact
                         src={p.lottieFile}
@@ -629,33 +613,11 @@ export default function AtmosphereSimulation({
                 const bottom = 14 + (1 - p.row) * 96; // row 클수록(=큰/가까운) 화면 아래(앞)
                 const dir = i % 2 === 0 ? 1 : -1;
                 const dur = 9 + (i % 6) * 2.2;
+                // 시작 위상 의사난수 분산 (Lottie 경로와 동일한 뭉침 방지)
+                const delay = -(((i * 5749 + 1013) % 941) / 941) * dur;
                 const walkAnim = dir === 1 ? "atmo-walk-r" : "atmo-walk-l";
-                const dotH = (13 + 1 + 24) * scale;
                 return (
-                  <div key={p.id} style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 1000) + i, animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}>
-                    {/* 성별 마커 */}
-                    <div
-                      aria-label={p.isFemale ? "여성" : "남성"}
-                      style={{
-                        position: "absolute",
-                        bottom: dotH + 2,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        width: 14,
-                        height: 14,
-                        borderRadius: "50%",
-                        background: p.isFemale ? SCENE_COLORS.femaleMarker : SCENE_COLORS.maleMarker,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 10,
-                        color: "var(--color-on-primary)",
-                        lineHeight: 1,
-                        pointerEvents: "none",
-                      }}
-                    >
-                      {p.isFemale ? "♀" : "♂"}
-                    </div>
+                  <div key={p.id} style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 1000) + i, animation: `${walkAnim} ${dur}s linear ${delay.toFixed(2)}s infinite`, animationPlayState: playState }}>
                     <div style={{ transform: `scale(${scale}) scaleX(${dir})`, transformOrigin: "bottom center" }}>
                       <div style={{ animation: `atmo-bob ${1.6 + (i % 3) * 0.3}s ease-in-out infinite`, animationPlayState: playState, display: "flex", flexDirection: "column", alignItems: "center" }}>
                         <div style={{ width: 13, height: 13, borderRadius: "50%", background: p.color }} />

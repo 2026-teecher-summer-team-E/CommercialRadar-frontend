@@ -1,4 +1,4 @@
-import { fmtPct, fmtManUnit, closureRiskLabel, riskColor } from "./format";
+import { fmtPct, fmtDailyManUnit, closureRiskLabel, riskColor } from "./format";
 import styles from "./ScoreCard.module.css";
 
 export interface ScoreBadge {
@@ -21,6 +21,10 @@ interface ScoreCardProps {
   weekdayPct: number | null;
   /** 유입 비율(주말) 0~100. 실데이터 없으면 null → 지표없음. */
   weekendPct: number | null;
+  /** 유동인구 피크 시간대 라벨(예: "17~21시"). 없으면 지표없음. */
+  peakLabel?: string | null;
+  /** 종합점수 순위 라벨(예: "서울 10위"). 없으면 지표없음. */
+  rankLabel?: string | null;
   onExpand?: () => void;
 }
 
@@ -45,6 +49,8 @@ export default function ScoreCard({
   avgPopulation,
   weekdayPct,
   weekendPct,
+  peakLabel,
+  rankLabel,
   onExpand,
 }: ScoreCardProps) {
   return (
@@ -63,7 +69,11 @@ export default function ScoreCard({
           <span className={styles.scoreNum}>{score != null ? Math.round(score) : "—"}</span>
           <span className={styles.scoreDenom}>/100</span>
         </div>
-        <span className={`${styles.topPill} ${styles.topPillEmpty}`}>순위 지표없음</span>
+        {rankLabel ? (
+          <span className={styles.topPill}>{rankLabel}</span>
+        ) : (
+          <span className={`${styles.topPill} ${styles.topPillEmpty}`}>순위 지표없음</span>
+        )}
       </div>
 
       <span className={styles.constructLabel}>점수 구성</span>
@@ -110,13 +120,17 @@ export default function ScoreCard({
         </div>
         <div className={styles.pill}>
           <span className={styles.pillLabel}>유동인구</span>
-          <span className={styles.pillValue}>{fmtManUnit(avgPopulation)}·일</span>
+          <span className={styles.pillValue}>{fmtDailyManUnit(avgPopulation)}·일</span>
         </div>
       </div>
 
       <div className={styles.growthRow}>
         <span className={styles.growthTag}>{typeName ?? "상권"}</span>
-        <span className={styles.peakTag}>피크 지표없음</span>
+        {peakLabel ? (
+          <span className={styles.peakTag}>피크 {peakLabel}</span>
+        ) : (
+          <span className={styles.peakTag}>피크 지표없음</span>
+        )}
       </div>
 
       {weekdayPct != null && weekendPct != null ? (

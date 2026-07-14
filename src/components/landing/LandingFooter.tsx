@@ -1,5 +1,4 @@
 import styles from "../../pages/LandingPage.module.css";
-import { RadarIcon } from "./icons";
 
 /** 다크 푸터. */
 export default function LandingFooter() {
@@ -8,7 +7,15 @@ export default function LandingFooter() {
       <div className={styles.footerInner}>
         <div className={styles.footerBrand}>
           <span className={styles.footerBrandMark}>
-            <RadarIcon size={12} />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path
+                d="M10.8 17.1a6.3 6.3 0 1 0 0-12.6 6.3 6.3 0 0 0 0 12.6Z"
+                stroke="#fff"
+                strokeWidth="2.2"
+              />
+              <path d="m15.4 15.4 4.1 4.1" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
+              <path d="M8.4 9.1a3.2 3.2 0 0 1 2.4-1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
           </span>
           상권레이더
         </div>
