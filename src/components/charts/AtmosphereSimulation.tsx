@@ -575,6 +575,9 @@ export default function AtmosphereSimulation({
                 const scaleXDir = dir * (FILE_FACING[p.lottieFile] ?? LOTTIE_FACING);
                 // 발밑 여백 정렬: 기준(기본 남성) 대비 초과 여백만큼 아래로 내려 모든 발을 같은 지면선에 맞춤.
                 const footNudge = Math.max(0, (FILE_FOOT_PAD[p.lottieFile] ?? 0.12) - FOOT_BASE_PAD) * FOOT_BOX_H;
+                const charH = 112 * scale;
+                const markerSize = Math.max(14, 15 * scale);
+                const markerBottom = charH + footNudge + 2;
                 return (
                   <div
                     key={p.id}
@@ -627,6 +630,7 @@ export default function AtmosphereSimulation({
                 const dir = i % 2 === 0 ? 1 : -1;
                 const dur = 9 + (i % 6) * 2.2;
                 const walkAnim = dir === 1 ? "atmo-walk-r" : "atmo-walk-l";
+                const dotH = (13 + 1 + 24) * scale;
                 return (
                   <div key={p.id} style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 1000) + i, animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}>
                     {/* 성별 마커 */}
