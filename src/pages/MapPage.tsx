@@ -261,67 +261,24 @@ export default function MapPage() {
           onKeyDown={handleSearchKeyDown}
         />
         {searchFocused && !query.trim() && recentSearches.length > 0 && (
-          <ul
-            style={{
-              position: "absolute",
-              top: "calc(100% + 6px)",
-              left: 0,
-              right: 0,
-              zIndex: 1200,
-              listStyle: "none",
-              margin: 0,
-              padding: 6,
-              background: "var(--color-surface)",
-              border: "1px solid var(--color-border)",
-              borderRadius: 12,
-              boxShadow: "var(--shadow-pop)",
-              maxHeight: 320,
-              overflowY: "auto",
-            }}
-          >
+          <ul className={styles.recentDropdown}>
             {recentSearches.map((item) => (
-              <li key={item.id} style={{ display: "flex", alignItems: "center" }}>
+              <li key={item.id} className={styles.recentItem}>
                 <button
                   type="button"
+                  className={styles.recentItemBtn}
                   onClick={() => handlePickRecent(item)}
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                    textAlign: "left",
-                    padding: "9px 12px",
-                    border: "none",
-                    background: "transparent",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    fontFamily: "var(--font-sans)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 2,
-                  }}
                 >
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text)" }}>
-                    {item.district_name}
-                  </span>
-                  <span style={{ fontSize: 12, color: "var(--color-muted)" }}>
+                  <span className={styles.recentItemName}>{item.district_name}</span>
+                  <span className={styles.recentItemMeta}>
                     {[item.gu_name, item.dong_name].filter(Boolean).join(" · ")}
                   </span>
                 </button>
                 <button
                   type="button"
+                  className={styles.recentRemoveBtn}
                   aria-label={`${item.district_name} 삭제`}
                   onClick={() => removeSearch(item.id)}
-                  style={{
-                    flex: "none",
-                    width: 24,
-                    height: 24,
-                    marginRight: 4,
-                    border: "none",
-                    background: "transparent",
-                    borderRadius: 6,
-                    cursor: "pointer",
-                    fontSize: 13,
-                    color: "var(--color-faint)",
-                  }}
                 >
                   ×
                 </button>
@@ -330,47 +287,17 @@ export default function MapPage() {
           </ul>
         )}
         {query.trim() && options.length > 0 && (
-          <ul
-            style={{
-              position: "absolute",
-              top: "calc(100% + 6px)",
-              left: 0,
-              right: 0,
-              zIndex: 1200,
-              listStyle: "none",
-              margin: 0,
-              padding: 6,
-              background: "var(--color-surface)",
-              border: "1px solid var(--color-border)",
-              borderRadius: 12,
-              boxShadow: "var(--shadow-pop)",
-              maxHeight: 320,
-              overflowY: "auto",
-            }}
-          >
+          <ul className={styles.recentDropdown}>
             {options.map((o) => (
               <li key={o.id}>
                 <button
                   type="button"
+                  className={styles.recentItemBtn}
+                  style={{ width: "100%" }}
                   onClick={() => handlePickSearch(o)}
-                  style={{
-                    width: "100%",
-                    textAlign: "left",
-                    padding: "9px 12px",
-                    border: "none",
-                    background: "transparent",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    fontFamily: "var(--font-sans)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 2,
-                  }}
                 >
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text)" }}>
-                    {o.district_name}
-                  </span>
-                  <span style={{ fontSize: 12, color: "var(--color-muted)" }}>
+                  <span className={styles.recentItemName}>{o.district_name}</span>
+                  <span className={styles.recentItemMeta}>
                     {[o.gu_name, o.dong_name].filter(Boolean).join(" · ")}
                     {o.type_name ? ` · ${o.type_name}` : ""}
                   </span>

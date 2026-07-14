@@ -47,6 +47,69 @@
   color: var(--color-faint);
 }
 
+/* 검색 드롭다운(최근 검색어 · 검색 결과) — 검색바 아래 떠오르는 목록 */
+.recentDropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 1200;
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-pop);
+  max-height: 320px;
+  overflow-y: auto;
+}
+.recentItem {
+  display: flex;
+  align-items: center;
+}
+.recentItemBtn {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  padding: 9px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.recentItemBtn:hover {
+  background: var(--color-chip);
+}
+.recentItemName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.recentItemMeta {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.recentRemoveBtn {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin-right: 4px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--color-faint);
+}
+.recentRemoveBtn:hover {
+  color: var(--color-muted);
+}
+
 /* 2단 본문 */
 .body {
   flex: 1;
