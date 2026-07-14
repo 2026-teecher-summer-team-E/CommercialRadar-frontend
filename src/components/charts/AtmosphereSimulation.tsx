@@ -412,8 +412,8 @@ export default function AtmosphereSimulation({
         {dayDominant != null && (
           <div style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 10, padding: "4px 10px", borderRadius: 20, background: isDay ? "rgba(252,211,77,0.18)" : "rgba(99,102,241,0.18)", fontSize: 12, color: isDay ? "#92400e" : "#a5b4fc" }}>
             {isDay
-              ? `☀️ 낮 매출${daySalesPct != null ? ` ${daySalesPct.toFixed(1)}%` : ""} — 낮이 유리한 상권`
-              : `🌙 밤 매출${daySalesPct != null ? ` ${daySalesPct.toFixed(1)}%` : ""} — 밤이 유리한 상권`}
+              ? `낮 매출${daySalesPct != null ? ` ${daySalesPct.toFixed(1)}%` : ""} — 낮이 유리한 상권`
+              : `밤 매출${daySalesPct != null ? ` ${daySalesPct.toFixed(1)}%` : ""} — 밤이 유리한 상권`}
           </div>
         )}
 

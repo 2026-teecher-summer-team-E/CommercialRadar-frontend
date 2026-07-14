@@ -56,7 +56,7 @@ export default function GangnamCafeDemoPage() {
         <>
           <ForecastChart history={data.history} forecast={data.forecast} unit={data.unit} onScenarioClick={setSim} />
           <p style={{ color: "#8b90a0", fontSize: 13, marginTop: 4 }}>
-            💡 미래 선(안풀린·보통·잘풀린)을 클릭하면 그 미래의 <b>상권 분위기</b>가 재생됩니다.
+            미래 선(안풀린·보통·잘풀린)을 클릭하면 그 미래의 <b>상권 분위기</b>가 재생됩니다.
           </p>
         </>
       ) : (
