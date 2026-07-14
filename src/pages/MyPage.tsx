@@ -207,7 +207,7 @@ export default function MyPage() {
       <header className={styles.header}>
         <h1 className={styles.title}>마이페이지</h1>
         <p className={styles.subtitle}>
-          저장한 리포트와 관심 상권을 관리하세요
+          내가 찜한 상권과 분석 기록
         </p>
       </header>
 
