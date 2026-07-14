@@ -48,6 +48,12 @@ export default function LeafletMap({
   // 카메라를 또 움직이지 않도록 이 ref로 "이미 이동했음"을 구분한다.
   const flownRef = useRef<number | null>(null);
 
+  // effect 4는 마운트 시에도 한 번 실행되는데, 그때 guFilter 기본값("전체")이
+  // effect 3의 flyToBounds(딥링크로 들어온 selectedId 확대) 직후 카메라를
+  // 서울 전체 뷰로 되돌려버려 확대가 무효화된다. 마운트 시 첫 실행은 건너뛰고
+  // 사용자가 실제로 필터를 바꿀 때만 카메라를 움직이도록 이 ref로 구분한다.
+  const guFilterMountedRef = useRef(false);
+
   // 선택 상권 팝업 DOM(이름/유형/점수 + 프로필 버튼).
   const buildPopup = () => {
     const el = document.createElement("div");
@@ -161,6 +167,10 @@ export default function LeafletMap({
 
   // 4) 자치구 필터 변경 시 해당 자치구 범위로 카메라 이동
   useEffect(() => {
+    if (!guFilterMountedRef.current) {
+      guFilterMountedRef.current = true;
+      return;
+    }
     const map = mapRef.current;
     if (!map) return;
     if (guFilter === "전체") {
