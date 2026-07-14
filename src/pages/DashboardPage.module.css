@@ -168,6 +168,19 @@
   }
 }
 
+/* 유동인구 상단: 시간·요일 히트맵 + 리듬 카드 2열. 와이드 화면에서 히트맵이 가로로 과하게 늘어지는 것 방지. */
+.popTopGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr);
+  gap: 22px;
+  align-items: stretch;
+}
+@media (max-width: 980px) {
+  .popTopGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* 3열 그리드(유동인구 하위 카드) */
 .trioGrid {
   display: grid;

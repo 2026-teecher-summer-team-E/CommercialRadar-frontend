@@ -21,7 +21,7 @@ import RentCard from "../components/dashboard/RentCard";
 import type { RentBar } from "../components/dashboard/RentCard";
 import BuzzGapCard from "../components/dashboard/BuzzGapCard";
 import SalesForecastCard from "../components/dashboard/SalesForecastCard";
-import { DayNightCard, ForeignCard, PerCapitaCard, WeekendCard } from "../components/dashboard/StatCards";
+import { DayNightCard, ForeignCard, PerCapitaCard, PopulationRhythmCard, WeekendCard } from "../components/dashboard/StatCards";
 import ExpandModal from "../components/dashboard/ExpandModal";
 import { quarterShort } from "../components/dashboard/format";
 import { useFavoriteDistrict } from "../hooks/useFavoriteDistrict";
@@ -581,28 +581,35 @@ export default function DashboardPage() {
       {/* 유동인구 */}
       <section className={styles.section}>
         <SectionTitle title="유동인구" subtitle="누가, 언제 이 상권에 오는가" />
-        <div className={styles.card}>
-          <div className={styles.cardHead}>
-            <div>
-              <h3 className={styles.cardTitle}>유동인구 시간·요일 패턴</h3>
-              <p className={styles.cardSub}>시간대 × 요일 평균 유동인구</p>
+        <div className={styles.popTopGrid}>
+          <div className={styles.card}>
+            <div className={styles.cardHead}>
+              <div>
+                <h3 className={styles.cardTitle}>유동인구 시간·요일 패턴</h3>
+                <p className={styles.cardSub}>시간대 × 요일 평균 유동인구</p>
+              </div>
+              {data.heatmap && data.heatmap.by_time.length > 0 && data.heatmap.by_day.length > 0 && (
+                <button
+                  type="button"
+                  className={styles.expandBtn}
+                  onClick={() => setModal("heatmap")}
+                  aria-label="유동인구 확대"
+                >
+                  ⤢
+                </button>
+              )}
             </div>
-            {data.heatmap && data.heatmap.by_time.length > 0 && data.heatmap.by_day.length > 0 && (
-              <button
-                type="button"
-                className={styles.expandBtn}
-                onClick={() => setModal("heatmap")}
-                aria-label="유동인구 확대"
-              >
-                ⤢
-              </button>
+            {data.heatmap ? (
+              <PopulationHeatmap byTime={data.heatmap.by_time} byDay={data.heatmap.by_day} />
+            ) : (
+              <div className={styles.empty}>이 상권의 유동인구 기록이 아직 없습니다.</div>
             )}
           </div>
-          {data.heatmap ? (
-            <PopulationHeatmap byTime={data.heatmap.by_time} byDay={data.heatmap.by_day} />
-          ) : (
-            <div className={styles.empty}>이 상권의 유동인구 기록이 아직 없습니다.</div>
-          )}
+          <PopulationRhythmCard
+            peakLabel={peakLabel}
+            dayPct={data.popRatios?.daytime_pct ?? null}
+            nightPct={data.popRatios?.nighttime_pct ?? null}
+          />
         </div>
 
         <div className={styles.trioGrid}>

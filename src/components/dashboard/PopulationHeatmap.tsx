@@ -66,7 +66,11 @@ export default function PopulationHeatmap({ byTime, byDay, showValues = false }:
 
   return (
     <div className={styles.wrap}>
-      <div className={styles.grid} style={{ gridTemplateColumns: `48px repeat(${DAY_ORDER.length}, 1fr)` }}>
+      {/* 인라인은 셀 최대폭 제한(와이드 화면에서 긴 막대처럼 늘어지지 않게), 모달(showValues)은 꽉 채움. */}
+      <div
+        className={styles.grid}
+        style={{ gridTemplateColumns: `48px repeat(${DAY_ORDER.length}, ${showValues ? "minmax(0, 1fr)" : "minmax(0, 120px)"})` }}
+      >
         {/* 헤더 행: 요일 */}
         <span className={styles.corner} />
         {DAY_ORDER.map((d) => (
