@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "../lib/apiClient";
@@ -21,6 +21,7 @@ import RentCard from "../components/dashboard/RentCard";
 import type { RentBar } from "../components/dashboard/RentCard";
 import BuzzGapCard from "../components/dashboard/BuzzGapCard";
 import SalesForecastCard from "../components/dashboard/SalesForecastCard";
+import { prewarmLottie } from "../utils/prewarmLottie";
 import { DayNightCard, ForeignCard, PerCapitaCard, PopulationRhythmCard, WeekendCard } from "../components/dashboard/StatCards";
 import ExpandModal from "../components/dashboard/ExpandModal";
 import { quarterShort } from "../components/dashboard/format";
@@ -219,6 +220,9 @@ export default function DashboardPage() {
   // 생존율 예측 업종 필터. null = 전체 상권(기존 기본 동작).
   const [selCategory, setSelCategory] = useState<string | null>(null);
 
+  // 시뮬레이션 Lottie 캐릭터를 유휴 시점에 미리 캐시에 적재 → 시나리오 클릭 시 팝인 지연 제거.
+  useEffect(() => { prewarmLottie(); }, []);
+
   const dashboardQuery = useQuery({
     queryKey: queryKeys.dashboard(id ?? -1),
     queryFn: () => fetchDashboard(id as number),
@@ -384,7 +388,7 @@ export default function DashboardPage() {
       if (rows[i].sales != null) return [{ year_quarter: rows[i].year_quarter, value: rows[i].sales }];
     }
     return [];
-  }, [selCategory, categoryStatsQuery.data, catStat, data?.tsSales]);
+  }, [selCategory, categoryStatsQuery.data, catStat, data?.tsSales, stats?.year_quarter]);
 
   // 카드 헤로: 폴백이면 현재 생존율만, 아니면 창업 시점 100% → 4분기 후 누적 생존율.
   const survivalStartPct = isFallback ? fallbackCurrentPct : survivalHistory.length > 0 ? 100 : null;
