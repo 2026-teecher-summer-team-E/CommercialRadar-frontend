@@ -1,7 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { apiClient } from "../lib/apiClient";
+import { useQuery } from "@tanstack/react-query";
 import { commercialApi } from "../services/commercialApi";
+import { queryKeys, useDistrictSearch } from "../hooks/queries";
 import { useRecentSearches, type RecentSearchItem } from "../hooks/useRecentSearches";
 import SangkwonPanel from "../components/map/SangkwonPanel";
 import FilterBar from "../components/map/FilterBar";
@@ -22,6 +23,30 @@ import type { CategoryStat, DistrictGeo } from "../types";
 import styles from "./MapPage.module.css";
 
 const DEFAULT_DISTRICT_ID = 1315;
+const EMPTY_GEO: DistrictGeo[] = [];
+
+/** 좌측 패널 상세 5개 API 병렬 호출. 상권 상세 실패만 에러, 나머지는 null 허용(allSettled). */
+async function fetchMapSummary(
+  id: number,
+): Promise<{ summary: DistrictSummary; categories: CategoryStat[] }> {
+  const [detailR, radarR, heatmapR, tsR, catR] = await Promise.allSettled([
+    commercialApi.getDistrict(id) as Promise<{ data: DistrictDetail }>,
+    commercialApi.radar(id),
+    commercialApi.heatmap(id),
+    commercialApi.timeSeries(id),
+    commercialApi.categoryStats(id),
+  ]);
+  if (detailR.status !== "fulfilled") throw new Error(`상권 ${id} 조회 실패`);
+  return {
+    summary: {
+      detail: detailR.value.data,
+      radar: radarR.status === "fulfilled" ? radarR.value.data : null,
+      heatmap: heatmapR.status === "fulfilled" ? heatmapR.value.data : null,
+      timeSeries: tsR.status === "fulfilled" ? tsR.value.data : null,
+    },
+    categories: catR.status === "fulfilled" ? catR.value.data.categories : [],
+  };
+}
 
 export default function MapPage() {
   const navigate = useNavigate();
@@ -50,17 +75,11 @@ export default function MapPage() {
       { replace: true },
     );
   }, [selectedId, setSearchParams]);
-  const [summary, setSummary] = useState<DistrictSummary | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
   const [query, setQuery] = useState("");
-  const [options, setOptions] = useState<DistrictSearchResult[]>([]);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const searchBarRef = useRef<HTMLDivElement | null>(null);
   const { items: recentSearches, addSearch, removeSearch } = useRecentSearches();
-  const [geo, setGeo] = useState<DistrictGeo[]>([]);
-  const [geojson, setGeojson] = useState<GeoJSON.FeatureCollection | null>(null);
   const [mode, setMode] = useState<MapMode>("regions");
 
   // 지도 필터(마커/구역 실필터): 상권유형/자치구/유동인구.
@@ -68,66 +87,34 @@ export default function MapPage() {
   const [guFilter, setGuFilter] = useState<string>("전체");
   const [popFilter, setPopFilter] = useState<PopulationBucket>("전체");
 
-  // 업종 필터(선택 상권 지표만 재조회, 마커/지도는 그대로): 상권 상세 로드 시 그 상권에 실재하는 업종 목록도 함께 받아둔다.
+  // 업종 필터(선택 상권 지표만 재조회, 마커/지도는 그대로).
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
-  const [availableCategories, setAvailableCategories] = useState<CategoryStat[]>([]);
 
-  // 전 상권 좌표(핀) + 경계 폴리곤(구역) 1회 로드.
-  useEffect(() => {
-    let alive = true;
-    commercialApi
-      .geo()
-      .then((r) => alive && setGeo(r.data))
-      .catch(() => alive && setGeo([]));
-    commercialApi
-      .geojson()
-      .then((r) => alive && setGeojson(r.data))
-      .catch(() => alive && setGeojson(null));
-    return () => {
-      alive = false;
-    };
-  }, []);
+  // 전 상권 좌표(핀) + 경계 폴리곤(구역). 전역 캐시라 페이지 재진입 시 재요청 없음.
+  const geoQuery = useQuery({
+    queryKey: queryKeys.geo,
+    queryFn: async () => (await commercialApi.geo()).data,
+  });
+  const geojsonQuery = useQuery({
+    queryKey: queryKeys.geojson,
+    queryFn: async () => (await commercialApi.geojson()).data,
+  });
+  const geo: DistrictGeo[] = geoQuery.data ?? EMPTY_GEO;
+  const geojson = geojsonQuery.data ?? null;
 
-  // 선택 상권 상세(좌측 패널) 로드. 업종 필터는 상권이 바뀌면 이전 상권 기준 선택값이 무의미해지므로 초기화.
+  // 선택 상권 상세(좌측 패널). 상권 상세 로드 시 실재 업종 목록도 함께 받아둔다.
+  const summaryQuery = useQuery({
+    queryKey: queryKeys.mapSummary(selectedId),
+    queryFn: () => fetchMapSummary(selectedId),
+  });
+  const summary = summaryQuery.data?.summary ?? null;
+  const availableCategories: CategoryStat[] = summaryQuery.data?.categories ?? [];
+  const loading = summaryQuery.isPending;
+  const error = summaryQuery.isError;
+
+  // 상권이 바뀌면 이전 상권 기준 업종 필터 선택값이 무의미해지므로 초기화.
   useEffect(() => {
-    let alive = true;
-    setLoading(true);
-    setError(false);
     setCategoryFilter(null);
-
-    Promise.allSettled([
-      commercialApi.getDistrict(selectedId) as Promise<{ data: DistrictDetail }>,
-      commercialApi.radar(selectedId),
-      commercialApi.heatmap(selectedId),
-      commercialApi.timeSeries(selectedId),
-      commercialApi.categoryStats(selectedId),
-    ])
-      .then(([detailR, radarR, heatmapR, tsR, catR]) => {
-        if (!alive) return;
-        if (detailR.status !== "fulfilled") {
-          setError(true);
-          setSummary(null);
-          setAvailableCategories([]);
-          return;
-        }
-        setSummary({
-          detail: detailR.value.data,
-          radar: radarR.status === "fulfilled" ? radarR.value.data : null,
-          heatmap: heatmapR.status === "fulfilled" ? heatmapR.value.data : null,
-          timeSeries: tsR.status === "fulfilled" ? tsR.value.data : null,
-        });
-        setAvailableCategories(catR.status === "fulfilled" ? catR.value.data.categories : []);
-      })
-      .catch(() => {
-        if (alive) setError(true);
-      })
-      .finally(() => {
-        if (alive) setLoading(false);
-      });
-
-    return () => {
-      alive = false;
-    };
   }, [selectedId]);
 
   // 상권유형 + 자치구 + 유동인구 필터를 지도 마커/구역에 실제로 적용.
@@ -160,32 +147,16 @@ export default function MapPage() {
     };
   }, [geojson, matchesFilters]);
 
-  // 검색: 입력 디바운스 후 위치 드롭다운 옵션 갱신.
+  // 검색: 입력 300ms 디바운스 후 요청. 같은 검색어는 캐시에서 즉시 응답.
+  const keyword = query.trim();
   useEffect(() => {
-    const keyword = query.trim();
-    if (!keyword) {
-      setOptions([]);
-      return;
-    }
-    let alive = true;
-    const t = setTimeout(() => {
-      apiClient
-        .get<DistrictSearchResult[]>("/api/commercial-districts/search", {
-          params: { q: keyword },
-        })
-        .then((res) => {
-          if (alive) setOptions(res.data);
-        })
-        .catch(() => {
-          if (alive) setOptions([]);
-        });
-    }, 300);
+    const t = setTimeout(() => setDebouncedQuery(keyword), 300);
+    return () => clearTimeout(t);
+  }, [keyword]);
 
-    return () => {
-      alive = false;
-      clearTimeout(t);
-    };
-  }, [query]);
+  const searchQuery = useDistrictSearch(debouncedQuery);
+  const options: DistrictSearchResult[] =
+    (keyword && debouncedQuery ? searchQuery.data : undefined) ?? [];
 
   // 검색 결과 클릭 → 실제 상권 선택(selectedId 변경) + 그 상권을 최근 검색어에 저장 + 검색 초기화.
   const handlePickSearch = (result: DistrictSearchResult) => {
@@ -197,7 +168,6 @@ export default function MapPage() {
     });
     setSelectedId(result.id);
     setQuery("");
-    setOptions([]);
     setSearchFocused(false);
   };
 
@@ -210,7 +180,6 @@ export default function MapPage() {
     addSearch(item);
     setSelectedId(item.id);
     setQuery("");
-    setOptions([]);
     setSearchFocused(false);
   };
 

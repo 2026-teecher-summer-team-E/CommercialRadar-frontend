@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { commercialApi } from "../services/commercialApi";
+import { queryKeys, useDistrictSearch } from "../hooks/queries";
 import type {
   DistrictCompareResponse,
   RadarResponse,
@@ -39,164 +41,119 @@ export default function ComparePage() {
   const [selectedIds, setSelectedIds] = useState<number[]>([1, 2, 3]);
   const [selectedQuarter, setSelectedQuarter] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [availableQuarters, setAvailableQuarters] = useState<string[]>([]);
-  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
-  const [data, setData] = useState<CompareData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [modal, setModal] = useState<ModalKind>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<CommercialDistrictSearchResult[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [searchError, setSearchError] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
 
+  // 검색어 250ms 디바운스: 입력이 멈춘 뒤에만 쿼리 키가 바뀌어 요청이 나간다.
+  const keyword = searchQuery.trim();
   useEffect(() => {
-    const keyword = searchQuery.trim();
-    if (!isAdding || !keyword) {
-      setSearchResults([]);
-      setSearchLoading(false);
-      setSearchError(false);
-      return;
-    }
+    const timer = window.setTimeout(() => setDebouncedQuery(keyword), 250);
+    return () => window.clearTimeout(timer);
+  }, [keyword]);
 
-    let alive = true;
-    setSearchLoading(true);
-    setSearchError(false);
+  const search = useDistrictSearch(debouncedQuery, isAdding);
+  const searchResults: CommercialDistrictSearchResult[] =
+    (isAdding && keyword && debouncedQuery ? search.data : undefined) ?? [];
+  // 디바운스 대기 중에도 로딩으로 표시해 기존 UX(타이핑 즉시 "찾고 있습니다") 유지.
+  const searchLoading = isAdding && !!keyword && (keyword !== debouncedQuery || search.isFetching);
+  const searchError = search.isError;
 
-    const timer = window.setTimeout(() => {
-      commercialApi
-        .searchDistricts(keyword)
-        .then((response) => {
-          if (alive) setSearchResults(response.data);
-        })
-        .catch(() => {
-          if (alive) {
-            setSearchResults([]);
-            setSearchError(true);
-          }
-        })
-        .finally(() => {
-          if (alive) setSearchLoading(false);
-        });
-    }, 250);
+  // 선택 상권들이 공통으로 가진 분기 목록.
+  const quartersQuery = useQuery({
+    queryKey: queryKeys.compareQuarters(selectedIds),
+    queryFn: async () => {
+      const responses = await Promise.all(
+        selectedIds.map((id) => commercialApi.timeSeries(id, { metrics: "survival_rate" })),
+      );
+      const commonQuarters = responses
+        .map((response) => new Set(response.data.data.map((item) => item.year_quarter)))
+        .reduce<Set<string>>((common, quarters, index) => {
+          if (index === 0) return new Set(quarters);
+          return new Set([...common].filter((quarter) => quarters.has(quarter)));
+        }, new Set<string>());
+      return [...commonQuarters].sort((a, b) => b.localeCompare(a));
+    },
+    // 상권 변경으로 재조회하는 동안 이전 목록을 유지해 선택 분기가 리셋되지 않게 한다.
+    placeholderData: keepPreviousData,
+  });
+  const availableQuarters = quartersQuery.data ?? [];
 
-    return () => {
-      alive = false;
-      window.clearTimeout(timer);
-    };
-  }, [isAdding, searchQuery]);
-
+  // 분기 목록 갱신 시 현재 선택이 유효하지 않으면 최신 분기로 보정.
   useEffect(() => {
-    let alive = true;
+    const quarters = quartersQuery.data;
+    if (!quarters) return;
+    setSelectedQuarter((current) =>
+      current && quarters.includes(current) ? current : (quarters[0] ?? ""),
+    );
+  }, [quartersQuery.data]);
 
-    Promise.all(
-      selectedIds.map((id) => commercialApi.timeSeries(id, { metrics: "survival_rate" })),
-    )
-      .then((responses) => {
-        if (!alive) return;
-
-        const commonQuarters = responses
-          .map((response) => new Set(response.data.data.map((item) => item.year_quarter)))
-          .reduce<Set<string>>((common, quarters, index) => {
-            if (index === 0) return new Set(quarters);
-            return new Set([...common].filter((quarter) => quarters.has(quarter)));
-          }, new Set<string>());
-        const quarters = [...commonQuarters].sort((a, b) => b.localeCompare(a));
-
-        setAvailableQuarters(quarters);
-        setSelectedQuarter((current) =>
-          current && quarters.includes(current) ? current : (quarters[0] ?? ""),
-        );
-      })
-      .catch(() => {
-        if (alive) setAvailableQuarters([]);
-      });
-
-    return () => {
-      alive = false;
-    };
-  }, [selectedIds]);
-
-  useEffect(() => {
-    let alive = true;
-
-    Promise.all(
-      selectedIds.map((id) =>
-        commercialApi.categoryStats(id, {
-          year_quarter: selectedQuarter || undefined,
-        }),
-      ),
-    )
-      .then((responses) => {
-        if (!alive) return;
-
-        const categories = Array.from(
-          new Set(
-            responses.flatMap((response) =>
-              response.data.categories.map((category) => category.category_name),
-            ),
-          ),
-        ).sort((a, b) => a.localeCompare(b, "ko"));
-
-        setAvailableCategories(categories);
-        setSelectedCategory((current) =>
-          current && !categories.includes(current) ? "" : current,
-        );
-      })
-      .catch(() => {
-        if (alive) setAvailableCategories([]);
-      });
-
-    return () => {
-      alive = false;
-    };
-  }, [selectedIds, selectedQuarter]);
-
-  useEffect(() => {
-    let alive = true;
-    setLoading(true);
-    setError(false);
-
-    const comparisonParams = {
-      year_quarter: selectedQuarter || undefined,
-      category_name: selectedCategory || undefined,
-    };
-    const timeSeriesParams = {
-      to_quarter: selectedQuarter || undefined,
-      category_name: selectedCategory || undefined,
-    };
-
-    Promise.all([
-      commercialApi.compare(selectedIds, comparisonParams),
-      Promise.all(selectedIds.map((id) => commercialApi.radar(id, comparisonParams))),
-      Promise.all(selectedIds.map((id) => commercialApi.timeSeries(id, timeSeriesParams))),
-      selectedIds.length > 0
-        ? commercialApi.categoryRanking(selectedIds[0], {
+  // 선택 상권들의 업종 목록(분기 기준).
+  const categoriesQuery = useQuery({
+    queryKey: queryKeys.compareCategories(selectedIds, selectedQuarter),
+    queryFn: async () => {
+      const responses = await Promise.all(
+        selectedIds.map((id) =>
+          commercialApi.categoryStats(id, {
             year_quarter: selectedQuarter || undefined,
-          })
-        : Promise.resolve(null),
-    ])
-      .then(([compareRes, radarRes, tsRes, rankingRes]) => {
-        if (!alive) return;
-        setData({
-          compare: compareRes.data,
-          radars: radarRes.map((r) => r.data),
-          timeSeries: tsRes.map((r) => r.data),
-          ranking: rankingRes ? rankingRes.data : null,
-        });
-      })
-      .catch(() => {
-        if (alive) setError(true);
-      })
-      .finally(() => {
-        if (alive) setLoading(false);
-      });
+          }),
+        ),
+      );
+      return Array.from(
+        new Set(
+          responses.flatMap((response) =>
+            response.data.categories.map((category) => category.category_name),
+          ),
+        ),
+      ).sort((a, b) => a.localeCompare(b, "ko"));
+    },
+    placeholderData: keepPreviousData,
+  });
+  const availableCategories = categoriesQuery.data ?? [];
 
-    return () => {
-      alive = false;
-    };
-  }, [selectedIds, selectedQuarter, selectedCategory]);
+  // 업종 목록 갱신 시 사라진 업종이 선택돼 있으면 "전체 업종"으로 보정.
+  useEffect(() => {
+    const categories = categoriesQuery.data;
+    if (!categories) return;
+    setSelectedCategory((current) => (current && !categories.includes(current) ? "" : current));
+  }, [categoriesQuery.data]);
+
+  // 본문 데이터: 비교표 + 레이더 + 생존율 추이 + 업종 순위.
+  const compareQuery = useQuery({
+    queryKey: queryKeys.comparePage(selectedIds, selectedQuarter, selectedCategory),
+    queryFn: async (): Promise<CompareData> => {
+      const comparisonParams = {
+        year_quarter: selectedQuarter || undefined,
+        category_name: selectedCategory || undefined,
+      };
+      const timeSeriesParams = {
+        to_quarter: selectedQuarter || undefined,
+        category_name: selectedCategory || undefined,
+      };
+
+      const [compareRes, radarRes, tsRes, rankingRes] = await Promise.all([
+        commercialApi.compare(selectedIds, comparisonParams),
+        Promise.all(selectedIds.map((id) => commercialApi.radar(id, comparisonParams))),
+        Promise.all(selectedIds.map((id) => commercialApi.timeSeries(id, timeSeriesParams))),
+        selectedIds.length > 0
+          ? commercialApi.categoryRanking(selectedIds[0], {
+              year_quarter: selectedQuarter || undefined,
+            })
+          : Promise.resolve(null),
+      ]);
+
+      return {
+        compare: compareRes.data,
+        radars: radarRes.map((r) => r.data),
+        timeSeries: tsRes.map((r) => r.data),
+        ranking: rankingRes ? rankingRes.data : null,
+      };
+    },
+  });
+  const data = compareQuery.data ?? null;
+  const loading = compareQuery.isPending;
+  const error = compareQuery.isError;
 
   const districts = data?.compare.districts ?? [];
   const names = districts.map((d) => d.district_name);
@@ -239,7 +196,6 @@ export default function ComparePage() {
     if (selectedIds.includes(district.id) || selectedIds.length >= MAX_DISTRICTS) return;
     setSelectedIds((current) => [...current, district.id]);
     setSearchQuery("");
-    setSearchResults([]);
     setIsAdding(false);
   };
 
@@ -247,8 +203,6 @@ export default function ComparePage() {
     if (selectedIds.length >= MAX_DISTRICTS) return;
     setIsAdding((current) => !current);
     setSearchQuery("");
-    setSearchResults([]);
-    setSearchError(false);
   };
 
   const activeQuarter = selectedQuarter || data?.compare.year_quarter || "";
