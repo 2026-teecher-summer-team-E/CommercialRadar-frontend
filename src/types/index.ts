@@ -9,6 +9,14 @@ export interface CommercialDistrict {
   area_name: string | null;
 }
 
+export interface CommercialDistrictSearchResult {
+  id: number;
+  district_name: string;
+  type_name: string | null;
+  gu_name: string | null;
+  dong_name: string | null;
+}
+
 export interface BusinessCategory {
   id: number;
   commercial_district_id: number;
