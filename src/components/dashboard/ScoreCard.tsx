@@ -1,4 +1,4 @@
-import { fmtPct, fmtManUnit, closureRiskLabel, riskColor } from "./format";
+import { fmtPct, fmtDailyManUnit, closureRiskLabel, riskColor } from "./format";
 import styles from "./ScoreCard.module.css";
 
 export interface ScoreBadge {
@@ -110,7 +110,7 @@ export default function ScoreCard({
         </div>
         <div className={styles.pill}>
           <span className={styles.pillLabel}>유동인구</span>
-          <span className={styles.pillValue}>{fmtManUnit(avgPopulation)}·일</span>
+          <span className={styles.pillValue}>{fmtDailyManUnit(avgPopulation)}·일</span>
         </div>
       </div>
 
