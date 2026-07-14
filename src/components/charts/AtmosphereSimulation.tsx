@@ -160,8 +160,6 @@ const SCENE_COLORS = {
   hudStrong: "var(--color-primary-light)",
   hudBase: "var(--color-muted)",
   traffic: "var(--color-accent)",
-  femaleMarker: "color-mix(in srgb, var(--color-red) 85%, transparent)",
-  maleMarker: "color-mix(in srgb, var(--series-1) 82%, transparent)",
   nightChipBg: "color-mix(in srgb, var(--series-1) 18%, transparent)",
   dayChipBg: "color-mix(in srgb, var(--color-amber) 18%, transparent)",
 } as const;
@@ -585,39 +583,12 @@ export default function AtmosphereSimulation({
                 const scaleXDir = dir * (FILE_FACING[p.lottieFile] ?? LOTTIE_FACING);
                 // 발밑 여백 정렬: 기준(기본 남성) 대비 초과 여백만큼 아래로 내려 모든 발을 같은 지면선에 맞춤.
                 const footNudge = Math.max(0, (FILE_FOOT_PAD[p.lottieFile] ?? 0.12) - FOOT_BASE_PAD) * FOOT_BOX_H;
-                const charH = 112 * scale;
-                const markerSize = Math.max(14, 15 * scale);
-                const markerBottom = charH + footNudge + 2;
                 return (
                   <div
                     key={p.id}
                     data-lf={p.lottieFile}
                     style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 1000) + i, animation: `${walkAnim} ${dur}s linear ${delay.toFixed(2)}s infinite`, animationPlayState: playState }}
                   >
-                    {/* 성별 마커 — scaleX 뒤집힘 영향 밖에 배치 */}
-                    <div
-                      aria-label={p.isFemale ? "여성" : "남성"}
-                      style={{
-                        position: "absolute",
-                        bottom: markerBottom,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        width: markerSize,
-                        height: markerSize,
-                        borderRadius: "50%",
-                        background: p.isFemale ? SCENE_COLORS.femaleMarker : SCENE_COLORS.maleMarker,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: Math.max(10, 11 * scale),
-                        color: "var(--color-on-primary)",
-                        lineHeight: 1,
-                        pointerEvents: "none",
-                        zIndex: 1,
-                      }}
-                    >
-                      {p.isFemale ? "♀" : "♂"}
-                    </div>
                     <div style={{ transform: `scale(${scale}) scaleX(${scaleXDir}) translateY(${footNudge}px)`, transformOrigin: "bottom center", display: "flex", flexDirection: "column", alignItems: "center" }}>
                       <DotLottieReact
                         src={p.lottieFile}
@@ -642,32 +613,8 @@ export default function AtmosphereSimulation({
                 // 시작 위상 의사난수 분산 (Lottie 경로와 동일한 뭉침 방지)
                 const delay = -(((i * 5749 + 1013) % 941) / 941) * dur;
                 const walkAnim = dir === 1 ? "atmo-walk-r" : "atmo-walk-l";
-                const dotH = (13 + 1 + 24) * scale;
                 return (
                   <div key={p.id} style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 1000) + i, animation: `${walkAnim} ${dur}s linear ${delay.toFixed(2)}s infinite`, animationPlayState: playState }}>
-                    {/* 성별 마커 */}
-                    <div
-                      aria-label={p.isFemale ? "여성" : "남성"}
-                      style={{
-                        position: "absolute",
-                        bottom: dotH + 2,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        width: 14,
-                        height: 14,
-                        borderRadius: "50%",
-                        background: p.isFemale ? SCENE_COLORS.femaleMarker : SCENE_COLORS.maleMarker,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 10,
-                        color: "var(--color-on-primary)",
-                        lineHeight: 1,
-                        pointerEvents: "none",
-                      }}
-                    >
-                      {p.isFemale ? "♀" : "♂"}
-                    </div>
                     <div style={{ transform: `scale(${scale}) scaleX(${dir})`, transformOrigin: "bottom center" }}>
                       <div style={{ animation: `atmo-bob ${1.6 + (i % 3) * 0.3}s ease-in-out infinite`, animationPlayState: playState, display: "flex", flexDirection: "column", alignItems: "center" }}>
                         <div style={{ width: 13, height: 13, borderRadius: "50%", background: p.color }} />
