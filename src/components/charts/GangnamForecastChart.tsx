@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import {
   Area,
   CartesianGrid,
@@ -12,6 +13,10 @@ import {
 
 import type { TimeseriesPoint } from "../../types";
 import { formatCurrency } from "../../utils/formatters";
+import styles from "./GangnamForecastChart.module.css";
+
+/** 툴팁 카드의 대략적인 폭(px) 추정치. 우측 경계 근접 판정에만 쓰이므로 정확할 필요는 없다. */
+const TOOLTIP_WIDTH_ESTIMATE = 230;
 
 const FORECAST_COLORS = {
   actual: "var(--series-2)",
@@ -55,17 +60,24 @@ function formatRatio(v: number): string {
 }
 
 // NaN 버그 수정: 밴드([low,high] 튜플)를 제외하고 실적/시나리오만 포맷 표시.
+// 항상 커서 중앙 아래에 붙인다(좌/우로 뒤집는 분기 없이 하나의 규칙만 적용 — 어떤 지점은
+// 왼쪽에, 어떤 지점은 오른쪽에 붙어 산만해 보이던 문제 방지). 차트 경계 밖으로 나가지
+// 않도록 이동량만 부드럽게 clamp한다.
 function ForecastTooltip({
   active,
   payload,
   label,
+  coordinate,
   formatValue,
+  chartWidth,
 }: {
   active?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload?: readonly any[];
   label?: string | number;
+  coordinate?: { x?: number; y?: number };
   formatValue: (v: number) => string;
+  chartWidth: number;
 }) {
   if (!active || !payload || payload.length === 0) return null;
   const byKey: Record<string, unknown> = {};
@@ -80,8 +92,30 @@ function ForecastTooltip({
     .map(([key, name, color]) => ({ name, color, value: byKey[key] }))
     .filter((r) => typeof r.value === "number");
   if (lines.length === 0) return null;
+
+  // 툴팁 좌상단은 기본적으로 coordinate 지점(offset=0)에 놓인다. 가로 중앙을 커서에
+  // 맞추려면 -폭/2 만큼 밀되, 차트 좌우 경계를 벗어나지 않도록 clamp한다.
+  const cursorX = coordinate?.x ?? 0;
+  const centerShift = -TOOLTIP_WIDTH_ESTIMATE / 2;
+  const shiftX =
+    chartWidth > 0
+      ? Math.min(Math.max(centerShift, -cursorX), chartWidth - TOOLTIP_WIDTH_ESTIMATE - cursorX)
+      : centerShift;
+
   return (
-    <div style={{ background: FORECAST_COLORS.surface, border: `1px solid ${FORECAST_COLORS.border}`, borderRadius: 8, padding: "8px 10px", fontSize: 13 }}>
+    <div
+      style={{
+        background: FORECAST_COLORS.surface,
+        border: `1px solid ${FORECAST_COLORS.border}`,
+        borderRadius: 8,
+        padding: "8px 10px",
+        fontSize: 13,
+        transform: `translate(${shiftX}px, 10px)`,
+        position: "relative",
+        // 툴팁이 아래로 내려가 범례·시나리오 버튼과 겹칠 때도 항상 맨 위에 보이게 한다.
+        zIndex: 50,
+      }}
+    >
       <div style={{ fontWeight: 700, marginBottom: 4 }}>{label}</div>
       {lines.map((r) => (
         <div key={r.name} style={{ color: r.color }}>
@@ -97,6 +131,18 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
   const reducedMotion =
     typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // 툴팁이 차트 우측 경계에 가까우면 왼쪽으로 밀어야 하므로, 실제 렌더링 폭을 측정해둔다.
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [chartWidth, setChartWidth] = useState(0);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => setChartWidth(entry.contentRect.width));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  const marginRight = endLabels ? 68 : 24;
 
   // 순차 draw: 실적/밴드(0ms)가 먼저 그려지고, 예측 시나리오 라인은 뒤이어 그려진다.
   const drawBase = sequentialDraw
@@ -196,8 +242,19 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
     };
 
   return (
+    // position+z-index: 툴팁이 아래로 내려가 이 차트 바깥의 시나리오 버튼 영역과 겹칠 때도
+    // 항상 위에 그려지도록, 차트 컨테이너 자체를 그 형제 요소보다 높은 스태킹에 둔다.
+    <div ref={containerRef} className={styles.chartWrap} style={{ position: "relative", zIndex: 1 }}>
     <ResponsiveContainer width="100%" height={height}>
-      <ComposedChart data={rows} margin={{ top: 16, right: endLabels ? 68 : 24, bottom: 8, left: 8 }}>
+      {/* accessibilityLayer(recharts 기본 활성): 데이터 포인트를 키보드 포커스 가능한
+          그룹으로 감싸는데, 클릭했을 때도 브라우저 기본 포커스 링(파란 사각 테두리)이
+          점 3개 단위로 나타나 보였다. 이 차트는 별도 클릭(시나리오 선택) 핸들러가 있어
+          꺼도 무방하다. */}
+      <ComposedChart
+        data={rows}
+        margin={{ top: 16, right: marginRight, bottom: 8, left: 8 }}
+        accessibilityLayer={false}
+      >
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="quarter" tick={{ fontSize: 12 }} />
         <YAxis
@@ -207,8 +264,25 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           domain={yDomain ?? ["auto", "auto"]}
           allowDataOverflow={!!yDomain}
         />
-        <Tooltip content={(props) => <ForecastTooltip {...props} formatValue={formatValue} />} />
-        <Legend />
+        {/* allowEscapeViewBox: recharts 기본 동작은 툴팁이 차트 경계를 벗어나면 반대편으로
+            뒤집어 배치해, 마우스가 차트 중앙을 넘나들 때 툴팁이 좌우로 튀어 보였다. 이를
+            끄고, offset=0 으로 앵커를 커서 좌표 그대로 둔 뒤 ForecastTooltip 내부에서
+            "항상 중앙 아래"라는 단일 규칙으로만 위치를 계산한다(좌/우 분기 없음).
+            isAnimationActive: 기본값은 위치 이동에 400ms 트랜지션이 걸려있어, 빠르게
+            마우스를 움직이면 이전 위치에서 뒤늦게 미끄러지듯 쫓아와 다음 위치와 겹쳐
+            보였다. 꺼서 커서 이동에 즉시 스냅되게 한다. */}
+        <Tooltip
+          content={(props) => (
+            <ForecastTooltip {...props} formatValue={formatValue} chartWidth={chartWidth} />
+          )}
+          allowEscapeViewBox={{ x: true, y: true }}
+          offset={0}
+          isAnimationActive={false}
+          // wrapperStyle: 툴팁 내용물이 아니라 recharts가 만드는 wrapper 자체(범례
+          // wrapper와 형제 관계)에 z-index를 줘야 범례 텍스트 위로 확실히 올라온다.
+          wrapperStyle={{ zIndex: 50 }}
+        />
+        <Legend wrapperStyle={{ transform: "translateX(20px)" }} />
         <Area
           dataKey="band"
           name="예측 범위"
@@ -219,7 +293,8 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           legendType="none"
           {...drawForecast}
         />
-        <Line type="monotone" dataKey="actual" name="실적" stroke={FORECAST_COLORS.actual} strokeWidth={2} dot={false} connectNulls {...drawBase} />
+        {/* legendType="none": 범례에서 "실적"을 빼고 나머지 3개 시나리오만 보여준다. */}
+        <Line type="monotone" dataKey="actual" name="실적" stroke={FORECAST_COLORS.actual} strokeWidth={2} dot={false} legendType="none" connectNulls {...drawBase} />
         <Line
           type="monotone"
           dataKey="high"
@@ -258,5 +333,6 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
         />
       </ComposedChart>
     </ResponsiveContainer>
+    </div>
   );
 }

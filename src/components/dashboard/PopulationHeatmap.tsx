@@ -3,6 +3,21 @@ import type { HeatmapSlot } from "../../types";
 import { fmtInt } from "./format";
 import styles from "./PopulationHeatmap.module.css";
 
+/**
+ * 지도 페이지(SangkwonPanel) 혼잡도 히트맵과 동일한 4단계 이산 색상.
+ * color-mix 연속 보간은 --color-primary-light(거의 흰색)와의 저채도 구간에서
+ * 값 차이가 잘 안 보였다 — 명도 차이가 뚜렷한 이산 단계로 바꿔 구분되게 한다.
+ */
+const HEAT_COLORS = ["#eef1f8", "#aabfec", "#7592e0", "#24398a"] as const;
+
+/** 지도 페이지 congestionLevel과 동일한 구간 기준(0~1 정규화 강도 → 0~3단계). */
+function heatColor(t: number): string {
+  if (t >= 0.85) return HEAT_COLORS[3];
+  if (t >= 0.65) return HEAT_COLORS[2];
+  if (t >= 0.4) return HEAT_COLORS[1];
+  return HEAT_COLORS[0];
+}
+
 interface PopulationHeatmapProps {
   byTime: HeatmapSlot[];
   byDay: HeatmapSlot[];
@@ -81,12 +96,8 @@ export default function PopulationHeatmap({ byTime, byDay, showValues = false }:
       </div>
       <div className={styles.legend}>
         <span className={styles.legendLabel}>낮음</span>
-        {[0.15, 0.4, 0.65, 0.9].map((t) => (
-          <span
-            key={t}
-            className={styles.legendCell}
-            style={{ backgroundColor: `color-mix(in srgb, var(--color-primary) ${Math.round(t * 100)}%, var(--color-primary-light))` }}
-          />
+        {HEAT_COLORS.map((c) => (
+          <span key={c} className={styles.legendCell} style={{ backgroundColor: c }} />
         ))}
         <span className={styles.legendLabel}>높음</span>
       </div>
@@ -114,11 +125,11 @@ function Row({
           <div
             key={c.day}
             className={styles.cell}
-            style={{ backgroundColor: `color-mix(in srgb, var(--color-primary) ${Math.round(t * 100)}%, var(--color-primary-light))` }}
+            style={{ backgroundColor: heatColor(t) }}
             title={`${c.day} ${TIME_LABEL[time] ?? time}: ${fmtInt(c.value)}`}
           >
             {showValues && (
-              <span className={styles.cellVal} style={{ color: t > 0.55 ? "var(--color-on-primary)" : "var(--color-text-body)" }}>
+              <span className={styles.cellVal} style={{ color: t >= 0.65 ? "var(--color-on-primary)" : "var(--color-text-body)" }}>
                 {fmtInt(c.value)}
               </span>
             )}

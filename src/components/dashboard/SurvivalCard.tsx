@@ -221,21 +221,16 @@ export default function SurvivalCard({
         </div>
 
         <div className={styles.stats}>
-          <div className={styles.statBox}>
-            <span className={styles.statLabel}>현재 매장수</span>
-            <span className={styles.statValue}>{fmtInt(totalBusiness)}</span>
-          </div>
-          <div className={styles.statBox}>
-            <span className={styles.statLabel}>폐업률</span>
-            <span className={styles.statValue}>{fmtPct(closureRate, 1)}</span>
-          </div>
-          <div className={styles.statBox}>
-            <span className={styles.statLabel}>{isFallback ? "현재 생존율" : "4분기 후 전망"}</span>
-            <span className={styles.statValueAccent}>
-              {isFallback
-                ? fmtPct(current, 0)
-                : `${fmtPct(forecast, 0)} ${delta != null ? `${deltaUp ? "▲" : "▼"}${Math.abs(delta).toFixed(1)}%p` : ""}`}
-            </span>
+          <div className={`${styles.statBox} ${styles.statBoxRow}`}>
+            <div className={styles.statPair}>
+              <span className={styles.statLabel}>현재 매장수</span>
+              <span className={styles.statValue}>{fmtInt(totalBusiness)}</span>
+            </div>
+            <span className={styles.statDivider} aria-hidden="true" />
+            <div className={styles.statPair}>
+              <span className={styles.statLabel}>폐업률</span>
+              <span className={styles.statValue}>{fmtPct(closureRate, 1)}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -248,7 +243,7 @@ export default function SurvivalCard({
               forecast={fc}
               unit="ratio"
               onScenarioClick={onScenarioClick}
-              height={240}
+              height={270}
               yDomain={yDomain}
               endLabels
               sequentialDraw
@@ -256,7 +251,7 @@ export default function SurvivalCard({
           </Suspense>
           {onScenarioClick && (
             <div className={styles.scenarioBar}>
-              <span className={styles.scenarioHint}>미래 거리 미리보기</span>
+              <span className={styles.scenarioHint}>상권 앞 분위기 시뮬레이션</span>
               <div className={styles.scenarioBtns}>
                 <button
                   type="button"

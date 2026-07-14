@@ -155,12 +155,13 @@
   color: var(--color-text);
 }
 
-/* 상단 2열 */
+/* 상단 2열 — align-items 기본값(stretch)을 그대로 써서, 오른쪽 생존율 예측 카드가
+   더 길 때 왼쪽 종합 점수 카드도 같은 높이로 늘어나게 한다(늘어난 여백은 ScoreCard의
+   growthRow margin-top:auto로 하단에 자연스럽게 배분됨). */
 .topGrid {
   display: grid;
   grid-template-columns: 400px 1fr;
   gap: 22px;
-  align-items: start;
 }
 @media (max-width: 980px) {
   .topGrid {
