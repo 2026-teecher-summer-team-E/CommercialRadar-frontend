@@ -13,6 +13,16 @@ import {
 import type { TimeseriesPoint } from "../../types";
 import { formatCurrency } from "../../utils/formatters";
 
+const FORECAST_COLORS = {
+  actual: "var(--series-2)",
+  mid: "var(--series-1)",
+  low: "var(--color-red)",
+  high: "var(--color-green)",
+  band: "var(--series-1)",
+  surface: "var(--color-surface)",
+  border: "var(--color-border)",
+} as const;
+
 interface Props {
   history: TimeseriesPoint[];
   forecast: TimeseriesPoint[];
@@ -61,17 +71,17 @@ function ForecastTooltip({
   const byKey: Record<string, unknown> = {};
   for (const p of payload) byKey[p.dataKey] = p.value;
   const order: [string, string, string][] = [
-    ["actual", "실적", "#111827"],
-    ["mid", "보통 미래(p50)", "#1876f2"],
-    ["low", "안풀린 미래(p10)", "#dc2626"],
-    ["high", "잘풀린 미래(p90)", "#16a34a"],
+    ["actual", "실적", FORECAST_COLORS.actual],
+    ["mid", "보통 미래(p50)", FORECAST_COLORS.mid],
+    ["low", "안풀린 미래(p10)", FORECAST_COLORS.low],
+    ["high", "잘풀린 미래(p90)", FORECAST_COLORS.high],
   ];
   const lines = order
     .map(([key, name, color]) => ({ name, color, value: byKey[key] }))
     .filter((r) => typeof r.value === "number");
   if (lines.length === 0) return null;
   return (
-    <div style={{ background: "#fff", border: "1px solid #e2e5ec", borderRadius: 8, padding: "8px 10px", fontSize: 13 }}>
+    <div style={{ background: FORECAST_COLORS.surface, border: `1px solid ${FORECAST_COLORS.border}`, borderRadius: 8, padding: "8px 10px", fontSize: 13 }}>
       <div style={{ fontWeight: 700, marginBottom: 4 }}>{label}</div>
       {lines.map((r) => (
         <div key={r.name} style={{ color: r.color }}>
@@ -117,7 +127,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
               <animate attributeName="opacity" values="0.55;0" dur="1.8s" repeatCount="indefinite" />
             </circle>
           )}
-          <circle cx={cx} cy={cy} r={4} fill={color} stroke="#fff" strokeWidth={1.5} />
+          <circle cx={cx} cy={cy} r={4} fill={color} stroke={FORECAST_COLORS.surface} strokeWidth={1.5} />
         </g>
       );
     };
@@ -203,22 +213,22 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           dataKey="band"
           name="예측 범위"
           stroke="none"
-          fill="#6366f1"
+          fill={FORECAST_COLORS.band}
           fillOpacity={0.12}
           connectNulls
           legendType="none"
           {...drawForecast}
         />
-        <Line type="monotone" dataKey="actual" name="실적" stroke="#111827" strokeWidth={2} dot={false} connectNulls {...drawBase} />
+        <Line type="monotone" dataKey="actual" name="실적" stroke={FORECAST_COLORS.actual} strokeWidth={2} dot={false} connectNulls {...drawBase} />
         <Line
           type="monotone"
           dataKey="high"
           name="잘풀린 미래(p90)"
-          stroke="#16a34a"
+          stroke={FORECAST_COLORS.high}
           strokeWidth={clickable ? 2.5 : 1.5}
           strokeDasharray="5 5"
-          dot={clickable ? makeDot("high", "#16a34a") : false}
-          label={makeEndLabel("high", "#16a34a", "잘풀린", -6)}
+          dot={clickable ? makeDot("high", FORECAST_COLORS.high) : false}
+          label={makeEndLabel("high", FORECAST_COLORS.high, "잘풀린", -6)}
           connectNulls
           {...drawForecast}
         />
@@ -226,11 +236,11 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           type="monotone"
           dataKey="mid"
           name="보통 미래(p50)"
-          stroke="#1876f2"
+          stroke={FORECAST_COLORS.mid}
           strokeWidth={clickable ? 3 : 2}
           strokeDasharray="5 5"
-          dot={clickable ? makeDot("mid", "#1876f2") : { r: 2 }}
-          label={makeEndLabel("mid", "#1876f2", "보통", 4)}
+          dot={clickable ? makeDot("mid", FORECAST_COLORS.mid) : { r: 2 }}
+          label={makeEndLabel("mid", FORECAST_COLORS.mid, "보통", 4)}
           connectNulls
           {...drawForecast}
         />
@@ -238,11 +248,11 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           type="monotone"
           dataKey="low"
           name="안풀린 미래(p10)"
-          stroke="#dc2626"
+          stroke={FORECAST_COLORS.low}
           strokeWidth={clickable ? 2.5 : 1.5}
           strokeDasharray="5 5"
-          dot={clickable ? makeDot("low", "#dc2626") : false}
-          label={makeEndLabel("low", "#dc2626", "안풀린", 14)}
+          dot={clickable ? makeDot("low", FORECAST_COLORS.low) : false}
+          label={makeEndLabel("low", FORECAST_COLORS.low, "안풀린", 14)}
           connectNulls
           {...drawForecast}
         />

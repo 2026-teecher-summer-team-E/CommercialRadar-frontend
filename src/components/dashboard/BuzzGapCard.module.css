@@ -11,7 +11,7 @@
   margin: 0 0 32px;
   font-size: 18px;
   font-weight: 800;
-  color: #000;
+  color: var(--color-text);
 }
 
 .gaugeRow {
