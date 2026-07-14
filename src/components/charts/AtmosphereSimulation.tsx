@@ -121,9 +121,12 @@ const FILE_FOOT_PAD: Record<string, number> = {
 const FOOT_BASE_PAD = 0.108; // 기준(기본 남성). 이 값 대비 초과 여백만큼 캐릭터를 내려 정렬.
 const FOOT_BOX_H = 112; // DotLottie 박스 높이(px, scale 전)
 
-/** 유동인구 표시 — 백만 단위 원본값을 '145.8만 명'처럼 축약. 집계 단위가 불명확해 '/h' 표기는 하지 않음. */
-const formatTraffic = (v: number): string =>
-  v >= 10000 ? `${(v / 10000).toFixed(1)}만 명` : `${Math.round(v).toLocaleString()}명`;
+/**
+ * footTraffic(유동인구)은 API의 분기 총합(avg_population)이라 그대로 표기하면
+ * "하루 145만 명"처럼 비현실적으로 보인다. HUD 표시용으로만 일 평균(÷365/4)으로 환산한다.
+ * (군중 수 계산 trafficBase는 원값을 그대로 사용 — 스케일 튜닝 유지)
+ */
+const DAYS_PER_QUARTER = 365 / 4;
 
 /** 타임랩스 종료 시점 보장 최소 폐업 점포 수. */
 const SCENARIO_MIN_CLOSED: Record<AtmoScenario, number> = { high: 1, mid: 2, low: 3 };
@@ -553,7 +556,7 @@ export default function AtmosphereSimulation({
             </div>
             {liveTraffic != null && (
               <div style={{ fontSize: 11, color: SCENE_COLORS.hudText }}>
-                유동인구 &nbsp;<span style={{ color: SCENE_COLORS.traffic, fontWeight: 600 }}>{formatTraffic(liveTraffic)}</span>
+                유동인구 &nbsp;<span style={{ color: SCENE_COLORS.traffic, fontWeight: 600 }}>{Math.round(liveTraffic / DAYS_PER_QUARTER).toLocaleString()}명·일</span>
               </div>
             )}
           </div>

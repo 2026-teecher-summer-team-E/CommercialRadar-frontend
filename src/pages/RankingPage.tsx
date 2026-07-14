@@ -1,11 +1,29 @@
 import { useMemo, useState } from "react";
-import { useCompareDistricts } from "../hooks/queries";
-import type { DistrictCompareItem } from "../types";
+import { useDistrictRanking } from "../hooks/queries";
+import type { DistrictCompareItem, DistrictRankingItem } from "../types";
 import Leaderboard, { type SortableKey, type SortState } from "../components/ranking/Leaderboard";
 import styles from "./RankingPage.module.css";
 
-/** 리더보드에 채울 상권 id 목록. */
-const DISTRICT_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+/** 리더보드에 노출할 상위 상권 수(종합점수 기준). */
+const RANKING_LIMIT = 100;
+
+/**
+ * 랭킹 API 항목을 리더보드(DistrictCompareItem) 형태로 변환.
+ * - closure_rate 는 응답에 없으나 데이터상 (100 - survival_rate)로 정확히 성립 → 폐업위험 열 유지.
+ * - survival_rate 는 원본 이상치(≤1 비율값, >100)가 섞여 있어 가드해 null 처리(백엔드 응답 문서 경고).
+ */
+function toLeaderboardItem(it: DistrictRankingItem): DistrictCompareItem {
+  const sr = it.survival_rate;
+  const validSr = sr != null && sr > 1 && sr <= 100 ? sr : null;
+  return {
+    id: it.id,
+    district_name: it.district_name,
+    avg_population: it.avg_population,
+    survival_rate: validSr,
+    closure_rate: validSr != null ? 100 - validSr : null,
+    district_score: it.district_score,
+  };
+}
 
 /** 정렬 기준별 비교 함수. null 은 방향과 무관하게 항상 뒤로. */
 function sortDistricts(districts: DistrictCompareItem[], sort: SortState): DistrictCompareItem[] {
@@ -34,9 +52,14 @@ export default function RankingPage() {
     );
   };
 
-  // compare API는 한 번에 2~5개만 허용 → 훅 내부에서 5개씩 나눠 호출 후 병합.
-  const { data: districts = [], isPending: loading, isError: error } = useCompareDistricts(DISTRICT_IDS);
+  // 서울 전체 상권을 종합점수 순으로 조회(상위 RANKING_LIMIT개). 강남역 포함 전 상권 대상.
+  const { data: rankingItems = [], isPending: loading, isError: error } = useDistrictRanking({
+    scope: "seoul",
+    sort: "score",
+    limit: RANKING_LIMIT,
+  });
 
+  const districts = useMemo(() => rankingItems.map(toLeaderboardItem), [rankingItems]);
   const sorted = useMemo(() => sortDistricts(districts, sort), [districts, sort]);
 
   return (

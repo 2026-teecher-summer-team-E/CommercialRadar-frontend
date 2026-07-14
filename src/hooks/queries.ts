@@ -14,6 +14,7 @@ type QP = Record<string, string | number | undefined>;
 export const queryKeys = {
   dashboard: (id: number) => ["dashboard", id] as const,
   compareDistricts: (ids: number[]) => ["compare-districts", ids] as const,
+  ranking: (params?: QP) => ["district-ranking", params ?? null] as const,
   compareQuarters: (ids: number[]) => ["compare-quarters", ids] as const,
   compareCategories: (ids: number[], quarter: string) =>
     ["compare-categories", ids, quarter] as const,
@@ -60,6 +61,21 @@ export function useCompareDistricts(ids: number[]) {
       resArr.forEach((res) => res.data.districts.forEach((d) => merged.set(d.id, d)));
       return [...merged.values()];
     },
+  });
+}
+
+/** 상권 종합 랭킹(scope/sort/limit). 랭킹 페이지 리더보드용. */
+export function useDistrictRanking(params?: {
+  scope?: "seoul" | "gu" | "type";
+  gu_name?: string;
+  type_name?: string;
+  sort?: "score" | "survival" | "population";
+  limit?: number;
+  offset?: number;
+}) {
+  return useQuery({
+    queryKey: queryKeys.ranking(params as QP | undefined),
+    queryFn: () => commercialApi.ranking(params).then((r) => r.data),
   });
 }
 
