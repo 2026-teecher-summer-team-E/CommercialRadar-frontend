@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 
-import AtmosphereSimulation, {
-  type AtmoScenario,
-} from "../components/charts/AtmosphereSimulation";
-import ForecastChart from "../components/charts/GangnamForecastChart";
+import type { AtmoScenario } from "../components/charts/AtmosphereSimulation";
 import { useTimeseries } from "../hooks/useTimeseries";
 import { forecastApi } from "../services/forecastApi";
 import type { AgeSlice } from "../types";
+import PageLoader from "../components/common/PageLoader";
+
+// recharts + lottie가 들어있어 무거움 — 실제로 화면에 그릴 때만 로드.
+const AtmosphereSimulation = lazy(() => import("../components/charts/AtmosphereSimulation"));
+const ForecastChart = lazy(() => import("../components/charts/GangnamForecastChart"));
 
 const DISTRICT_ID = 1315;
 const CATEGORY = "커피-음료";
@@ -54,7 +56,9 @@ export default function GangnamCafeDemoPage() {
       {!!error && <p>데이터를 불러오지 못했습니다.</p>}
       {data && (data.history.length > 0 || data.forecast.length > 0) ? (
         <>
-          <ForecastChart history={data.history} forecast={data.forecast} unit={data.unit} onScenarioClick={setSim} />
+          <Suspense fallback={<PageLoader fullScreen={false} />}>
+            <ForecastChart history={data.history} forecast={data.forecast} unit={data.unit} onScenarioClick={setSim} />
+          </Suspense>
           <p style={{ color: "#8b90a0", fontSize: 13, marginTop: 4 }}>
             💡 미래 선(안풀린·보통·잘풀린)을 클릭하면 그 미래의 <b>상권 분위기</b>가 재생됩니다.
           </p>
@@ -63,7 +67,11 @@ export default function GangnamCafeDemoPage() {
         !loading && !error && <p>표시할 데이터가 없습니다.</p>
       )}
 
-      {sim && <AtmosphereSimulation scenario={sim} ageDistribution={ages} onClose={() => setSim(null)} />}
+      {sim && (
+        <Suspense fallback={<PageLoader />}>
+          <AtmosphereSimulation scenario={sim} ageDistribution={ages} onClose={() => setSim(null)} />
+        </Suspense>
+      )}
     </div>
   );
 }

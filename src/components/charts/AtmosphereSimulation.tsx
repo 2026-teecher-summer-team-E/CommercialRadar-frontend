@@ -10,8 +10,13 @@ import type { AgeSlice } from "../../types";
 const CROWD_LOTTIE_BASE = "/lottie/walking.json";
 /** 기본 Lottie가 바라보는 방향: 1=오른쪽, -1=왼쪽. 문워크로 보이면 이 값을 뒤집어라. */
 const LOTTIE_FACING = 1;
+/** 파일별 방향 보정 — 원본이 기본과 반대를 볼 때. 해당 파일만 문워크하면 부호를 뒤집어라. */
+const FILE_FACING: Record<string, number> = {
+  "/lottie/walking-5.json": -1, // 뽀빠이(노인)는 기본과 반대를 봄
+  "/lottie/walking-7.json": -1, // 노인 여성(보행보조기)도 기본과 반대를 봄
+};
 /** walking-2.json, walking-3.json … 최대 이 수까지 자동 감지 */
-const LOTTIE_VARIANT_MAX = 6;
+const LOTTIE_VARIANT_MAX = 7;
 
 /** 타임랩스: 분기당 표시 시간(ms), 끝에 정지 시간(ms), 총 분기 수 */
 const TIMELAPSE_QUARTER_MS = 1200;
@@ -89,8 +94,32 @@ const AGE_STYLE_FALLBACK = { hueRotate: 0, saturate: 1.0, brightness: 1.0, scale
 /** 파일별 렌더 크기 보정 — 원본 캔버스 크기(1080/1000/500)가 달라 보이는 키가 제각각인 것 정규화. */
 const FILE_SCALE: Record<string, number> = {
   "/lottie/walking-6.json": 1.28, // 오피스맨(1000px) — 작게 나와 키움
-  "/lottie/walking-5.json": 1.1, // 노인(500px)
+  "/lottie/walking-5.json": 1.35, // 할아버지(Popeye) — 작게 보여 키움
+  "/lottie/walking-7.json": 1.5, // 할머니(500px) — 작게 보여 키움
 };
+
+/** 파일별 재생 속도 보정 — 원본 애니메이션 사이클 길이가 달라 걷는 속도가 제각각인 것 정규화. */
+const FILE_SPEED: Record<string, number> = {
+  "/lottie/walking-7.json": 1.6, // 노인 여성: 사이클 150프레임(5초) → 느린 걸음으로 보정
+};
+
+/**
+ * 파일별 '발밑 여백' 비율 — 캔버스(정사각) 안에서 캐릭터 발 아래 빈 공간이 차지하는 비율.
+ * 88×112 박스에 정사각 캔버스가 들어가며 캐릭터가 뜨는 정도가 파일마다 달라, 같은 bottom이어도
+ * 발 높이가 어긋나 z-순서와 시각적 깊이가 불일치(예: 할머니가 뒤로 보이는데 앞사람을 덮음).
+ * 실측(canvas alpha 하단 경계)값. 이 여백만큼 아래로 내려 모든 발을 같은 지면선에 정렬한다.
+ */
+const FILE_FOOT_PAD: Record<string, number> = {
+  "/lottie/walking.json": 0.108,
+  "/lottie/walking-2.json": 0.207,
+  "/lottie/walking-3.json": 0.12,
+  "/lottie/walking-4.json": 0.207,
+  "/lottie/walking-5.json": 0.183, // 뽀빠이 할아버지
+  "/lottie/walking-6.json": 0.259, // 오피스맨
+  "/lottie/walking-7.json": 0.298, // 할머니(보행보조기) — 여백 최대
+};
+const FOOT_BASE_PAD = 0.108; // 기준(기본 남성). 이 값 대비 초과 여백만큼 캐릭터를 내려 정렬.
+const FOOT_BOX_H = 112; // DotLottie 박스 높이(px, scale 전)
 
 /** 타임랩스 종료 시점 보장 최소 폐업 점포 수. */
 const SCENARIO_MIN_CLOSED: Record<AtmoScenario, number> = { high: 1, mid: 2, low: 3 };
@@ -330,7 +359,8 @@ export default function AtmosphereSimulation({
     const f = (idx: number) => lottieFiles[idx] ?? lottieFiles[0] ?? CROWD_LOTTIE_BASE;
     const hasVariants = lottieFiles.length >= 2;
     for (let i = 0; i < count; i++) {
-      const r  = ((i * 9301 + 49297) % 233280) / 233280;
+      // 배수를 크게 해 인덱스가 커질 때 값이 골고루 섞이게(9301은 작아서 앞 인덱스가 단조증가 → 노인 편중 누락).
+      const r  = ((i * 90001 + 49297) % 233280) / 233280;
       const r2 = ((i * 4021 + 3571) % 100) / 100;
       const r3 = ((i * 1777 + 7919) % 997) / 997;
       const r4 = ((i * 6271 + 1031) % 883) / 883;
@@ -340,18 +370,17 @@ export default function AtmosphereSimulation({
       let lottieFile: string;
       if (!hasVariants) {
         lottieFile = f(0);
-      } else if (ageBucket === "60대+" || ageBucket === "60대이상") {
-        // 노인 전용 애니메이션 (성별·국적 무관)
-        lottieFile = f(4);
-      } else if (!isFemale && (ageBucket === "30대" || ageBucket === "40대" || ageBucket === "50대")) {
+      } else if (ageBucket === "50대" || ageBucket === "60대+" || ageBucket === "60대이상") {
+        // 노인 전용 애니메이션 (50대 이상). 여성=보행보조기 할머니(f6), 남성=할아버지(f4).
+        lottieFile = isFemale ? f(6) : f(4);
+      } else if (!isFemale && (ageBucket === "30대" || ageBucket === "40대")) {
         // 직장인 나이대 남성 → 오피스맨 (국적 무관)
         lottieFile = f(5);
       } else if (isForeigner) {
         lottieFile = isFemale ? f(3) : f(2);
       } else {
         lottieFile = isFemale ? f(1) : f(0);
-      }
-      out.push({ id: i, color: weightedAge(r), bag: r2 > 0.55, row: (i % 5) / 4, ageBucket, isFemale, isForeigner, lottieFile });
+      }      out.push({ id: i, color: weightedAge(r), bag: r2 > 0.55, row: (i % 5) / 4, ageBucket, isFemale, isForeigner, lottieFile });
     }
     return out;
   }, [count, weightedAge, weightedAgeBucket, lottieFiles, foreignerThreshold]);
@@ -534,8 +563,8 @@ export default function AtmosphereSimulation({
                 const rowScale = 0.62 + p.row * 0.5;
                 const rawScale = rowScale * ageStyle.scaleBonus * (FILE_SCALE[p.lottieFile] ?? 1);
                 // 오피스맨은 최소 크기 하한을 둬(현재 최소의 약 2배) 뒷줄에서도 작게 안 보이게.
-                const scale = p.lottieFile === "/lottie/walking-6.json" ? Math.max(rawScale, 1.6) : rawScale;
-                const bottom = 4 + p.row * 52;
+                const scale = p.lottieFile === "/lottie/walking-6.json" ? Math.max(rawScale, 1.28) : rawScale;
+                const bottom = 4 + (1 - p.row) * 52; // row 클수록(=큰/가까운) 화면 아래(앞)
                 const dir = i % 2 === 0 ? 1 : -1;
                 const baseDur = 9 + (i % 6) * 2.2;
                 const dur = baseDur / ageStyle.speedMult;
@@ -543,14 +572,14 @@ export default function AtmosphereSimulation({
                 const hueExtra = p.isFemale ? 5 : 0;
                 const brightnessExtra = p.isFemale ? 0.04 : 0;
                 const cssFilter = `hue-rotate(${ageStyle.hueRotate + hueExtra}deg) saturate(${ageStyle.saturate}) brightness(${ageStyle.brightness + brightnessExtra})`;
-                const scaleXDir = dir * LOTTIE_FACING;
-                const charH = 112 * scale;
-                const markerSize = Math.max(14, 15 * scale);
-                const markerBottom = charH + 2;
+                const scaleXDir = dir * (FILE_FACING[p.lottieFile] ?? LOTTIE_FACING);
+                // 발밑 여백 정렬: 기준(기본 남성) 대비 초과 여백만큼 아래로 내려 모든 발을 같은 지면선에 맞춤.
+                const footNudge = Math.max(0, (FILE_FOOT_PAD[p.lottieFile] ?? 0.12) - FOOT_BASE_PAD) * FOOT_BOX_H;
                 return (
                   <div
                     key={p.id}
-                    style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 10), animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}
+                    data-lf={p.lottieFile}
+                    style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 1000) + i, animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}
                   >
                     {/* 성별 마커 — scaleX 뒤집힘 영향 밖에 배치 */}
                     <div
@@ -576,14 +605,15 @@ export default function AtmosphereSimulation({
                     >
                       {p.isFemale ? "♀" : "♂"}
                     </div>
-                    <div style={{ transform: `scale(${scale}) scaleX(${scaleXDir})`, transformOrigin: "bottom center", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    <div style={{ transform: `scale(${scale}) scaleX(${scaleXDir}) translateY(${footNudge}px)`, transformOrigin: "bottom center", display: "flex", flexDirection: "column", alignItems: "center" }}>
                       <DotLottieReact
                         src={p.lottieFile}
                         loop
                         autoplay={playing}
+                        speed={(FILE_SPEED[p.lottieFile] ?? 1) * ageStyle.speedMult}
                         dotLottieRefCallback={(inst) => {
                           players.current[i] = inst;
-                          if (inst) inst.setSpeed(ageStyle.speedMult);
+                          if (inst) inst.setSpeed((FILE_SPEED[p.lottieFile] ?? 1) * ageStyle.speedMult);
                         }}
                         style={{ width: 88, height: 112, filter: cssFilter }}
                       />
@@ -593,13 +623,12 @@ export default function AtmosphereSimulation({
               })
             : people.map((p, i) => {
                 const scale = 0.62 + p.row * 0.5;
-                const bottom = 14 + p.row * 96;
+                const bottom = 14 + (1 - p.row) * 96; // row 클수록(=큰/가까운) 화면 아래(앞)
                 const dir = i % 2 === 0 ? 1 : -1;
                 const dur = 9 + (i % 6) * 2.2;
                 const walkAnim = dir === 1 ? "atmo-walk-r" : "atmo-walk-l";
-                const dotH = (13 + 1 + 24) * scale;
                 return (
-                  <div key={p.id} style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 10), animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}>
+                  <div key={p.id} style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 1000) + i, animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}>
                     {/* 성별 마커 */}
                     <div
                       aria-label={p.isFemale ? "여성" : "남성"}

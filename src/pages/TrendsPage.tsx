@@ -1,10 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { commercialApi } from "../services/commercialApi";
-import type {
-  DistrictTimeSeriesResponse,
-  CategoryRankingResponse,
-  DistrictQuarterMetrics,
-} from "../types";
+import { useMemo, useState } from "react";
+import { useCategoryRanking, useTimeSeries } from "../hooks/queries";
+import type { DistrictQuarterMetrics } from "../types";
 import TrendLineChart from "../components/trends/TrendLineChart";
 import {
   METRICS,
@@ -24,11 +20,6 @@ const DISTRICT_OPTIONS: { id: number; name: string }[] = [
   { id: 5, name: "여의도역" },
 ];
 
-interface TrendData {
-  timeSeries: DistrictTimeSeriesResponse;
-  ranking: CategoryRankingResponse | null;
-}
-
 /** 분기 지표에서 선택 지표의 값을 뽑는다. population 은 total, 나머지는 동명 필드. */
 function metricValue(q: DistrictQuarterMetrics, key: MetricKey): number | null {
   switch (key) {
@@ -46,36 +37,13 @@ function metricValue(q: DistrictQuarterMetrics, key: MetricKey): number | null {
 export default function TrendsPage() {
   const [districtId, setDistrictId] = useState<number>(1);
   const [metric, setMetric] = useState<MetricKey>("survival");
-  const [data, setData] = useState<TrendData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
 
-  useEffect(() => {
-    let alive = true;
-    setLoading(true);
-    setError(false);
+  const timeSeriesQuery = useTimeSeries(districtId);
+  const rankingQuery = useCategoryRanking(districtId);
+  const loading = timeSeriesQuery.isPending || rankingQuery.isPending;
+  const error = timeSeriesQuery.isError || rankingQuery.isError;
 
-    Promise.all([
-      commercialApi.timeSeries(districtId),
-      commercialApi.categoryRanking(districtId),
-    ])
-      .then(([tsRes, rankingRes]) => {
-        if (!alive) return;
-        setData({ timeSeries: tsRes.data, ranking: rankingRes.data });
-      })
-      .catch(() => {
-        if (alive) setError(true);
-      })
-      .finally(() => {
-        if (alive) setLoading(false);
-      });
-
-    return () => {
-      alive = false;
-    };
-  }, [districtId]);
-
-  const quarters = useMemo(() => data?.timeSeries.data ?? [], [data]);
+  const quarters = useMemo(() => timeSeriesQuery.data?.data ?? [], [timeSeriesQuery.data]);
   const meta = METRICS[metric];
 
   const labels = useMemo(() => quarters.map((q) => q.year_quarter), [quarters]);
@@ -98,7 +66,7 @@ export default function TrendsPage() {
   const districtName =
     DISTRICT_OPTIONS.find((d) => d.id === districtId)?.name ?? `상권 ${districtId}`;
 
-  const rising = data?.ranking?.ranking ?? [];
+  const rising = rankingQuery.data?.ranking ?? [];
 
   return (
     <div className={styles.page}>

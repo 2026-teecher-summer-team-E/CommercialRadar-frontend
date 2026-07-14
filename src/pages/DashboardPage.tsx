@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "../lib/apiClient";
 import { commercialApi } from "../services/commercialApi";
 import { mlApi } from "../services/mlApi";
@@ -14,7 +15,6 @@ import type {
 import type { ForecastPoint } from "../components/charts/ForecastChart";
 import ScoreCard from "../components/dashboard/ScoreCard";
 import SurvivalCard from "../components/dashboard/SurvivalCard";
-import AtmosphereSimulation from "../components/charts/AtmosphereSimulation";
 import PopulationHeatmap from "../components/dashboard/PopulationHeatmap";
 import AgeGenderCard from "../components/dashboard/AgeGenderCard";
 import RentCard from "../components/dashboard/RentCard";
@@ -24,8 +24,13 @@ import { DayNightCard, ForeignCard, PerCapitaCard, WeekendCard } from "../compon
 import ExpandModal from "../components/dashboard/ExpandModal";
 import { quarterShort } from "../components/dashboard/format";
 import { useFavoriteDistrict } from "../hooks/useFavoriteDistrict";
+import { queryKeys } from "../hooks/queries";
 import FavoriteStar from "../components/common/FavoriteStar";
+import PageLoader from "../components/common/PageLoader";
 import styles from "./DashboardPage.module.css";
+
+// recharts + lottie가 들어있어 무거움 — 시나리오 클릭(모달) 시점에만 로드.
+const AtmosphereSimulation = lazy(() => import("../components/charts/AtmosphereSimulation"));
 
 /** getDistrict 응답(서비스가 제네릭 없이 any 반환) — 페이지 내부 로컬 타입. */
 interface DistrictLatestStats {
@@ -143,6 +148,55 @@ function toTopPct(pctl: number | null | undefined): number | null {
   return Math.max(1, 100 - Math.round(pctl));
 }
 
+/** 대시보드 12개 API 병렬 호출. 상권 상세 실패만 페이지 에러, 나머지는 null 로 진행(allSettled). */
+async function fetchDashboard(id: number): Promise<DashboardData> {
+  const [
+    districtR,
+    radarR,
+    heatmapR,
+    tsAgeR,
+    tsGenderR,
+    forecastR,
+    rentR,
+    buzzR,
+    foreignR,
+    popRatiosR,
+    salesBandsR,
+    perCapitaR,
+  ] = await Promise.allSettled([
+    commercialApi.getDistrict(id),
+    commercialApi.radar(id),
+    commercialApi.heatmap(id),
+    commercialApi.timeSeries(id, { metrics: "population", breakdown: "age" }),
+    commercialApi.timeSeries(id, { metrics: "population", breakdown: "gender" }),
+    mlApi.survivalForecast(id),
+    apiClient.get<RentResponse>(`/api/commercial-districts/${id}/rent`),
+    apiClient.get<BuzzGapResponse>("/api/buzz-gap"),
+    apiClient.get<ForeignRatioResponse>(`/api/commercial-districts/${id}/foreign-ratio`),
+    apiClient.get<PopulationRatiosResponse>(`/api/commercial-districts/${id}/population-ratios`),
+    apiClient.get<SalesTimeBandsResponse>(`/api/commercial-districts/${id}/sales-time-bands`),
+    apiClient.get<PerCapitaSalesResponse>(`/api/commercial-districts/${id}/per-capita-sales`),
+  ]);
+
+  const district = pick<DistrictDetail>(districtR);
+  if (!district) throw new Error(`상권 ${id} 조회 실패`);
+
+  return {
+    district,
+    radar: pick<RadarResponse>(radarR),
+    heatmap: pick<PopulationHeatmapResponse>(heatmapR),
+    tsAge: pick<DistrictTimeSeriesResponse>(tsAgeR),
+    tsGender: pick<DistrictTimeSeriesResponse>(tsGenderR),
+    forecast: pick<SurvivalForecastResponse>(forecastR),
+    rent: pick<RentResponse>(rentR),
+    buzz: pick<BuzzGapResponse>(buzzR),
+    foreign: pick<ForeignRatioResponse>(foreignR),
+    popRatios: pick<PopulationRatiosResponse>(popRatiosR),
+    salesBands: pick<SalesTimeBandsResponse>(salesBandsR),
+    perCapita: pick<PerCapitaSalesResponse>(perCapitaR),
+  };
+}
+
 export default function DashboardPage() {
   const { districtCode } = useParams();
   const id = useMemo<number | null>(() => {
@@ -150,84 +204,17 @@ export default function DashboardPage() {
     return districtCode && Number.isFinite(n) && n > 0 ? n : null;
   }, [districtCode]);
 
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [modal, setModal] = useState<"forecast" | "heatmap" | null>(null);
   const [sim, setSim] = useState<"low" | "mid" | "high" | null>(null);
 
-  useEffect(() => {
-    if (id == null) {
-      setError(true);
-      setLoading(false);
-      return;
-    }
-
-    let alive = true;
-    setLoading(true);
-    setError(false);
-
-    Promise.allSettled([
-      commercialApi.getDistrict(id),
-      commercialApi.radar(id),
-      commercialApi.heatmap(id),
-      commercialApi.timeSeries(id, { metrics: "population", breakdown: "age" }),
-      commercialApi.timeSeries(id, { metrics: "population", breakdown: "gender" }),
-      mlApi.survivalForecast(id),
-      apiClient.get<RentResponse>(`/api/commercial-districts/${id}/rent`),
-      apiClient.get<BuzzGapResponse>("/api/buzz-gap"),
-      apiClient.get<ForeignRatioResponse>(`/api/commercial-districts/${id}/foreign-ratio`),
-      apiClient.get<PopulationRatiosResponse>(`/api/commercial-districts/${id}/population-ratios`),
-      apiClient.get<SalesTimeBandsResponse>(`/api/commercial-districts/${id}/sales-time-bands`),
-      apiClient.get<PerCapitaSalesResponse>(`/api/commercial-districts/${id}/per-capita-sales`),
-    ])
-      .then((results) => {
-        if (!alive) return;
-        const [
-          districtR,
-          radarR,
-          heatmapR,
-          tsAgeR,
-          tsGenderR,
-          forecastR,
-          rentR,
-          buzzR,
-          foreignR,
-          popRatiosR,
-          salesBandsR,
-          perCapitaR,
-        ] = results;
-        const district = pick<DistrictDetail>(districtR);
-        if (!district) {
-          setError(true);
-          return;
-        }
-        setData({
-          district,
-          radar: pick<RadarResponse>(radarR),
-          heatmap: pick<PopulationHeatmapResponse>(heatmapR),
-          tsAge: pick<DistrictTimeSeriesResponse>(tsAgeR),
-          tsGender: pick<DistrictTimeSeriesResponse>(tsGenderR),
-          forecast: pick<SurvivalForecastResponse>(forecastR),
-          rent: pick<RentResponse>(rentR),
-          buzz: pick<BuzzGapResponse>(buzzR),
-          foreign: pick<ForeignRatioResponse>(foreignR),
-          popRatios: pick<PopulationRatiosResponse>(popRatiosR),
-          salesBands: pick<SalesTimeBandsResponse>(salesBandsR),
-          perCapita: pick<PerCapitaSalesResponse>(perCapitaR),
-        });
-      })
-      .catch(() => {
-        if (alive) setError(true);
-      })
-      .finally(() => {
-        if (alive) setLoading(false);
-      });
-
-    return () => {
-      alive = false;
-    };
-  }, [id]);
+  const dashboardQuery = useQuery({
+    queryKey: queryKeys.dashboard(id ?? -1),
+    queryFn: () => fetchDashboard(id as number),
+    enabled: id != null,
+  });
+  const data = dashboardQuery.data ?? null;
+  const loading = id != null && dashboardQuery.isPending;
+  const error = id == null || dashboardQuery.isError;
 
   // ── 파생 값 ─────────────────────────────────────────────
   const d = data?.district ?? null;
@@ -560,17 +547,19 @@ export default function DashboardPage() {
 
       {/* 상권 분위기 시뮬레이션: 생존율 예측 시나리오 선 클릭 시 */}
       {sim && (
-        <AtmosphereSimulation
-          scenario={sim}
-          ageDistribution={ageSlices}
-          survivalPct={survivalScenarioPct ? survivalScenarioPct[sim] : null}
-          footTraffic={simFootTraffic}
-          dayDominant={simDayDominant}
-          daySalesPct={simDaySalesPct}
-          foreignerPct={data.foreign?.foreigner_pct ?? null}
-          startQuarter={survivalForecast[0]?.year_quarter ?? null}
-          onClose={() => setSim(null)}
-        />
+        <Suspense fallback={<PageLoader />}>
+          <AtmosphereSimulation
+            scenario={sim}
+            ageDistribution={ageSlices}
+            survivalPct={survivalScenarioPct ? survivalScenarioPct[sim] : null}
+            footTraffic={simFootTraffic}
+            dayDominant={simDayDominant}
+            daySalesPct={simDaySalesPct}
+            foreignerPct={data.foreign?.foreigner_pct ?? null}
+            startQuarter={survivalForecast[0]?.year_quarter ?? null}
+            onClose={() => setSim(null)}
+          />
+        </Suspense>
       )}
     </div>
   );

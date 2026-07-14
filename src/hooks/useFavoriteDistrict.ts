@@ -1,30 +1,22 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { interestApi } from "../services/interestApi";
 import type { InterestDistrict } from "../types";
+import { queryKeys } from "./queries";
 
-/** 관심 상권(즐겨찾기) 등록 여부 조회 + 토글. 페이지 마운트 시 전체 목록을 한 번 불러온다. */
+const EMPTY_ITEMS: InterestDistrict[] = [];
+
+/** 관심 상권(즐겨찾기) 등록 여부 조회 + 토글. 목록은 전역 캐시로 공유되어 페이지 이동 시 재요청하지 않는다. */
 export function useFavoriteDistrict() {
-  const [items, setItems] = useState<InterestDistrict[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const queryClient = useQueryClient();
   const [pending, setPending] = useState(false);
 
-  useEffect(() => {
-    let alive = true;
-    interestApi
-      .list()
-      .then((r) => {
-        if (alive) setItems(r.data ?? []);
-      })
-      .catch(() => {
-        if (alive) setItems([]);
-      })
-      .finally(() => {
-        if (alive) setLoaded(true);
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
+  const query = useQuery({
+    queryKey: queryKeys.favorites,
+    queryFn: async () => (await interestApi.list()).data ?? [],
+  });
+  const items = query.data ?? EMPTY_ITEMS;
+  const loaded = query.isSuccess || query.isError;
 
   const findItem = useCallback(
     (districtId: number) => items.find((it) => it.commercial_district_id === districtId) ?? null,
@@ -40,16 +32,24 @@ export function useFavoriteDistrict() {
       try {
         if (existing) {
           await interestApi.remove(existing.id);
-          setItems((prev) => prev.filter((it) => it.id !== existing.id));
+          queryClient.setQueryData<InterestDistrict[]>(queryKeys.favorites, (prev) =>
+            prev?.filter((it) => it.id !== existing.id),
+          );
         } else {
           const res = await interestApi.create({ commercial_district_id: districtId });
-          setItems((prev) => [...prev, res.data]);
+          queryClient.setQueryData<InterestDistrict[]>(queryKeys.favorites, (prev) => [
+            ...(prev ?? []),
+            res.data,
+          ]);
         }
+        // 마이페이지의 관심 상권 목록(이름 채워진 버전)과 요약 카운트도 다음 조회 때 갱신되도록 무효화.
+        queryClient.invalidateQueries({ queryKey: queryKeys.interests });
+        queryClient.invalidateQueries({ queryKey: queryKeys.myStats });
       } finally {
         setPending(false);
       }
     },
-    [findItem],
+    [findItem, queryClient],
   );
 
   return { loaded, pending, isFavorite, toggle };
