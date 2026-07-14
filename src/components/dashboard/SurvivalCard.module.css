@@ -153,11 +153,11 @@
 .statBox {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 4px;
   padding: 12px 14px;
   background: var(--color-chip);
   border-radius: var(--radius);
-  transition: background 0.18s ease, transform 0.18s ease;
   animation: surv-fade-up 0.5s ease-out both;
 }
 .statBox:nth-child(1) {
@@ -166,12 +166,24 @@
 .statBox:nth-child(2) {
   animation-delay: 0.32s;
 }
-.statBox:nth-child(3) {
-  animation-delay: 0.4s;
+/* 현재 매장수 + 폐업률을 한 박스에 나란히(가로) 배치해 stats 컬럼 전체 높이를 줄인다.
+   양 끝에 붙이지 않고 가운데로 모아 구분선을 사이에 둔 한 쌍처럼 보이게 한다. */
+.statBoxRow {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 44px;
 }
-.statBox:hover {
-  background: var(--color-primary-light, var(--color-chip));
-  transform: translateX(2px);
+.statPair {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.statDivider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--color-border);
 }
 .statLabel {
   font-size: 12px;
@@ -225,59 +237,78 @@
   font-size: 14px;
 }
 
+/* 힘줘서 만든 기능이라 눈에 띄어야 한다 — 조용한 텍스트+아웃라인 버튼 대신
+   구분되는 배경 박스 안에, 시나리오별로 색이 처음부터 채워진 버튼으로 강조. */
 .scenarioBar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 10px;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--color-chip);
+  border-radius: var(--radius);
   flex-wrap: wrap;
 }
 .scenarioHint {
-  font-size: 12px;
-  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
   white-space: nowrap;
   flex: none;
 }
 .scenarioBtns {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 .scenarioBtn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
+  gap: 6px;
+  padding: 7px 14px;
   border-radius: var(--radius-pill);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-text);
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.scenarioBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card);
 }
 .scenarioDot {
   display: inline-block;
   width: 7px;
   height: 7px;
   border-radius: 50%;
+  border: 1.5px solid var(--color-surface);
   flex: none;
 }
-.scenarioBtnHigh:hover {
+.scenarioBtnHigh {
   background: var(--color-green-bg);
-  border-color: var(--color-green);
   color: var(--color-green);
 }
-.scenarioBtnMid:hover {
+.scenarioBtnHigh:hover {
+  background: var(--color-green);
+  color: #fff;
+}
+.scenarioBtnMid {
   background: var(--series-1-bg);
-  border-color: var(--series-1);
   color: var(--color-primary-dark);
 }
-.scenarioBtnLow:hover {
+.scenarioBtnMid:hover {
+  background: var(--series-1);
+  color: #fff;
+}
+.scenarioBtnLow {
   background: var(--series-7-bg);
-  border-color: var(--color-red);
   color: var(--color-red);
+}
+.scenarioBtnLow:hover {
+  background: var(--color-red);
+  color: #fff;
 }
 
 /* 접근성: '모션 줄이기'가 켜지면 진입/반복 애니메이션을 끈다(호버 트랜지션은 유지). */

@@ -66,14 +66,14 @@ export default function AgeGenderCard({ ageFemale, ageMale }: AgeGenderCardProps
           className={gender === "female" ? styles.toggleActive : styles.toggleBtn}
           onClick={() => setGender("female")}
         >
-          <i className={styles.dotFemale} /> 여성
+          <i className={styles.dot} /> 여성
         </button>
         <button
           type="button"
           className={gender === "male" ? styles.toggleActive : styles.toggleBtn}
           onClick={() => setGender("male")}
         >
-          <i className={styles.dotMale} /> 남성
+          <i className={styles.dot} /> 남성
         </button>
       </div>
     </div>
