@@ -31,6 +31,7 @@ export default function RisingSection() {
                 </li>
               ))}
             </ol>
+            <p className={styles.panelNote}>2026년 1분기 대비 직전 분기 증감률 · 예시</p>
           </div>
 
           <div className={styles.panel}>
@@ -48,6 +49,7 @@ export default function RisingSection() {
                 </li>
               ))}
             </ol>
+            <p className={styles.panelNote}>2026년 1분기 대비 직전 분기 증감률 · 예시</p>
           </div>
 
           <div className={styles.panel}>

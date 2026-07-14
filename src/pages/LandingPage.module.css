@@ -309,6 +309,11 @@
   font-weight: 700;
   color: var(--color-text);
 }
+.panelNote {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: var(--color-faint);
+}
 .rankList {
   list-style: none;
   margin: 0;
