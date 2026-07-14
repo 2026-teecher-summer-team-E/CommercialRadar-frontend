@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiClient } from "../../lib/apiClient";
+import { buildSignInPath, clerkEnabled, useAuth } from "../../lib/auth";
 import type { DistrictSearchResult } from "../map/mapData";
 import styles from "../../pages/LandingPage.module.css";
 import { POPULAR_SEARCHES } from "./data";
@@ -9,10 +10,16 @@ import { SearchIcon } from "./icons";
 /** 히어로: 지도 배경 + 헤드라인 + 검색바 + 인기 검색어. */
 export default function HeroSection() {
   const navigate = useNavigate();
+  const { isLoaded, isSignedIn } = useAuth();
   const [query, setQuery] = useState("");
 
   // 검색어로 상권을 찾아 그 상권의 지도 화면으로 이동. 결과 없으면 기본 지도로만 이동.
   const goToDistrict = async (keyword: string) => {
+    if (clerkEnabled && isLoaded && !isSignedIn) {
+      navigate(buildSignInPath("/"));
+      return;
+    }
+
     const trimmed = keyword.trim();
     if (!trimmed) {
       navigate("/");
@@ -34,12 +41,12 @@ export default function HeroSection() {
       <div className={styles.heroGrid} aria-hidden="true" />
       <div className={styles.heroInner}>
         <h1 className={styles.heroTitle}>
-          실패 없는 창업의 시작,
+          데이터로 검증하는
           <br />
-          <span className={styles.heroTitleAccent}>데이터로 보는 진짜 상권</span>
+          <span className={styles.heroTitleAccent}>상권과 창업의 가능성</span>
         </h1>
         <p className={styles.heroSub}>
-          원하는 지역만 검색하세요. 유동인구부터 생존율, 매출 예측까지 바로 확인합니다.
+          지역을 검색하시면 해당 상권의 유동인구, 생존율, 예상 매출을 한눈에 분석해 드립니다.
         </p>
 
         <div className={styles.searchBar}>

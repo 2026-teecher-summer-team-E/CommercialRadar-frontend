@@ -5,42 +5,7 @@ import type {
   PopulationHeatmapResponse,
 } from "../../types";
 
-/**
- * 지도 페이지 전용 타입/포맷/목업 좌표.
- *
- * 제약: Kakao 지도 SDK 키(VITE_KAKAO_MAP_KEY)와 좌표/GeoJSON API가 없으므로
- * 실제 지도 타일을 못 띄운다. Figma의 지도 영역 자체가 스타일화된 그리드 + 점수 핀
- * 목업이므로, 핀 위치는 아래 MOCK_PIN_POSITIONS 정적 배치를 쓰고,
- * 이름/점수는 실데이터(검색 결과 + getDistrict/radar)로 채운다.
- */
-
-/** 지도 위 상권 점수 핀. 좌표는 목업(%), 이름·점수는 실데이터. */
-export interface MapPin {
-  id: number;
-  name: string;
-  score: number | null;
-  /** 그리드 좌상단 기준 퍼센트 좌표(0~100). 목업 정적 배치. */
-  x: number;
-  y: number;
-  /** true면 현재 선택된 상권(강조 핀). */
-  active?: boolean;
-}
-
-/** 좌표 API가 없어 사용하는 정적 핀 배치(%). Figma 배치를 근사. */
-export const MOCK_PIN_POSITIONS: ReadonlyArray<{ x: number; y: number }> = [
-  { x: 50, y: 26 }, // 중앙(활성 후보)
-  { x: 42, y: 11 },
-  { x: 78, y: 15 },
-  { x: 68, y: 20 },
-  { x: 12, y: 24 },
-  { x: 36, y: 32 },
-  { x: 74, y: 42 },
-  { x: 8, y: 46 },
-  { x: 44, y: 48 },
-  { x: 62, y: 52 },
-  { x: 88, y: 58 },
-  { x: 82, y: 72 },
-];
+/** 지도 페이지 전용 타입/포맷. */
 
 /** 검색 결과(간략 타입). 검색 API 응답 형태. */
 export interface DistrictSearchResult {
@@ -120,7 +85,7 @@ export function scoreColor(score: number | null | undefined): string {
   const TONE_COLORS: Record<typeof grade.tone, string> = {
     good: "#4a9e5c",
     mid: "#24398a",
-    low: "#e8a020",
+    low: "#d94430",
   };
   return TONE_COLORS[grade.tone];
 }

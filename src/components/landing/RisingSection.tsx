@@ -8,7 +8,7 @@ export default function RisingSection() {
     <section className={styles.rising}>
       <div className={styles.container}>
         <div className={styles.sectionHead}>
-          <h2 className={styles.h2}>지금 이 순간, 뜨는 상권</h2>
+          <h2 className={styles.h2}>실시간 상권 및 업종 트렌드</h2>
           <p className={styles.sectionSub}>
             공공데이터와 카드사 매출 데이터 기반으로 매주 업데이트됩니다.
           </p>
@@ -16,7 +16,7 @@ export default function RisingSection() {
 
         <div className={styles.risingGrid}>
           <div className={styles.panel}>
-            <h3 className={styles.panelTitle}>이번 주 급상승 상권 Top 5</h3>
+            <h3 className={styles.panelTitle}>이번 주 급상승 상권</h3>
             <ol className={styles.rankList}>
               {RISING_DISTRICTS.map((item, i) => (
                 <li key={item.name} className={styles.rankRow}>
@@ -43,6 +43,9 @@ export default function RisingSection() {
                     <div className={styles.rankLine}>
                       <span className={styles.rankName}>{item.name}</span>
                       <span className={styles.rankDelta}>{item.delta}</span>
+                    </div>
+                    <div className={`${styles.rankSub} ${styles.rankSubSpacer}`} aria-hidden="true">
+                      &nbsp;
                     </div>
                   </div>
                 </li>

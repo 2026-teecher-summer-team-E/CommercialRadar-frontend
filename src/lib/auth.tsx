@@ -5,7 +5,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import {
   ClerkProvider,
   useAuth as useClerkAuth,
@@ -42,6 +42,10 @@ const AuthContext = createContext<AuthState>({
 });
 
 export const useAuth = () => useContext(AuthContext);
+
+export function buildSignInPath(redirectUrl: string) {
+  return `/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`;
+}
 
 /** 백엔드 /api/users/me 로 앱 유저(이름/이메일/등급)를 로드. 두 모드 공용. */
 function useBackendUser(active: boolean) {
@@ -132,18 +136,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 /** 앱 내부 라우트 보호. Clerk 활성 && 미로그인이면 로그인으로 리다이렉트, dev 모드는 통과. */
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { isLoaded, isSignedIn } = useAuth();
+  const location = useLocation();
   if (!clerkEnabled) return <>{children}</>;
   if (!isLoaded) return null;
-  if (!isSignedIn) return <Navigate to="/landing" replace />;
+  if (!isSignedIn) {
+    const redirectUrl = `${location.pathname}${location.search}${location.hash}`;
+    return <Navigate to={buildSignInPath(redirectUrl)} replace />;
+  }
   return <>{children}</>;
 }
 
 /** 어드민 전용 라우트 보호. 로그인 확인 후 어드민이 아니면 홈으로 리다이렉트. */
 export function RequireAdmin({ children }: { children: ReactNode }) {
   const { isLoaded, isSignedIn, user } = useAuth();
+  const location = useLocation();
   if (clerkEnabled) {
     if (!isLoaded) return null;
-    if (!isSignedIn) return <Navigate to="/landing" replace />;
+    if (!isSignedIn) {
+      const redirectUrl = `${location.pathname}${location.search}${location.hash}`;
+      return <Navigate to={buildSignInPath(redirectUrl)} replace />;
+    }
   }
   // 백엔드 유저 로딩 대기(어드민 판정 전 깜빡임 방지).
   if (!user) return null;

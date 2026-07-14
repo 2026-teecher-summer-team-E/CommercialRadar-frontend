@@ -118,7 +118,7 @@ function Row({
             title={`${c.day} ${TIME_LABEL[time] ?? time}: ${fmtInt(c.value)}`}
           >
             {showValues && (
-              <span className={styles.cellVal} style={{ color: t > 0.55 ? "#fff" : "var(--color-text-body)" }}>
+              <span className={styles.cellVal} style={{ color: t > 0.55 ? "var(--color-on-primary)" : "var(--color-text-body)" }}>
                 {fmtInt(c.value)}
               </span>
             )}
