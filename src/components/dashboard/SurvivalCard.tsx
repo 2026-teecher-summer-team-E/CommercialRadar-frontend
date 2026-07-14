@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import type { ForecastPoint } from "../charts/ForecastChart";
 import type { TimeseriesPoint } from "../../types";
 import { useCountUp } from "../../hooks/useCountUp";
@@ -37,8 +37,89 @@ interface SurvivalCardProps {
   fallbackNote?: string | null;
 }
 
-/** 업종 select 전체 상권 옵션 값(빈 문자열은 select에서 다루기 애매해 상수화). */
+/** 업종 드롭다운 '전체 상권' 옵션 값. */
 const ALL_CATEGORIES = "__all__";
+
+interface CategoryDropdownProps {
+  options: string[];
+  selected: string | null;
+  onChange: (category: string | null) => void;
+}
+
+/**
+ * 업종 선택 커스텀 드롭다운.
+ * 네이티브 <select>는 열린 목록을 CSS로 스타일할 수 없어(OS 기본 UI),
+ * 서비스 톤에 맞춘 트리거 버튼 + 메뉴로 직접 구현한다.
+ */
+function CategoryDropdown({ options, selected, onChange }: CategoryDropdownProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const items = [{ value: ALL_CATEGORIES, label: "전체 상권" }, ...options.map((c) => ({ value: c, label: c }))];
+
+  return (
+    <div className={styles.categoryWrap} ref={ref}>
+      <span className={styles.categoryLabel}>업종</span>
+      <button
+        type="button"
+        className={styles.categoryTrigger}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label="업종 선택"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className={styles.categoryValue}>{selected ?? "전체 상권"}</span>
+        <svg className={styles.categoryChevron} width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+          <path
+            d="M2.5 4.5 6 8l3.5-3.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      {open && (
+        <ul className={styles.categoryMenu} role="listbox">
+          {items.map((it) => {
+            const isSel = (it.value === ALL_CATEGORIES ? null : it.value) === selected;
+            return (
+              <li key={it.value} role="option" aria-selected={isSel}>
+                <button
+                  type="button"
+                  className={`${styles.categoryOption} ${isSel ? styles.categoryOptionSel : ""}`}
+                  onClick={() => {
+                    onChange(it.value === ALL_CATEGORIES ? null : it.value);
+                    setOpen(false);
+                  }}
+                >
+                  {it.label}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 /** "2025-Q4" → "2025년 4분기". 파싱 실패 시 원본 반환. */
 function fmtQuarter(q?: string | null): string | null {
@@ -101,24 +182,11 @@ export default function SurvivalCard({
         </div>
         <div className={styles.headRight}>
           {hasCategorySelect && (
-            <label className={styles.categorySelect}>
-              <span className={styles.categoryLabel}>업종</span>
-              <select
-                className={styles.categoryField}
-                value={selectedCategory ?? ALL_CATEGORIES}
-                onChange={(e) =>
-                  onCategoryChange?.(e.target.value === ALL_CATEGORIES ? null : e.target.value)
-                }
-                aria-label="업종 선택"
-              >
-                <option value={ALL_CATEGORIES}>전체 상권</option>
-                {categoryOptions.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <CategoryDropdown
+              options={categoryOptions}
+              selected={selectedCategory ?? null}
+              onChange={(c) => onCategoryChange?.(c)}
+            />
           )}
           {onExpand && hasChart && (
             <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="생존율 예측 확대">
