@@ -23,6 +23,8 @@ interface ScoreCardProps {
   weekendPct: number | null;
   /** 유동인구 피크 시간대 라벨(예: "17~21시"). 없으면 지표없음. */
   peakLabel?: string | null;
+  /** 종합점수 순위 라벨(예: "서울 10위"). 없으면 지표없음. */
+  rankLabel?: string | null;
   onExpand?: () => void;
 }
 
@@ -48,6 +50,7 @@ export default function ScoreCard({
   weekdayPct,
   weekendPct,
   peakLabel,
+  rankLabel,
   onExpand,
 }: ScoreCardProps) {
   return (
@@ -66,7 +69,11 @@ export default function ScoreCard({
           <span className={styles.scoreNum}>{score != null ? Math.round(score) : "—"}</span>
           <span className={styles.scoreDenom}>/100</span>
         </div>
-        <span className={`${styles.topPill} ${styles.topPillEmpty}`}>순위 지표없음</span>
+        {rankLabel ? (
+          <span className={styles.topPill}>{rankLabel}</span>
+        ) : (
+          <span className={`${styles.topPill} ${styles.topPillEmpty}`}>순위 지표없음</span>
+        )}
       </div>
 
       <span className={styles.constructLabel}>점수 구성</span>

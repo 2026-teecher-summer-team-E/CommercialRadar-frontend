@@ -39,6 +39,11 @@ interface DistrictLatestStats {
   survival_rate: number | null;
   closure_rate: number | null;
   total_business: number | null;
+  // 종합점수 순위(백엔드 제공). 데이터 없으면 null → "지표없음".
+  score_rank?: number | null;
+  score_rank_total?: number | null;
+  score_percentile?: number | null;
+  rank_scope?: "seoul" | "gu" | "type" | null;
 }
 interface DistrictDetail {
   id: number;
@@ -459,6 +464,17 @@ export default function DashboardPage() {
     return bestSlot != null ? `${bestSlot}시` : null;
   }, [data]);
 
+  // 종합점수 순위(백엔드 제공, 상권 고유값 — 업종 선택과 무관). scope에 맞춰 라벨 접두어를 붙인다.
+  const rankLabel = useMemo<string | null>(() => {
+    const r = stats?.score_rank;
+    if (r == null) return null;
+    const prefix =
+      stats?.rank_scope === "gu" ? (d?.gu_name ?? "자치구")
+      : stats?.rank_scope === "type" ? (d?.type_name ?? "동일 유형")
+      : "서울";
+    return `${prefix} ${r.toLocaleString()}위`;
+  }, [stats, d]);
+
   const region = d ? [d.gu_name, d.dong_name].filter(Boolean).join(" ") || null : null;
   const regionLine = d
     ? [d.gu_name, d.dong_name, d.district_name].filter(Boolean).join(" ") || null
@@ -519,6 +535,7 @@ export default function DashboardPage() {
           weekdayPct={flow?.weekday ?? null}
           weekendPct={flow?.weekend ?? null}
           peakLabel={peakLabel}
+          rankLabel={rankLabel}
         />
 
         <SurvivalCard
