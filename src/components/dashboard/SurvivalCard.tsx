@@ -27,7 +27,18 @@ interface SurvivalCardProps {
   totalBusiness: number | null;
   closureRate: number | null;
   onExpand?: () => void;
+  /** 업종 선택 옵션(첫 항목 = 전체 상권). */
+  categoryOptions?: string[];
+  /** 선택된 업종(null = 전체 상권). */
+  selectedCategory?: string | null;
+  /** 업종 변경 콜백(전체 상권 선택 시 null). */
+  onCategoryChange?: (category: string | null) => void;
+  /** 폴백 안내 문구. 있으면 예측 대신 현재 생존율만 표시. */
+  fallbackNote?: string | null;
 }
+
+/** 업종 select 전체 상권 옵션 값(빈 문자열은 select에서 다루기 애매해 상수화). */
+const ALL_CATEGORIES = "__all__";
 
 /** "2025-Q4" → "2025년 4분기". 파싱 실패 시 원본 반환. */
 function fmtQuarter(q?: string | null): string | null {
@@ -47,10 +58,15 @@ export default function SurvivalCard({
   totalBusiness,
   closureRate,
   onExpand,
+  categoryOptions,
+  selectedCategory,
+  onCategoryChange,
+  fallbackNote,
 }: SurvivalCardProps) {
   const hist = history ?? [];
   const fc = forecastSeries ?? [];
-  const hasChart = hist.length + fc.length >= 2;
+  const isFallback = fallbackNote != null;
+  const hasChart = !isFallback && hist.length + fc.length >= 2;
   const deltaUp = (delta ?? 0) >= 0;
 
   // 히어로 숫자 카운트업: 현재값 먼저, 전망값은 살짝 늦게 올라와 '현재→전망' 흐름을 만든다.
@@ -61,10 +77,13 @@ export default function SurvivalCard({
   const startLabel = fmtQuarter(hist[0]?.year_quarter);
   const endLabel = fmtQuarter(fc[fc.length - 1]?.year_quarter);
   const survivors = forecast != null ? Math.round(forecast) : null;
-  const subtitle =
-    startLabel && endLabel && survivors != null
+  const subtitle = isFallback
+    ? "현재 생존율(최근 분기 실측)"
+    : startLabel && endLabel && survivors != null
       ? `100곳이 문 열면 ${survivors}곳이 버팁니다 — ${startLabel} 창업 기준`
       : "창업 시점 대비 살아남는 점포 비율(ML 예측)";
+
+  const hasCategorySelect = categoryOptions != null && categoryOptions.length > 0 && onCategoryChange != null;
 
   // Y축을 데이터 범위(최저값~100%)로 좁혀 곡선이 눌리지 않게. 최저값을 0.05 단위로 내림.
   const vals = [...hist, ...fc]
@@ -80,24 +99,56 @@ export default function SurvivalCard({
           <h3 className={styles.title}>생존율 예측</h3>
           <p className={styles.sub}>{subtitle}</p>
         </div>
-        {onExpand && hasChart && (
-          <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="생존율 예측 확대">
-            ⤢
-          </button>
-        )}
+        <div className={styles.headRight}>
+          {hasCategorySelect && (
+            <label className={styles.categorySelect}>
+              <span className={styles.categoryLabel}>업종</span>
+              <select
+                className={styles.categoryField}
+                value={selectedCategory ?? ALL_CATEGORIES}
+                onChange={(e) =>
+                  onCategoryChange?.(e.target.value === ALL_CATEGORIES ? null : e.target.value)
+                }
+                aria-label="업종 선택"
+              >
+                <option value={ALL_CATEGORIES}>전체 상권</option>
+                {categoryOptions.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {onExpand && hasChart && (
+            <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="생존율 예측 확대">
+              ⤢
+            </button>
+          )}
+        </div>
       </div>
 
       <div className={styles.body}>
         <div className={styles.left}>
-          <div className={styles.hero}>
-            <span className={styles.heroNow}>{fmtPct(animCurrent, 0)}</span>
-            <span className={styles.arrow}>→</span>
-            <span className={styles.heroNext}>{fmtPct(animForecast, 0)}</span>
-          </div>
-          {delta != null && (
-            <span className={styles.deltaPill}>
-              {deltaUp ? "▲" : "▼"} {Math.abs(delta).toFixed(1)}%p · 4분기 후 전망
-            </span>
+          {isFallback ? (
+            <div className={styles.hero}>
+              <span className={styles.heroNow}>{fmtPct(animCurrent, 0)}</span>
+            </div>
+          ) : (
+            <div className={styles.hero}>
+              <span className={styles.heroNow}>{fmtPct(animCurrent, 0)}</span>
+              <span className={styles.arrow}>→</span>
+              <span className={styles.heroNext}>{fmtPct(animForecast, 0)}</span>
+            </div>
+          )}
+          {isFallback ? (
+            <p className={styles.fallbackNote}>{fallbackNote}</p>
+          ) : (
+            delta != null && (
+              <span className={styles.deltaPill}>
+                {deltaUp ? "▲" : "▼"} {Math.abs(delta).toFixed(1)}%p · 4분기 후 전망
+              </span>
+            )
           )}
         </div>
 
@@ -111,9 +162,11 @@ export default function SurvivalCard({
             <span className={styles.statValue}>{fmtPct(closureRate, 1)}</span>
           </div>
           <div className={styles.statBox}>
-            <span className={styles.statLabel}>4분기 후 전망</span>
+            <span className={styles.statLabel}>{isFallback ? "현재 생존율" : "4분기 후 전망"}</span>
             <span className={styles.statValueAccent}>
-              {fmtPct(forecast, 0)} {delta != null && `${deltaUp ? "▲" : "▼"}${Math.abs(delta).toFixed(1)}%p`}
+              {isFallback
+                ? fmtPct(current, 0)
+                : `${fmtPct(forecast, 0)} ${delta != null ? `${deltaUp ? "▲" : "▼"}${Math.abs(delta).toFixed(1)}%p` : ""}`}
             </span>
           </div>
         </div>
@@ -169,7 +222,7 @@ export default function SurvivalCard({
           )}
         </div>
       ) : (
-        <div className={styles.empty}>예측 데이터가 없어요.</div>
+        !isFallback && <div className={styles.empty}>예측 데이터가 없어요.</div>
       )}
     </div>
   );
