@@ -85,7 +85,7 @@ export function scoreColor(score: number | null | undefined): string {
   const TONE_COLORS: Record<typeof grade.tone, string> = {
     good: "#4a9e5c",
     mid: "#24398a",
-    low: "#e8a020",
+    low: "#d94430",
   };
   return TONE_COLORS[grade.tone];
 }
