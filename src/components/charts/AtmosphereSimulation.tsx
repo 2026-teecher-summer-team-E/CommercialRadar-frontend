@@ -95,6 +95,24 @@ const FILE_SPEED: Record<string, number> = {
   "/lottie/walking-7.json": 1.6, // 노인 여성: 사이클 150프레임(5초) → 느린 걸음으로 보정
 };
 
+/**
+ * 파일별 '발밑 여백' 비율 — 캔버스(정사각) 안에서 캐릭터 발 아래 빈 공간이 차지하는 비율.
+ * 88×112 박스에 정사각 캔버스가 들어가며 캐릭터가 뜨는 정도가 파일마다 달라, 같은 bottom이어도
+ * 발 높이가 어긋나 z-순서와 시각적 깊이가 불일치(예: 할머니가 뒤로 보이는데 앞사람을 덮음).
+ * 실측(canvas alpha 하단 경계)값. 이 여백만큼 아래로 내려 모든 발을 같은 지면선에 정렬한다.
+ */
+const FILE_FOOT_PAD: Record<string, number> = {
+  "/lottie/walking.json": 0.108,
+  "/lottie/walking-2.json": 0.207,
+  "/lottie/walking-3.json": 0.12,
+  "/lottie/walking-4.json": 0.207,
+  "/lottie/walking-5.json": 0.183, // 뽀빠이 할아버지
+  "/lottie/walking-6.json": 0.259, // 오피스맨
+  "/lottie/walking-7.json": 0.298, // 할머니(보행보조기) — 여백 최대
+};
+const FOOT_BASE_PAD = 0.108; // 기준(기본 남성). 이 값 대비 초과 여백만큼 캐릭터를 내려 정렬.
+const FOOT_BOX_H = 112; // DotLottie 박스 높이(px, scale 전)
+
 /** 타임랩스 종료 시점 보장 최소 폐업 점포 수. */
 const SCENARIO_MIN_CLOSED: Record<AtmoScenario, number> = { high: 1, mid: 2, low: 3 };
 
@@ -507,12 +525,15 @@ export default function AtmosphereSimulation({
                 const brightnessExtra = p.isFemale ? 0.04 : 0;
                 const cssFilter = `hue-rotate(${ageStyle.hueRotate + hueExtra}deg) saturate(${ageStyle.saturate}) brightness(${ageStyle.brightness + brightnessExtra})`;
                 const scaleXDir = dir * (FILE_FACING[p.lottieFile] ?? LOTTIE_FACING);
+                // 발밑 여백 정렬: 기준(기본 남성) 대비 초과 여백만큼 아래로 내려 모든 발을 같은 지면선에 맞춤.
+                const footNudge = Math.max(0, (FILE_FOOT_PAD[p.lottieFile] ?? 0.12) - FOOT_BASE_PAD) * FOOT_BOX_H;
                 return (
                   <div
                     key={p.id}
-                    style={{ position: "absolute", bottom, zIndex: Math.round(scale * 1000) + i, animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}
+                    data-lf={p.lottieFile}
+                    style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 1000) + i, animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}
                   >
-                    <div style={{ transform: `scale(${scale}) scaleX(${scaleXDir})`, transformOrigin: "bottom center", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    <div style={{ transform: `scale(${scale}) scaleX(${scaleXDir}) translateY(${footNudge}px)`, transformOrigin: "bottom center", display: "flex", flexDirection: "column", alignItems: "center" }}>
                       <DotLottieReact
                         src={p.lottieFile}
                         loop
@@ -535,7 +556,7 @@ export default function AtmosphereSimulation({
                 const dur = 9 + (i % 6) * 2.2;
                 const walkAnim = dir === 1 ? "atmo-walk-r" : "atmo-walk-l";
                 return (
-                  <div key={p.id} style={{ position: "absolute", bottom, zIndex: Math.round(scale * 1000) + i, animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}>
+                  <div key={p.id} style={{ position: "absolute", bottom, zIndex: Math.round(p.row * 1000) + i, animation: `${walkAnim} ${dur}s linear ${-(i * 1.7)}s infinite`, animationPlayState: playState }}>
                     <div style={{ transform: `scale(${scale}) scaleX(${dir})`, transformOrigin: "bottom center" }}>
                       <div style={{ animation: `atmo-bob ${1.6 + (i % 3) * 0.3}s ease-in-out infinite`, animationPlayState: playState, display: "flex", flexDirection: "column", alignItems: "center" }}>
                         <div style={{ width: 13, height: 13, borderRadius: "50%", background: p.color }} />
