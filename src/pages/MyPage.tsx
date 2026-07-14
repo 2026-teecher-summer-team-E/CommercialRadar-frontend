@@ -297,7 +297,7 @@ export default function MyPage() {
             </ul>
           ) : (
             <EmptyState
-              title="저장된 리포트가 아직 없어요"
+              title="분석한 상권 리포트를 저장해보세요."
               description="상권 분석 결과를 리포트로 저장하면 여기에서 모아볼 수 있습니다."
             />
           ))}
@@ -319,14 +319,14 @@ export default function MyPage() {
             </ul>
           ) : (
             <EmptyState
-              title="아직 찜한 상권이 없어요"
+              title="지도에서 별표를 눌러 관심 상권을 추가하세요."
               description="관심 있는 상권을 저장해두면 변화를 빠르게 확인할 수 있습니다."
             />
           ))}
 
         {tab === "shared" && (
           <EmptyState
-            title="공유된 리포트가 아직 없어요"
+            title="공유받은 리포트가 없습니다."
             description="리포트를 공유하면 공유 링크와 함께 이곳에 모입니다."
           />
         )}

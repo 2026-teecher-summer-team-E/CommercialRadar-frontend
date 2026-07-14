@@ -675,7 +675,7 @@ function RadarValueTable({ axes, series }: { axes: string[]; series: RadarSeries
 /** 업종별 추천 순위표. */
 function RankingTable({ ranking }: { ranking: CategoryRankingResponse | null }) {
   if (!ranking || ranking.ranking.length === 0) {
-    return <div className={styles.empty}>업종 순위 데이터가 없어요.</div>;
+    return <div className={styles.empty}>선택한 분기에 업종 순위 데이터가 없습니다.</div>;
   }
   return (
     <table className={styles.table}>

@@ -57,7 +57,7 @@ export default function AgeGenderCard({ ageFemale, ageMale }: AgeGenderCardProps
           ))}
         </div>
       ) : (
-        <div className={styles.empty}>연령·성별 데이터가 없어요.</div>
+        <div className={styles.empty}>이 상권의 연령·성별 집계가 아직 없습니다.</div>
       )}
 
       <div className={styles.toggle}>

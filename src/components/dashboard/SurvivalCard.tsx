@@ -163,7 +163,7 @@ export default function SurvivalCard({
           )}
         </div>
       ) : (
-        <div className={styles.empty}>예측 데이터가 없어요.</div>
+        <div className={styles.empty}>예측에 필요한 분기 데이터가 부족합니다.</div>
       )}
     </div>
   );

@@ -61,7 +61,7 @@ export default function PopulationHeatmap({ byTime, byDay, showValues = false }:
 
   const hasData = byTime.length > 0 && byDay.length > 0;
   if (!hasData) {
-    return <div className={styles.empty}>유동인구 데이터가 없어요.</div>;
+    return <div className={styles.empty}>시간대별 인구 데이터를 불러오지 못했습니다.</div>;
   }
 
   return (
