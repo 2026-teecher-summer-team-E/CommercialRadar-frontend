@@ -36,15 +36,89 @@ interface CompareData {
 const EXPAND_ICON = "⤢";
 const MIN_DISTRICTS = 2;
 const MAX_DISTRICTS = 5;
+const COMPARE_PAGE_STORAGE_KEY = "commercialradar.comparePage.v1";
+
+interface PersistedComparePageState {
+  selectedIds: number[];
+  selectedDistrictNames: Record<number, string>;
+  selectedQuarter: string;
+  selectedCategory: string;
+  modal: ModalKind;
+}
+
+const DEFAULT_COMPARE_PAGE_STATE: PersistedComparePageState = {
+  selectedIds: [1, 2, 3],
+  selectedDistrictNames: {},
+  selectedQuarter: "",
+  selectedCategory: "",
+  modal: null,
+};
+
+function readComparePageState(): PersistedComparePageState {
+  if (typeof window === "undefined") return DEFAULT_COMPARE_PAGE_STATE;
+
+  try {
+    const raw = window.localStorage.getItem(COMPARE_PAGE_STORAGE_KEY);
+    if (!raw) return DEFAULT_COMPARE_PAGE_STATE;
+
+    const parsed = JSON.parse(raw) as Partial<PersistedComparePageState>;
+    const selectedIds = Array.from(
+      new Set(
+        (Array.isArray(parsed.selectedIds) ? parsed.selectedIds : [])
+          .map((id) => Number(id))
+          .filter((id) => Number.isInteger(id) && id > 0),
+      ),
+    ).slice(0, MAX_DISTRICTS);
+    const names: Record<number, string> = {};
+    if (parsed.selectedDistrictNames && typeof parsed.selectedDistrictNames === "object") {
+      Object.entries(parsed.selectedDistrictNames).forEach(([id, name]) => {
+        const numericId = Number(id);
+        if (Number.isInteger(numericId) && typeof name === "string" && name.trim()) {
+          names[numericId] = name;
+        }
+      });
+    }
+    const modal = parsed.modal === "radar" || parsed.modal === "trend" ? parsed.modal : null;
+
+    return {
+      selectedIds,
+      selectedDistrictNames: names,
+      selectedQuarter: typeof parsed.selectedQuarter === "string" ? parsed.selectedQuarter : "",
+      selectedCategory: typeof parsed.selectedCategory === "string" ? parsed.selectedCategory : "",
+      modal: selectedIds.length >= MIN_DISTRICTS ? modal : null,
+    };
+  } catch {
+    return DEFAULT_COMPARE_PAGE_STATE;
+  }
+}
 
 export default function ComparePage() {
-  const [selectedIds, setSelectedIds] = useState<number[]>([1, 2, 3]);
-  const [selectedQuarter, setSelectedQuarter] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [modal, setModal] = useState<ModalKind>(null);
+  const [initialState] = useState(readComparePageState);
+  const [selectedIds, setSelectedIds] = useState<number[]>(initialState.selectedIds);
+  const [selectedDistrictNames, setSelectedDistrictNames] = useState<Record<number, string>>(
+    initialState.selectedDistrictNames,
+  );
+  const [selectedQuarter, setSelectedQuarter] = useState(initialState.selectedQuarter);
+  const [selectedCategory, setSelectedCategory] = useState(initialState.selectedCategory);
+  const [modal, setModal] = useState<ModalKind>(initialState.modal);
   const [isAdding, setIsAdding] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  useEffect(() => {
+    try {
+      const state: PersistedComparePageState = {
+        selectedIds,
+        selectedDistrictNames,
+        selectedQuarter,
+        selectedCategory,
+        modal: selectedIds.length >= MIN_DISTRICTS ? modal : null,
+      };
+      window.localStorage.setItem(COMPARE_PAGE_STORAGE_KEY, JSON.stringify(state));
+    } catch {
+      // localStorage 접근 불가 환경에서는 저장 없이 현재 화면 상태만 유지한다.
+    }
+  }, [selectedIds, selectedDistrictNames, selectedQuarter, selectedCategory, modal]);
 
   // 검색어 250ms 디바운스: 입력이 멈춘 뒤에만 쿼리 키가 바뀌어 요청이 나간다.
   const keyword = searchQuery.trim();
@@ -63,6 +137,7 @@ export default function ComparePage() {
   // 선택 상권들이 공통으로 가진 분기 목록.
   const quartersQuery = useQuery({
     queryKey: queryKeys.compareQuarters(selectedIds),
+    enabled: selectedIds.length > 0,
     queryFn: async () => {
       const responses = await Promise.all(
         selectedIds.map((id) => commercialApi.timeSeries(id, { metrics: "survival_rate" })),
@@ -78,20 +153,25 @@ export default function ComparePage() {
     // 상권 변경으로 재조회하는 동안 이전 목록을 유지해 선택 분기가 리셋되지 않게 한다.
     placeholderData: keepPreviousData,
   });
-  const availableQuarters = quartersQuery.data ?? [];
+  const availableQuarters = selectedIds.length > 0 ? (quartersQuery.data ?? []) : [];
 
   // 분기 목록 갱신 시 현재 선택이 유효하지 않으면 최신 분기로 보정.
   useEffect(() => {
+    if (selectedIds.length === 0) {
+      setSelectedQuarter("");
+      return;
+    }
     const quarters = quartersQuery.data;
     if (!quarters) return;
     setSelectedQuarter((current) =>
       current && quarters.includes(current) ? current : (quarters[0] ?? ""),
     );
-  }, [quartersQuery.data]);
+  }, [quartersQuery.data, selectedIds.length]);
 
   // 선택 상권들의 업종 목록(분기 기준).
   const categoriesQuery = useQuery({
     queryKey: queryKeys.compareCategories(selectedIds, selectedQuarter),
+    enabled: selectedIds.length > 0,
     queryFn: async () => {
       const responses = await Promise.all(
         selectedIds.map((id) =>
@@ -110,18 +190,25 @@ export default function ComparePage() {
     },
     placeholderData: keepPreviousData,
   });
-  const availableCategories = categoriesQuery.data ?? [];
+  const availableCategories = selectedIds.length > 0 ? (categoriesQuery.data ?? []) : [];
 
   // 업종 목록 갱신 시 사라진 업종이 선택돼 있으면 "전체 업종"으로 보정.
   useEffect(() => {
+    if (selectedIds.length === 0) {
+      setSelectedCategory("");
+      return;
+    }
     const categories = categoriesQuery.data;
     if (!categories) return;
     setSelectedCategory((current) => (current && !categories.includes(current) ? "" : current));
-  }, [categoriesQuery.data]);
+  }, [categoriesQuery.data, selectedIds.length]);
+
+  const canCompare = selectedIds.length >= MIN_DISTRICTS;
 
   // 본문 데이터: 비교표 + 레이더 + 생존율 추이 + 업종 순위.
   const compareQuery = useQuery({
     queryKey: queryKeys.comparePage(selectedIds, selectedQuarter, selectedCategory),
+    enabled: canCompare,
     queryFn: async (): Promise<CompareData> => {
       const comparisonParams = {
         year_quarter: selectedQuarter || undefined,
@@ -151,11 +238,31 @@ export default function ComparePage() {
       };
     },
   });
-  const data = compareQuery.data ?? null;
-  const loading = compareQuery.isPending;
-  const error = compareQuery.isError;
+  const data = canCompare ? (compareQuery.data ?? null) : null;
+  const loading = canCompare && compareQuery.isPending;
+  const error = canCompare && compareQuery.isError;
 
-  const districts = data?.compare.districts ?? [];
+  const districts = useMemo(() => data?.compare.districts ?? [], [data]);
+  useEffect(() => {
+    if (districts.length === 0) return;
+    setSelectedDistrictNames((current) => {
+      const next = { ...current };
+      districts.forEach((district) => {
+        next[district.id] = district.district_name;
+      });
+      return next;
+    });
+  }, [districts]);
+
+  useEffect(() => {
+    if (selectedIds.length < MIN_DISTRICTS) setModal(null);
+    if (selectedIds.length === 0) setIsAdding(false);
+  }, [selectedIds.length]);
+
+  const chipDistricts = selectedIds.map((id) => ({
+    id,
+    district_name: selectedDistrictNames[id] ?? `상권 ${id}`,
+  }));
   const names = districts.map((d) => d.district_name);
 
   // 레이더: 모든 상권의 축 라벨은 동일하다고 가정, 첫 상권 축을 기준으로 사용.
@@ -188,12 +295,12 @@ export default function ComparePage() {
   }, [data, names, trendLabels]);
 
   const removeDistrict = (id: number) => {
-    if (selectedIds.length <= MIN_DISTRICTS) return;
     setSelectedIds((current) => current.filter((selectedId) => selectedId !== id));
   };
 
   const addDistrict = (district: CommercialDistrictSearchResult) => {
     if (selectedIds.includes(district.id) || selectedIds.length >= MAX_DISTRICTS) return;
+    setSelectedDistrictNames((current) => ({ ...current, [district.id]: district.district_name }));
     setSelectedIds((current) => [...current, district.id]);
     setSearchQuery("");
     setIsAdding(false);
@@ -208,28 +315,6 @@ export default function ComparePage() {
   const activeQuarter = selectedQuarter || data?.compare.year_quarter || "";
   const filterSummary = `${formatQuarter(activeQuarter)} · ${selectedCategory || "전체 업종"}`;
 
-  if (loading) {
-    return (
-      <div className={styles.page}>
-        <Header />
-        <div className={styles.skeletonWrap}>
-          <div className={styles.skeleton} />
-          <div className={styles.skeleton} />
-          <div className={styles.skeleton} />
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <div className={styles.page}>
-        <Header />
-        <div className={styles.empty}>비교 데이터를 받아오지 못했습니다. 페이지를 새로고침해보세요.</div>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.page}>
       <Header />
@@ -237,7 +322,7 @@ export default function ComparePage() {
       {/* 컨트롤 바 */}
       <div className={styles.controlBar}>
         <div className={styles.chips}>
-          {districts.map((d, i) => (
+          {chipDistricts.map((d, i) => (
             <span key={d.id} className={styles.chip}>
               <span className={styles.chipDot} style={{ background: seriesColor(i) }} />
               {d.district_name}
@@ -246,8 +331,7 @@ export default function ComparePage() {
                 className={styles.chipClose}
                 aria-label={`${d.district_name} 제거`}
                 onClick={() => removeDistrict(d.id)}
-                disabled={selectedIds.length <= MIN_DISTRICTS}
-                title={selectedIds.length <= MIN_DISTRICTS ? "비교하려면 상권이 2개 이상 필요합니다" : "상권 제거"}
+                title="상권 제거"
               >
                 ×
               </button>
@@ -363,7 +447,35 @@ export default function ComparePage() {
         )}
       </div>
 
+      {selectedIds.length === 0 && (
+        <div className={styles.emptyState}>
+          <h2>비교할 상권을 추가하세요</h2>
+          <p>상권을 선택하면 아래에 지표표, 레이더, 업종 순위, 생존율 추이가 표시됩니다.</p>
+        </div>
+      )}
+
+      {selectedIds.length === 1 && (
+        <div className={styles.emptyState}>
+          <h2>상권을 1개 더 추가하세요</h2>
+          <p>상권 비교 데이터는 2개 이상 선택했을 때 표시됩니다.</p>
+        </div>
+      )}
+
+      {loading && (
+        <div className={styles.skeletonWrap}>
+          <div className={styles.skeleton} />
+          <div className={styles.skeleton} />
+          <div className={styles.skeleton} />
+        </div>
+      )}
+
+      {canCompare && !loading && (error || !data) && (
+        <div className={styles.empty}>비교 데이터를 받아오지 못했습니다. 페이지를 새로고침해보세요.</div>
+      )}
+
       {/* 핵심 지표 비교표 */}
+      {canCompare && !loading && !error && data && (
+        <>
       <section className={styles.section}>
         <SectionTitle title="핵심 지표 비교" subtitle={`${filterSummary} 기준 상권별 대표 지표`} />
         <div className={styles.card}>
@@ -448,6 +560,8 @@ export default function ComparePage() {
             <LineChartSvg labels={trendLabels} series={trendSeries} width={760} height={360} />
           </div>
         </ExpandModal>
+      )}
+        </>
       )}
     </div>
   );
