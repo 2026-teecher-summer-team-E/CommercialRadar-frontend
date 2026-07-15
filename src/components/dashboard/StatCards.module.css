@@ -148,6 +148,10 @@
   font-weight: 600;
   color: var(--color-muted);
 }
+.foreignDonutMini {
+  margin-left: auto;
+  align-self: center;
+}
 .miniCol {
   flex: 1 1 0;
   height: 100%;

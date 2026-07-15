@@ -1,3 +1,4 @@
+import ForeignDonut from "./ForeignDonut";
 import styles from "./StatCards.module.css";
 
 const WEEKEND_AVG_PCT = 28.4;
@@ -136,6 +137,11 @@ export function ForeignCard({
       <div className={styles.foreignRow}>
         <span className={styles.bigNum}>{pct != null ? `${pct}%` : "—"}</span>
         {countLabel && <span className={styles.foreignCount}>{countLabel}</span>}
+        {pct != null && (
+          <div className={styles.foreignDonutMini}>
+            <ForeignDonut pct={pct} size={104} compact />
+          </div>
+        )}
       </div>
       <p className={`${styles.note} ${styles.foreignNote}`}>{note}</p>
     </div>

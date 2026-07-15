@@ -1,24 +1,30 @@
 .wrap {
+  --donut-size: 236px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 20px;
   padding: 8px 4px 4px;
 }
+/* 카드 임베드용: 도넛만, 여백 없이. */
+.compact {
+  gap: 0;
+  padding: 0;
+}
 
 /* 원근 무대: 도넛을 눕히면 세로가 짧아 보이므로 높이를 줄인다. */
 .stage {
-  perspective: 760px;
-  width: 260px;
-  height: 180px;
+  perspective: calc(var(--donut-size) * 3.2);
+  width: var(--donut-size);
+  height: calc(var(--donut-size) * 0.72);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .donut {
   position: relative;
-  width: 236px;
-  height: 236px;
+  width: var(--donut-size);
+  height: var(--donut-size);
   /* 뉘이기: X축으로 눕혀 3D 원근을 준다. */
   transform: rotateX(62deg);
   transform-style: preserve-3d;
@@ -43,7 +49,7 @@
     color-mix(in srgb, var(--color-primary) 60%, #000) 0 var(--pct),
     color-mix(in srgb, var(--color-primary-light) 82%, #000) var(--pct) 100%
   );
-  transform: translateZ(-18px);
+  transform: translateZ(calc(var(--donut-size) * -0.076));
 }
 
 .legend {
