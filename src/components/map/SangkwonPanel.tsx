@@ -173,7 +173,7 @@ export default function SangkwonPanel({
           <div className={styles.metricGrid}>
             <Metric label="생존율" value={fmtPct(survivalRate)} />
             <Metric label="폐업위험" value={closureRiskLabel(closureRate)} />
-            <Metric label="월평균매출" value={fmtSales(latestSales)} />
+            <Metric label="월평균 매출" value={fmtSales(latestSales)} />
             {/* avg_population은 분기 총합 → 월 평균(÷3)으로 표시. */}
             <Metric label="월 유동인구" value={fmtPopulation(population != null ? population / 3 : null)} />
           </div>
