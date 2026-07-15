@@ -53,6 +53,11 @@
   height: 12px;
   border-radius: 3px;
 }
+.unitNote {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--color-faint);
+}
 .empty {
   padding: 28px 12px;
   text-align: center;

@@ -34,6 +34,33 @@
   align-items: flex-start;
   gap: 10px;
 }
+.sectionTitleText {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.yearTabs {
+  flex: none;
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+.yearTab,
+.yearTabActive {
+  border: 1px solid var(--color-border);
+  background: var(--color-chip);
+  color: var(--color-text-body);
+  border-radius: var(--radius-pill);
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-num);
+  cursor: pointer;
+}
+.yearTabActive {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
 .accentBar {
   width: 4px;
   align-self: stretch;
@@ -84,16 +111,20 @@
   flex-direction: column;
   gap: 8px;
 }
+/* 고정 열 너비 그리드 — 모든 행이 같은 트랙을 쓰므로 변화율/검색지수/전분기 대비가
+   행마다 세로로 정확히 정렬된다. 이름 칸을 넉넉히(190px) 잡아 이름-지표 간격을
+   자연스럽게 벌리고, 지표 칸끼리는 column-gap만큼만 촘촘히 붙인다. */
 .risingRow {
-  display: flex;
+  display: grid;
+  grid-template-columns: 190px repeat(3, 70px);
+  justify-content: center;
+  column-gap: 16px;
   align-items: center;
-  gap: 14px;
   padding: 12px 14px;
   background: var(--color-chip);
   border-radius: var(--radius);
 }
 .risingName {
-  flex: 1 1 auto;
   min-width: 0;
   font-size: 14px;
   font-weight: 600;
@@ -102,13 +133,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.metricsGroup {
+  display: contents;
+}
 .risingMetric {
-  flex: none;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 2px;
-  min-width: 64px;
 }
 .risingMetricLabel {
   font-size: 11px;

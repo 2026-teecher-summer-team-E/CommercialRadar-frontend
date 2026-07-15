@@ -8,7 +8,7 @@ interface ScenarioSimBoxProps {
 export default function ScenarioSimBox({ onScenarioClick }: ScenarioSimBoxProps) {
   return (
     <div className={styles.scenarioBar}>
-      <span className={styles.scenarioHint}>상권 앞 분위기 시뮬레이션</span>
+      <span className={styles.scenarioHint}>상권 분위기 시뮬레이션</span>
       <div className={styles.scenarioBtns}>
         <button
           type="button"
