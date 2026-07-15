@@ -3,7 +3,8 @@
   max-width: 1560px;
   margin: 0 auto;
   width: 100%;
-  padding: 26px 30px 44px;
+  /* 좌우 여백(사이드바 간격)은 상권비교(ComparePage) 기준 32px. 상단 16px은 검색바 세로 위치 유지. */
+  padding: 16px 32px 44px;
   display: flex;
   flex-direction: column;
   gap: 24px;

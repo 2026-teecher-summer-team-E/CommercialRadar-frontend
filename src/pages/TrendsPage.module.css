@@ -1,5 +1,6 @@
 .page {
-  padding: 26px 30px 44px;
+  /* 상권비교(ComparePage) 페이지 레이아웃에 맞춤. */
+  padding: 26px 32px 44px;
   display: flex;
   flex-direction: column;
   gap: 22px;

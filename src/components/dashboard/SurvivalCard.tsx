@@ -6,8 +6,12 @@ import { fmtPct, fmtInt } from "./format";
 import PageLoader from "../common/PageLoader";
 import styles from "./SurvivalCard.module.css";
 
-// recharts가 들어있어 무거움 — 카드가 실제로 차트를 그릴 때만 로드.
-const GangnamForecastChart = lazy(() => import("../charts/GangnamForecastChart"));
+// recharts가 들어있어 무거움 — 별도 청크로 분리하되, 이 카드 모듈이 로드되는 즉시
+// 청크를 프리워밍한다. 그래야 카드 렌더 시점엔 이미 준비돼 Suspense 지연 없이
+// 생존율 카운트업과 차트 draw가 '동시에' 시작된다.
+const importForecastChart = () => import("../charts/GangnamForecastChart");
+const GangnamForecastChart = lazy(importForecastChart);
+void importForecastChart();
 
 interface SurvivalCardProps {
   /** 현재(첫) 생존율 %. */
@@ -197,8 +201,6 @@ export default function SurvivalCard({
             </div>
           ) : (
             <div className={styles.hero}>
-              <span className={styles.heroNow}>{fmtPct(animCurrent, 0)}</span>
-              <span className={styles.arrow}>→</span>
               <span className={styles.heroNext}>{fmtPct(animForecast, 0)}</span>
             </div>
           )}
