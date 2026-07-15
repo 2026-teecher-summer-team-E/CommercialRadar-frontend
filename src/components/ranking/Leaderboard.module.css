@@ -2,6 +2,20 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  /* 열 너비를 내용(정렬로 바뀌는 상권명)에 의존하지 않게 고정 → 정렬 토글 시 열이 흔들리지 않음. */
+  table-layout: fixed;
+}
+.colRank {
+  width: 7%;
+}
+.colName {
+  width: 31%;
+}
+.colNum {
+  width: 16%;
+}
+.colRisk {
+  width: 15%;
 }
 .table th {
   padding: 10px 14px;
@@ -94,6 +108,8 @@
   font-weight: 600;
   color: var(--color-text);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .numCell {
   font-family: var(--font-num);

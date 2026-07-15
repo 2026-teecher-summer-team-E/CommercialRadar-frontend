@@ -83,6 +83,14 @@ export default function Leaderboard({
 
   return (
     <table className={styles.table}>
+      <colgroup>
+        <col className={styles.colRank} />
+        <col className={styles.colName} />
+        <col className={styles.colNum} />
+        <col className={styles.colRisk} />
+        <col className={styles.colNum} />
+        <col className={styles.colNum} />
+      </colgroup>
       <thead>
         <tr>
           <th className={styles.rankTh}>순위</th>
@@ -114,7 +122,7 @@ export default function Leaderboard({
               <td className={styles.rankCell}>
                 <span className={badgeClass(rank)}>{rank}</span>
               </td>
-              <td className={styles.nameCell}>{d.district_name}</td>
+              <td className={styles.nameCell} title={d.district_name}>{d.district_name}</td>
               <td className={`${styles.numCell} ${styles.survival} ${sort.key === "survival" ? styles.sortedCol : ""}`}>
                 {fmtPct(d.survival_rate)}
               </td>
