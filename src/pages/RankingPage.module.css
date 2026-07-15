@@ -73,6 +73,37 @@
   overflow-x: auto;
 }
 
+/* 더보기 버튼 */
+.moreBtn {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 11px 22px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.moreBtn:hover {
+  background: var(--color-chip);
+  border-color: var(--color-border-strong);
+}
+.moreBtn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.moreCount {
+  font-family: var(--font-num);
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
 /* 상태 */
 .state {
   padding: 48px 24px;
