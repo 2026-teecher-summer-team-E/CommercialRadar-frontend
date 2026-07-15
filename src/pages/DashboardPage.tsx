@@ -525,6 +525,21 @@ export default function DashboardPage() {
     return { weekday, weekend: 100 - weekday };
   }, [data]);
 
+  // 유동인구 피크 시간대: heatmap by_time 중 최댓값 슬롯("17~21" → "17~21시").
+  const peakLabel = useMemo<string | null>(() => {
+    const byTime = data?.heatmap?.by_time ?? [];
+    let bestSlot: string | null = null;
+    let bestVal = 0;
+    byTime.forEach((s) => {
+      const v = s.avg_population ?? 0;
+      if (v > bestVal) {
+        bestVal = v;
+        bestSlot = s.slot;
+      }
+    });
+    return bestSlot != null ? `${bestSlot}시` : null;
+  }, [data]);
+
   // 종합점수 순위(백엔드 제공, 상권 고유값 — 업종 선택과 무관). scope에 맞춰 라벨 접두어를 붙인다.
   const rankLabel = useMemo<string | null>(() => {
     const r = stats?.score_rank;
