@@ -4,11 +4,11 @@ interface ScenarioSimBoxProps {
   onScenarioClick: (s: "low" | "mid" | "high") => void;
 }
 
-/** 상권 앞 분위기 시뮬레이션 진입 버튼 3개(잘풀린/보통/안풀린 미래). */
+/** 상권 분위기 시뮬레이션 진입 버튼 3개(잘풀린/보통/안풀린 미래). */
 export default function ScenarioSimBox({ onScenarioClick }: ScenarioSimBoxProps) {
   return (
     <div className={styles.scenarioBar}>
-      <span className={styles.scenarioHint}>상권 앞 분위기 시뮬레이션</span>
+      <span className={styles.scenarioHint}>상권 분위기 시뮬레이션</span>
       <div className={styles.scenarioBtns}>
         <button
           type="button"

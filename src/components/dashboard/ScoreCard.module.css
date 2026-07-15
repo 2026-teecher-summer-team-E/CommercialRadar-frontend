@@ -6,8 +6,9 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
-  /* topGridLeft에서 flex:1로 살짝 늘어날 때, 그 여백이 섹션 사이사이에 고르게
-     퍼지도록 한다(콘텐츠가 카드보다 작을 때만 작동, 평소엔 영향 없음). */
+  /* topGridLeft에서 옆 시뮬레이션 박스는 내용 높이만큼만 차지하므로, 남는 세로 공간은
+     이 카드가 전부 흡수한다(flex:1). 그 여백은 섹션 사이사이에 고르게 퍼지도록 한다. */
+  flex: 1;
   justify-content: space-between;
 }
 .head {
@@ -68,6 +69,11 @@
   font-size: 13px;
   font-weight: 700;
   font-family: var(--font-num);
+  transition: background 0.15s ease;
+}
+a.topPill:hover {
+  background: var(--color-primary-soft);
+  cursor: pointer;
 }
 .topPillEmpty {
   background: var(--color-chip);
