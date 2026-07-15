@@ -42,20 +42,22 @@
   outline-offset: 2px;
 }
 .sortArrow {
+  /* 고정폭 — ▾/▲/▼ 글리프가 바뀌어도 헤더 위치가 흔들리지 않게. */
+  display: inline-block;
+  width: 12px;
+  text-align: center;
   font-size: 11px;
   color: var(--color-faint);
 }
-/* 활성 정렬 열 헤더: 남색 대신 기존 헤더색보다 진한 텍스트로만 강조. */
+/* 활성 정렬 열 헤더: 굵기·크기 변화 없이(리플로우 방지) 진한 텍스트색으로만 강조. */
 .sortBtnActive,
 .sortBtnActive:hover {
   background: transparent;
   border-color: transparent;
   color: var(--color-text);
-  font-weight: 700;
 }
 .sortBtnActive .sortArrow {
   color: var(--color-text);
-  font-size: 12px;
 }
 
 .row {
@@ -164,17 +166,17 @@
 }
 
 /* 현재 정렬 기준 열의 값 강조(헤더 알약과 함께 어느 열로 정렬됐는지 명확히). */
+/* 정렬로 선택한 열: 굵기 변화 없이(리플로우 방지) 배경 하이라이트로만 표시. */
 .sortedCol {
-  font-weight: 800;
   background: var(--color-chip);
 }
-/* 정렬로 선택한 열: 1~3위 행에선 해당 금/은/동을 더 진한 톤으로 강조(행 배경보다 짙게). */
+/* 1~3위 행에선 해당 금/은/동을 행 배경보다 살짝 짙게(과하지 않게). */
 .rowGold .sortedCol {
-  background: #ffe79c;
+  background: #ffefba;
 }
 .rowSilver .sortedCol {
-  background: #d9e0ea;
+  background: #e1e7ef;
 }
 .rowBronze .sortedCol {
-  background: #f3cdb2;
+  background: #f6d8c2;
 }
