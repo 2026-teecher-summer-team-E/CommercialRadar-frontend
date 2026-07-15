@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { fmtPct, fmtDailyManUnit, closureRiskLabel, riskColor } from "./format";
 import styles from "./ScoreCard.module.css";
 
@@ -56,7 +57,9 @@ export default function ScoreCard({
           <span className={styles.scoreDenom}>/100</span>
         </div>
         {rankLabel ? (
-          <span className={styles.topPill}>{rankLabel}</span>
+          <Link to="/ranking" className={styles.topPill} aria-label={`${rankLabel} — 랭킹 페이지로 이동`}>
+            {rankLabel}
+          </Link>
         ) : (
           <span className={`${styles.topPill} ${styles.topPillEmpty}`}>순위 지표없음</span>
         )}

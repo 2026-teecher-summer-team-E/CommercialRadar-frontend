@@ -676,7 +676,7 @@ export default function DashboardPage() {
               )}
             </div>
             {data.heatmap ? (
-              <PopulationHeatmap byTime={data.heatmap.by_time} byDay={data.heatmap.by_day} />
+              <PopulationHeatmap byTime={data.heatmap.by_time} byDay={data.heatmap.by_day} showValues />
             ) : (
               <div className={styles.empty}>이 상권의 유동인구 기록이 아직 없습니다.</div>
             )}
@@ -744,7 +744,7 @@ export default function DashboardPage() {
           subtitle="시간대 × 요일 평균 유동인구 상세"
           onClose={() => setModal(null)}
         >
-          <PopulationHeatmap byTime={data.heatmap.by_time} byDay={data.heatmap.by_day} showValues />
+          <PopulationHeatmap byTime={data.heatmap.by_time} byDay={data.heatmap.by_day} showValues wide />
         </ExpandModal>
       )}
 

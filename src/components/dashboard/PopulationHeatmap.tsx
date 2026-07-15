@@ -18,11 +18,18 @@ function heatColor(t: number): string {
   return HEAT_COLORS[0];
 }
 
+/** 셀 표시용 만 단위 숫자(접미사 없음 — 단위는 카드 하단에 한 번만 표시). */
+function fmtCellMan(value: number): string {
+  return (value / 10000).toFixed(1);
+}
+
 interface PopulationHeatmapProps {
   byTime: HeatmapSlot[];
   byDay: HeatmapSlot[];
-  /** true면 셀에 값을 함께 표시(모달 상세용). */
+  /** true면 셀에 값을 함께 표시. */
   showValues?: boolean;
+  /** true면 셀 폭을 꽉 채움(모달 확대용). 인라인은 항상 폭 제한 유지. */
+  wide?: boolean;
 }
 
 /** Figma 순서 그대로. 데이터에 없는 slot 은 비운다. */
@@ -43,7 +50,7 @@ const TIME_LABEL: Record<string, string> = {
  * 각 셀 강도 = (시간대 비율) × (요일 비율), 전체 최댓값으로 0~1 정규화.
  * (지도 페이지 buildCongestionGrid 와 동일 아이디어의 자체 구현.)
  */
-export default function PopulationHeatmap({ byTime, byDay, showValues = false }: PopulationHeatmapProps) {
+export default function PopulationHeatmap({ byTime, byDay, showValues = false, wide = false }: PopulationHeatmapProps) {
   const timeMap = useMemo(
     () => new Map(byTime.map((s) => [s.slot, s.avg_population ?? 0])),
     [byTime],
@@ -81,10 +88,10 @@ export default function PopulationHeatmap({ byTime, byDay, showValues = false }:
 
   return (
     <div className={styles.wrap}>
-      {/* 인라인은 셀 최대폭 제한(와이드 화면에서 긴 막대처럼 늘어지지 않게), 모달(showValues)은 꽉 채움. */}
+      {/* 인라인은 셀 최대폭 제한(와이드 화면에서 긴 막대처럼 늘어지지 않게), 모달(wide)은 꽉 채움. */}
       <div
         className={styles.grid}
-        style={{ gridTemplateColumns: `48px repeat(${DAY_ORDER.length}, ${showValues ? "minmax(0, 1fr)" : "minmax(0, 120px)"})` }}
+        style={{ gridTemplateColumns: `48px repeat(${DAY_ORDER.length}, ${wide ? "minmax(0, 1fr)" : "minmax(0, 120px)"})` }}
       >
         {/* 헤더 행: 요일 */}
         <span className={styles.corner} />
@@ -104,6 +111,7 @@ export default function PopulationHeatmap({ byTime, byDay, showValues = false }:
           <span key={c} className={styles.legendCell} style={{ backgroundColor: c }} />
         ))}
         <span className={styles.legendLabel}>높음</span>
+        {showValues && <span className={styles.unitNote}>단위: 만 명</span>}
       </div>
     </div>
   );
@@ -134,7 +142,7 @@ function Row({
           >
             {showValues && (
               <span className={styles.cellVal} style={{ color: t >= 0.65 ? "var(--color-on-primary)" : "var(--color-text-body)" }}>
-                {fmtInt(c.value)}
+                {fmtCellMan(c.value)}
               </span>
             )}
           </div>
