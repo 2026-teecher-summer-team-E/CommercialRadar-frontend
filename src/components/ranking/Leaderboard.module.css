@@ -66,13 +66,13 @@
   background: var(--color-primary-light);
 }
 .rowGold {
-  background: #ffeeb8;
+  background: #fff6da;
 }
 .rowSilver {
-  background: #e3e8f0;
+  background: #eef1f4;
 }
 .rowBronze {
-  background: #f6d9c2;
+  background: #fbe9dd;
 }
 .table td {
   padding: 14px;
@@ -167,4 +167,14 @@
 .sortedCol {
   font-weight: 800;
   background: var(--color-chip);
+}
+/* 정렬로 선택한 열: 1~3위 행에선 해당 금/은/동을 더 진한 톤으로 강조(행 배경보다 짙게). */
+.rowGold .sortedCol {
+  background: #ffe79c;
+}
+.rowSilver .sortedCol {
+  background: #d9e0ea;
+}
+.rowBronze .sortedCol {
+  background: #f3cdb2;
 }
