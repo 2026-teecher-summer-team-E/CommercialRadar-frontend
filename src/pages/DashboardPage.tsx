@@ -638,7 +638,11 @@ export default function DashboardPage() {
             nightPct={data.salesBands?.nighttime_pct ?? null}
             bands={data.salesBands?.bands ?? null}
           />
-          <ForeignCard pct={data.foreign?.foreigner_pct ?? null} />
+          <ForeignCard
+            pct={data.foreign?.foreigner_pct ?? null}
+            count={data.foreign?.foreigner_count ?? null}
+            total={data.foreign?.total_count ?? null}
+          />
         </div>
       </section>
 
