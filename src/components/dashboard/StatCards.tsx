@@ -31,7 +31,7 @@ export function DayNightCard({
   return (
     <div className={styles.card}>
       <div className={styles.head}>
-        <h3 className={styles.title}>낮 vs 밤 매출</h3>
+        <h3 className={styles.title}>주·야간 매출 비중</h3>
         <p className={styles.sub}>시간대 매출 구성</p>
       </div>
       <div className={styles.dnHero}>
