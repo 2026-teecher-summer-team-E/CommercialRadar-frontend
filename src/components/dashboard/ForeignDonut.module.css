@@ -38,6 +38,30 @@
   mask: radial-gradient(circle at center, transparent 58%, #000 59%);
 }
 
+/* 도넛 구멍 중앙의 % 라벨. 폰트 크기는 도넛 지름에 비례. */
+.center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  pointer-events: none;
+}
+.centerPct {
+  font-family: var(--font-num);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--color-primary);
+  font-size: calc(var(--donut-size) * 0.18);
+}
+.centerCap {
+  font-size: calc(var(--donut-size) * 0.058);
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
 .legend {
   display: flex;
   flex-direction: column;

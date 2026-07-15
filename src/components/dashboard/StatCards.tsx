@@ -135,11 +135,12 @@ export function ForeignCard({
         )}
       </div>
       <div className={styles.foreignRow}>
-        <span className={styles.bigNum}>{pct != null ? `${pct}%` : "—"}</span>
-        {pct != null && (
+        {pct != null ? (
           <div className={styles.foreignDonutMini}>
-            <ForeignDonut pct={pct} size={104} compact />
+            <ForeignDonut pct={pct} size={120} compact />
           </div>
+        ) : (
+          <span className={styles.bigNum}>—</span>
         )}
       </div>
       <div className={styles.foreignBottom}>

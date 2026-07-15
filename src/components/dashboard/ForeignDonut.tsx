@@ -38,6 +38,10 @@ export default function ForeignDonut({ pct, count = null, total = null, size = 2
       <div className={styles.stage}>
         <div className={styles.donut} style={donutStyle}>
           <div className={styles.ring} aria-hidden />
+          <div className={styles.center}>
+            <span className={styles.centerPct}>{foreign}%</span>
+            {!compact && <span className={styles.centerCap}>외국인</span>}
+          </div>
         </div>
       </div>
 

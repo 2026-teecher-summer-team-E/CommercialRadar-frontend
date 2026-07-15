@@ -148,7 +148,7 @@
   white-space: nowrap;
 }
 .foreignDonutMini {
-  margin-left: auto;
+  margin: 0 auto;
   align-self: center;
 }
 /* 카드 하단: 기준 문구(좌) + 인원수(우)를 바닥에 정렬. */
