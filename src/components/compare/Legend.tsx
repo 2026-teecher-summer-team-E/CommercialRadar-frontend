@@ -1,4 +1,4 @@
-import { seriesColor } from "./format";
+import { seriesGradient } from "./format";
 import styles from "./Legend.module.css";
 
 interface Props {
@@ -11,7 +11,7 @@ export default function Legend({ names }: Props) {
     <ul className={styles.legend}>
       {names.map((name, i) => (
         <li key={`${name}-${i}`} className={styles.item}>
-          <span className={styles.dot} style={{ background: seriesColor(i) }} />
+          <span className={styles.dot} style={{ background: seriesGradient(i) }} />
           <span className={styles.name}>{name}</span>
         </li>
       ))}

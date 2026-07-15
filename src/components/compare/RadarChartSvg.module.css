@@ -1,3 +1,7 @@
+.wrap {
+  position: relative;
+  width: 100%;
+}
 .svg {
   display: block;
   overflow: visible;
@@ -15,4 +19,46 @@
   font-family: var(--font-sans);
   font-size: 11px;
   fill: var(--color-muted);
+}
+.seriesShape {
+  cursor: help;
+  transition:
+    fill-opacity 0.15s ease,
+    stroke-width 0.15s ease;
+}
+.seriesShape:hover {
+  fill-opacity: 0.22;
+  stroke-width: 2.8;
+}
+.tooltip {
+  position: absolute;
+  z-index: 3;
+  min-width: 160px;
+  max-width: 220px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--color-surface) 96%, transparent);
+  box-shadow: var(--shadow-pop);
+  color: var(--color-text-body);
+  font-size: 12px;
+  line-height: 1.45;
+  pointer-events: none;
+}
+.tooltip strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 13px;
+}
+.tooltipRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.tooltipRow b {
+  flex: none;
+  font-family: var(--font-num);
+  font-size: 12px;
+  font-weight: 700;
 }

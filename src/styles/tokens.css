@@ -60,6 +60,25 @@
   --series-6-bg: #fdf4dc;
   --series-7: #d94430;
   --series-7-bg: #fbe9e5;
+  --series-8: #7c3aed;
+  --series-8-bg: #f3e8ff;
+
+  /* Compare series — 크림 배경과 어울리는 muted gradient 팔레트 */
+  --compare-series-1: #24398a;
+  --compare-series-1-bg: #e8ebf5;
+  --compare-series-1-gradient: linear-gradient(135deg, #5266b5 0%, #24398a 100%);
+  --compare-series-2: #2f6f73;
+  --compare-series-2-bg: #e8f2f2;
+  --compare-series-2-gradient: linear-gradient(135deg, #64a6a3 0%, #2f6f73 100%);
+  --compare-series-3: #6b5c8f;
+  --compare-series-3-bg: #f0edf7;
+  --compare-series-3-gradient: linear-gradient(135deg, #9a86be 0%, #6b5c8f 100%);
+  --compare-series-4: #9a6a2f;
+  --compare-series-4-bg: #f6efe5;
+  --compare-series-4-gradient: linear-gradient(135deg, #d0a05c 0%, #9a6a2f 100%);
+  --compare-series-5: #8b4d5a;
+  --compare-series-5-bg: #f5eaed;
+  --compare-series-5-gradient: linear-gradient(135deg, #bd7a88 0%, #8b4d5a 100%);
 
   /* Radius — Zapier 시그니처 미들 라디우스 */
   --radius-sm: 6px;

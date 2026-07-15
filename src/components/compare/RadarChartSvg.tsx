@@ -1,3 +1,4 @@
+import { useState, type MouseEvent } from "react";
 import { seriesColor } from "./format";
 import styles from "./RadarChartSvg.module.css";
 
@@ -18,6 +19,14 @@ interface Props {
 const RINGS = 4; // 동심 다각형 그리드 개수
 const MAX = 100;
 
+interface TooltipState {
+  x: number;
+  y: number;
+  name: string;
+  color: string;
+  details: Array<{ axis: string; value: string }>;
+}
+
 /** N각형 꼭짓점 좌표(반지름 r, 값 0~1 스케일된 factor). */
 function points(
   count: number,
@@ -35,8 +44,17 @@ function points(
     .join(" ");
 }
 
+function formatScore(value: number): string {
+  return String(Math.round(value * 10) / 10);
+}
+
+function seriesDetails(axes: string[], values: number[]): TooltipState["details"] {
+  return axes.map((axis, i) => ({ axis, value: formatScore(values[i] ?? 0) }));
+}
+
 /** 다중 상권 오버레이 레이더 차트(순수 SVG). */
 export default function RadarChartSvg({ axes, series, size = 420 }: Props) {
+  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const n = axes.length;
   if (n < 3) return null;
 
@@ -68,47 +86,78 @@ export default function RadarChartSvg({ axes, series, size = 420 }: Props) {
     return { x, y, anchor };
   });
 
+  const moveTooltip = (event: MouseEvent<SVGPolygonElement>, s: RadarSeries, color: string) => {
+    const svg = event.currentTarget.ownerSVGElement;
+    const rect = svg?.getBoundingClientRect();
+    if (!rect) return;
+    setTooltip({
+      x: event.clientX - rect.left + 14,
+      y: event.clientY - rect.top + 14,
+      name: s.name,
+      color,
+      details: seriesDetails(axes, s.values),
+    });
+  };
+
   return (
-    <svg
-      className={styles.svg}
-      viewBox={`0 0 ${size} ${size}`}
-      width="100%"
-      style={{ maxWidth: size }}
-      role="img"
-      aria-label="지표 레이더 차트"
-    >
-      {rings.map((ring, i) => (
-        <polygon key={`ring-${i}`} className={styles.ring} points={ring} />
-      ))}
-      {axisEnds.map((p, i) => (
-        <line key={`axis-${i}`} className={styles.axis} x1={cx} y1={cy} x2={p.x} y2={p.y} />
-      ))}
-      {series.map((s, si) => {
-        const factors = s.values.map((v) => Math.max(0, Math.min(1, v / MAX)));
-        const color = seriesColor(si);
-        return (
-          <polygon
-            key={`series-${si}`}
-            points={points(n, cx, cy, radius, factors)}
-            fill={color}
-            fillOpacity={0.14}
-            stroke={color}
-            strokeWidth={2}
-          />
-        );
-      })}
-      {labelPos.map((p, i) => (
-        <text
-          key={`label-${i}`}
-          className={styles.label}
-          x={p.x}
-          y={p.y}
-          textAnchor={p.anchor}
-          dominantBaseline="middle"
+    <div className={styles.wrap} style={{ maxWidth: size }} onMouseLeave={() => setTooltip(null)}>
+      <svg
+        className={styles.svg}
+        viewBox={`0 0 ${size} ${size}`}
+        width="100%"
+        role="img"
+        aria-label="지표 레이더 차트"
+      >
+        {rings.map((ring, i) => (
+          <polygon key={`ring-${i}`} className={styles.ring} points={ring} />
+        ))}
+        {axisEnds.map((p, i) => (
+          <line key={`axis-${i}`} className={styles.axis} x1={cx} y1={cy} x2={p.x} y2={p.y} />
+        ))}
+        {series.map((s, si) => {
+          const factors = s.values.map((v) => Math.max(0, Math.min(1, v / MAX)));
+          const color = seriesColor(si);
+          return (
+            <polygon
+              key={`series-${si}`}
+              className={styles.seriesShape}
+              points={points(n, cx, cy, radius, factors)}
+              fill={color}
+              fillOpacity={0.14}
+              stroke={color}
+              strokeWidth={2}
+              onMouseEnter={(event) => moveTooltip(event, s, color)}
+              onMouseMove={(event) => moveTooltip(event, s, color)}
+            />
+          );
+        })}
+        {labelPos.map((p, i) => (
+          <text
+            key={`label-${i}`}
+            className={styles.label}
+            x={p.x}
+            y={p.y}
+            textAnchor={p.anchor}
+            dominantBaseline="middle"
+          >
+            {axes[i]}
+          </text>
+        ))}
+      </svg>
+      {tooltip && (
+        <div
+          className={styles.tooltip}
+          style={{ left: tooltip.x, top: tooltip.y, borderColor: tooltip.color }}
         >
-          {axes[i]}
-        </text>
-      ))}
-    </svg>
+          <strong style={{ color: tooltip.color }}>{tooltip.name}</strong>
+          {tooltip.details.map((detail) => (
+            <span key={detail.axis} className={styles.tooltipRow}>
+              <span>{detail.axis}</span>
+              <b style={{ color: tooltip.color }}>{detail.value}</b>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

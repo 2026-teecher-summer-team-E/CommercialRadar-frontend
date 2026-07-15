@@ -76,9 +76,11 @@
 }
 
 .chipDot {
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
+  border: 1px solid color-mix(in srgb, var(--color-surface) 75%, transparent);
   border-radius: var(--radius-pill);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text) 8%, transparent);
 }
 
 .chipClose {
@@ -246,31 +248,51 @@
 .selectors {
   display: flex;
   align-items: flex-end;
-  gap: 10px;
+  gap: 12px;
 }
 
 .selectorGroup {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 7px;
 }
 
 .selectorGroup > span {
-  padding-left: 2px;
+  padding-left: 3px;
   color: var(--color-muted);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .selector {
-  min-width: 150px;
-  padding: 8px 34px 8px 12px;
+  min-width: 168px;
+  min-height: 44px;
+  appearance: none;
+  padding: 10px 42px 10px 14px;
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--color-muted) 50%),
+    linear-gradient(135deg, var(--color-muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 19px) 19px,
+    calc(100% - 14px) 19px;
+  background-repeat: no-repeat;
+  background-size: 5px 5px, 5px 5px;
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius);
-  font-size: 13px;
-  color: var(--color-text-body);
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.selector:hover:not(:disabled) {
+  background-color: var(--color-chip);
 }
 
 .selector:disabled {
@@ -280,8 +302,9 @@
 }
 
 .selector:focus {
-  outline: 3px solid var(--color-primary-light);
+  outline: 0;
   border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 /* 섹션 */
@@ -364,6 +387,62 @@
   font-family: var(--font-num);
 }
 
+.scoreCriteria {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--color-chip) 46%, var(--color-surface));
+}
+
+.scoreCriteria h3 {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.criteriaGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.criteriaGrid > div {
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.criteriaGrid strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--color-text);
+  font-size: 12px;
+}
+
+.criteriaGrid p {
+  margin: 0;
+  color: var(--color-text-body);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.criteriaGrid small {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-muted);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
 .leftCell {
   text-align: center;
 }
@@ -377,10 +456,12 @@
 
 .thDot {
   display: inline-block;
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
+  border: 1px solid color-mix(in srgb, var(--color-surface) 75%, transparent);
   border-radius: var(--radius-pill);
   margin-right: 6px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text) 8%, transparent);
   vertical-align: middle;
 }
 
@@ -401,6 +482,13 @@
 @media (max-width: 900px) {
   .chartsGrid {
     grid-template-columns: 1fr;
+  }
+  .scoreCriteria {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .criteriaGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

@@ -16,7 +16,7 @@ import type { LineSeries } from "../components/compare/LineChartSvg";
 import Legend from "../components/compare/Legend";
 import ExpandModal from "../components/compare/ExpandModal";
 import {
-  seriesColor,
+  seriesGradient,
   fmtNum,
   fmtPct,
   fmtPopulation,
@@ -324,7 +324,7 @@ export default function ComparePage() {
         <div className={styles.chips}>
           {chipDistricts.map((d, i) => (
             <span key={d.id} className={styles.chip}>
-              <span className={styles.chipDot} style={{ background: seriesColor(i) }} />
+              <span className={styles.chipDot} style={{ background: seriesGradient(i) }} />
               {d.district_name}
               <button
                 type="button"
@@ -475,7 +475,7 @@ export default function ComparePage() {
       {canCompare && !loading && !error && data && (
         <>
       <section className={styles.section}>
-        <SectionTitle title="핵심 지표 비교" subtitle={`${filterSummary} 기준 상권별 대표 지표`} />
+        <SectionTitle title="핵심 지표 비교" subtitle={`${filterSummary} 기준`} />
         <div className={styles.card}>
           <MetricsTable districts={districts} />
         </div>
@@ -484,7 +484,7 @@ export default function ComparePage() {
       {/* 차트 2열 */}
       <section className={styles.chartsGrid}>
         <div className={styles.card}>
-          <ChartHeader title="지표 레이더" onExpand={() => setModal("radar")} />
+          <ChartHeader title="지표별 환산 점수" onExpand={() => setModal("radar")} />
           {radarSeries.length > 0 && radarAxes.length >= 3 ? (
             <div className={styles.chartBody}>
               <RadarChartSvg axes={radarAxes} series={radarSeries} />
@@ -534,7 +534,7 @@ export default function ComparePage() {
       {/* 확대 모달 */}
       {modal === "radar" && radarAxes.length >= 3 && (
         <ExpandModal
-          title="지표 레이더"
+          title="지표별 환산 점수"
           subtitle="상권별 5개 축 비교"
           onClose={() => setModal(null)}
         >
@@ -542,6 +542,7 @@ export default function ComparePage() {
             <RadarChartSvg axes={radarAxes} series={radarSeries} size={420} />
           </div>
           <RadarValueTable axes={radarAxes} series={radarSeries} />
+          <ScoreCriteria />
         </ExpandModal>
       )}
 
@@ -615,6 +616,41 @@ function ChartHeader({ title, onExpand }: { title: string; onExpand: () => void 
   );
 }
 
+function ScoreCriteria() {
+  return (
+    <aside className={styles.scoreCriteria} aria-label="점수 산출 기준">
+      <h3>점수 산출 기준</h3>
+      <div className={styles.criteriaGrid}>
+        <div>
+          <strong>생존율</strong>
+          <p>생존율 그대로</p>
+          <small>선택한 분기·업종의 생존율을 사용합니다.</small>
+        </div>
+        <div>
+          <strong>유동인구</strong>
+          <p>총 유동인구 ÷ 300만 × 100</p>
+          <small>선택 분기의 상권 전체 유동인구를 기준 상한 대비 점수화합니다.</small>
+        </div>
+        <div>
+          <strong>매출</strong>
+          <p>log10(총매출 + 1) ÷ 12 × 100</p>
+          <small>매출 규모 차이가 커지지 않도록 로그 스케일을 적용합니다.</small>
+        </div>
+        <div>
+          <strong>안정성</strong>
+          <p>100 - 폐업률</p>
+          <small>폐업률이 낮을수록 안정성 점수가 높아집니다.</small>
+        </div>
+        <div>
+          <strong>성장성</strong>
+          <p>개업률 × 5</p>
+          <small>개업률 20%를 100점으로 환산합니다.</small>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
 /** 핵심 지표 비교표. 지표별 최고값 셀을 하이라이트. */
 function MetricsTable({ districts }: { districts: DistrictCompareResponse["districts"] }) {
   // 각 지표에서 "최고(=가장 좋음)" 인덱스 계산. 폐업위험은 낮을수록 좋음.
@@ -669,7 +705,7 @@ function MetricsTable({ districts }: { districts: DistrictCompareResponse["distr
           <th className={styles.metricCol}>지표</th>
           {districts.map((d, i) => (
             <th key={d.id} className={styles.numCell}>
-              <span className={styles.thDot} style={{ background: seriesColor(i) }} />
+              <span className={styles.thDot} style={{ background: seriesGradient(i) }} />
               {d.district_name}
             </th>
           ))}
@@ -700,7 +736,7 @@ function RadarValueTable({ axes, series }: { axes: string[]; series: RadarSeries
           <th className={styles.metricCol}>축</th>
           {series.map((s, i) => (
             <th key={i} className={styles.numCell}>
-              <span className={styles.thDot} style={{ background: seriesColor(i) }} />
+              <span className={styles.thDot} style={{ background: seriesGradient(i) }} />
               {s.name}
             </th>
           ))}
@@ -722,11 +758,7 @@ function RadarValueTable({ axes, series }: { axes: string[]; series: RadarSeries
             <tr key={axis}>
               <td className={styles.metricCol}>{axis}</td>
               {vals.map((v, i) => (
-                <td
-                  key={i}
-                  className={styles.numCell}
-                  style={i === best ? { color: seriesColor(i), fontWeight: 700 } : undefined}
-                >
+                <td key={i} className={`${styles.numCell} ${i === best ? styles.bestCell : ""}`}>
                   {fmtNum(v, 0)}
                 </td>
               ))}
