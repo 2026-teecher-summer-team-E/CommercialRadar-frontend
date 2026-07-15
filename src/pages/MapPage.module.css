@@ -4,7 +4,8 @@
   flex-direction: column;
   height: calc(100vh - 0px);
   min-height: 0;
-  padding: 16px 20px 20px;
+  /* 좌우 여백(사이드바 간격)은 다른 앱 페이지와 동일하게 32px. 상단 16px·하단 20px은 지도 레이아웃 유지. */
+  padding: 16px 32px 20px;
   gap: 14px;
   background: var(--color-bg);
   box-sizing: border-box;
@@ -106,7 +107,7 @@
   font-family: var(--font-sans);
   font-size: 17px;
   font-weight: 800;
-  color: var(--color-primary);
+  color: var(--color-text);
 }
 .locationSub {
   display: flex;
