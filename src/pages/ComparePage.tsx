@@ -20,11 +20,16 @@ import {
   fmtNum,
   fmtPct,
   fmtPopulation,
-  closureRiskLabel,
 } from "../components/compare/format";
 import styles from "./ComparePage.module.css";
 
 type ModalKind = "radar" | "trend" | null;
+type SelectorKind = "quarter" | "category" | "ranking" | null;
+
+interface SelectorOption {
+  value: string;
+  label: string;
+}
 
 interface CompareData {
   compare: DistrictCompareResponse;
@@ -43,6 +48,7 @@ interface PersistedComparePageState {
   selectedDistrictNames: Record<number, string>;
   selectedQuarter: string;
   selectedCategory: string;
+  selectedRankingDistrictId: number | null;
   modal: ModalKind;
 }
 
@@ -51,6 +57,7 @@ const DEFAULT_COMPARE_PAGE_STATE: PersistedComparePageState = {
   selectedDistrictNames: {},
   selectedQuarter: "",
   selectedCategory: "",
+  selectedRankingDistrictId: null,
   modal: null,
 };
 
@@ -85,6 +92,11 @@ function readComparePageState(): PersistedComparePageState {
       selectedDistrictNames: names,
       selectedQuarter: typeof parsed.selectedQuarter === "string" ? parsed.selectedQuarter : "",
       selectedCategory: typeof parsed.selectedCategory === "string" ? parsed.selectedCategory : "",
+      selectedRankingDistrictId:
+        typeof parsed.selectedRankingDistrictId === "number" &&
+        selectedIds.includes(parsed.selectedRankingDistrictId)
+          ? parsed.selectedRankingDistrictId
+          : null,
       modal: selectedIds.length >= MIN_DISTRICTS ? modal : null,
     };
   } catch {
@@ -100,8 +112,12 @@ export default function ComparePage() {
   );
   const [selectedQuarter, setSelectedQuarter] = useState(initialState.selectedQuarter);
   const [selectedCategory, setSelectedCategory] = useState(initialState.selectedCategory);
+  const [selectedRankingDistrictId, setSelectedRankingDistrictId] = useState<number | null>(
+    initialState.selectedRankingDistrictId,
+  );
   const [modal, setModal] = useState<ModalKind>(initialState.modal);
   const [isAdding, setIsAdding] = useState(false);
+  const [openSelector, setOpenSelector] = useState<SelectorKind>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
@@ -112,13 +128,14 @@ export default function ComparePage() {
         selectedDistrictNames,
         selectedQuarter,
         selectedCategory,
+        selectedRankingDistrictId,
         modal: selectedIds.length >= MIN_DISTRICTS ? modal : null,
       };
       window.localStorage.setItem(COMPARE_PAGE_STORAGE_KEY, JSON.stringify(state));
     } catch {
       // localStorage 접근 불가 환경에서는 저장 없이 현재 화면 상태만 유지한다.
     }
-  }, [selectedIds, selectedDistrictNames, selectedQuarter, selectedCategory, modal]);
+  }, [selectedIds, selectedDistrictNames, selectedQuarter, selectedCategory, selectedRankingDistrictId, modal]);
 
   // 검색어 250ms 디바운스: 입력이 멈춘 뒤에만 쿼리 키가 바뀌어 요청이 나간다.
   const keyword = searchQuery.trim();
@@ -204,10 +221,24 @@ export default function ComparePage() {
   }, [categoriesQuery.data, selectedIds.length]);
 
   const canCompare = selectedIds.length >= MIN_DISTRICTS;
+  const effectiveRankingDistrictId =
+    selectedRankingDistrictId && selectedIds.includes(selectedRankingDistrictId)
+      ? selectedRankingDistrictId
+      : selectedIds[0];
+
+  useEffect(() => {
+    if (selectedIds.length === 0) {
+      setSelectedRankingDistrictId(null);
+      return;
+    }
+    setSelectedRankingDistrictId((current) =>
+      current && selectedIds.includes(current) ? current : selectedIds[0],
+    );
+  }, [selectedIds]);
 
   // 본문 데이터: 비교표 + 레이더 + 생존율 추이 + 업종 순위.
   const compareQuery = useQuery({
-    queryKey: queryKeys.comparePage(selectedIds, selectedQuarter, selectedCategory),
+    queryKey: queryKeys.comparePage(selectedIds, selectedQuarter, selectedCategory, effectiveRankingDistrictId),
     enabled: canCompare,
     queryFn: async (): Promise<CompareData> => {
       const comparisonParams = {
@@ -223,8 +254,8 @@ export default function ComparePage() {
         commercialApi.compare(selectedIds, comparisonParams),
         Promise.all(selectedIds.map((id) => commercialApi.radar(id, comparisonParams))),
         Promise.all(selectedIds.map((id) => commercialApi.timeSeries(id, timeSeriesParams))),
-        selectedIds.length > 0
-          ? commercialApi.categoryRanking(selectedIds[0], {
+        effectiveRankingDistrictId
+          ? commercialApi.categoryRanking(effectiveRankingDistrictId, {
               year_quarter: selectedQuarter || undefined,
             })
           : Promise.resolve(null),
@@ -263,9 +294,16 @@ export default function ComparePage() {
     id,
     district_name: selectedDistrictNames[id] ?? `상권 ${id}`,
   }));
+  const rankingDistrictOptions: SelectorOption[] = chipDistricts.map((district) => ({
+    value: String(district.id),
+    label: district.district_name,
+  }));
+  const rankingDistrictName =
+    chipDistricts.find((district) => district.id === effectiveRankingDistrictId)?.district_name ??
+    "선택 상권";
   const names = districts.map((d) => d.district_name);
 
-  // 레이더: 모든 상권의 축 라벨은 동일하다고 가정, 첫 상권 축을 기준으로 사용.
+  // 레이더: 모든 상권의 지표 라벨은 동일하다고 가정, 첫 상권 지표를 기준으로 사용.
   const radarAxes = useMemo(() => data?.radars[0]?.axes.map((a) => a.label) ?? [], [data]);
   const radarSeries: RadarSeries[] = useMemo(() => {
     if (!data) return [];
@@ -314,6 +352,14 @@ export default function ComparePage() {
 
   const activeQuarter = selectedQuarter || data?.compare.year_quarter || "";
   const filterSummary = `${formatQuarter(activeQuarter)} · ${selectedCategory || "전체 업종"}`;
+  const quarterOptions: SelectorOption[] = availableQuarters.map((quarter) => ({
+    value: quarter,
+    label: formatQuarter(quarter),
+  }));
+  const categoryOptions: SelectorOption[] = [
+    { value: "", label: "전체 업종" },
+    ...availableCategories.map((category) => ({ value: category, label: category })),
+  ];
 
   return (
     <div className={styles.page}>
@@ -349,39 +395,26 @@ export default function ComparePage() {
           </button>
         </div>
         <div className={styles.selectors}>
-          <label className={styles.selectorGroup}>
-            <span>기준 분기</span>
-            <select
-              className={styles.selector}
-              value={selectedQuarter}
-              onChange={(event) => setSelectedQuarter(event.target.value)}
-              disabled={availableQuarters.length === 0}
-              aria-label="비교 기준 분기"
-            >
-              {availableQuarters.map((quarter) => (
-                <option key={quarter} value={quarter}>
-                  {formatQuarter(quarter)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className={styles.selectorGroup}>
-            <span>비교 업종</span>
-            <select
-              className={styles.selector}
-              value={selectedCategory}
-              onChange={(event) => setSelectedCategory(event.target.value)}
-              disabled={availableCategories.length === 0}
-              aria-label="비교 업종"
-            >
-              <option value="">전체 업종</option>
-              {availableCategories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </label>
+          <FilterDropdown
+            label="기준 분기"
+            value={selectedQuarter}
+            options={quarterOptions}
+            disabled={availableQuarters.length === 0}
+            open={openSelector === "quarter"}
+            onToggle={() => setOpenSelector((current) => (current === "quarter" ? null : "quarter"))}
+            onClose={() => setOpenSelector(null)}
+            onChange={setSelectedQuarter}
+          />
+          <FilterDropdown
+            label="비교 업종"
+            value={selectedCategory}
+            options={categoryOptions}
+            disabled={availableCategories.length === 0}
+            open={openSelector === "category"}
+            onToggle={() => setOpenSelector((current) => (current === "category" ? null : "category"))}
+            onClose={() => setOpenSelector(null)}
+            onChange={setSelectedCategory}
+          />
         </div>
 
         {isAdding && (
@@ -496,26 +529,38 @@ export default function ComparePage() {
         </div>
 
         <div className={styles.card}>
-          <div style={{ marginBottom: 12 }}>
+          <div className={styles.rankingHeader}>
             <SectionTitle
               title="업종별 추천 순위"
               subtitle={
-                districts[0]
-                  ? `${formatQuarter(activeQuarter)} · ${districts[0].district_name} 기준`
+                effectiveRankingDistrictId
+                  ? `${formatQuarter(activeQuarter)} · ${rankingDistrictName} 기준`
                   : "선택 상권 기준 상위 업종"
               }
               showAccent={false}
+            />
+            <FilterDropdown
+              label="순위 기준"
+              value={effectiveRankingDistrictId ? String(effectiveRankingDistrictId) : ""}
+              options={rankingDistrictOptions}
+              disabled={rankingDistrictOptions.length === 0}
+              open={openSelector === "ranking"}
+              onToggle={() => setOpenSelector((current) => (current === "ranking" ? null : "ranking"))}
+              onClose={() => setOpenSelector(null)}
+              onChange={(value) => setSelectedRankingDistrictId(Number(value))}
+              compact
             />
           </div>
           <RankingTable ranking={data.ranking} />
         </div>
       </section>
 
-      {/* 분기별 생존율 추이: 그래프가 길쭉해서 2열보단 전체 폭 차지가 낫다. */}
+      {/* 생존율 추이: 그래프가 길쭉해서 2열보단 전체 폭 차지가 낫다. */}
       <section className={styles.section}>
         <div className={styles.card}>
           <ChartHeader
-            title={`분기별 생존율 추이 · ${selectedCategory || "전체 업종"}`}
+            title="생존율 추이"
+            subtitle={selectedCategory || "전체 업종"}
             onExpand={() => setModal("trend")}
           />
           <div className={styles.legendTop}>
@@ -523,7 +568,7 @@ export default function ComparePage() {
           </div>
           {trendLabels.length > 0 ? (
             <div className={styles.chartBody}>
-              <LineChartSvg labels={trendLabels} series={trendSeries} />
+              <LineChartSvg labels={trendLabels} series={trendSeries} width={680} height={340} />
             </div>
           ) : (
             <div className={styles.empty}>생존율 추이 기록이 아직 없습니다.</div>
@@ -535,7 +580,7 @@ export default function ComparePage() {
       {modal === "radar" && radarAxes.length >= 3 && (
         <ExpandModal
           title="지표별 환산 점수"
-          subtitle="상권별 5개 축 비교"
+          subtitle="상권별 5개 지표 비교"
           onClose={() => setModal(null)}
         >
           <div className={styles.modalChart}>
@@ -548,7 +593,7 @@ export default function ComparePage() {
 
       {modal === "trend" && trendLabels.length > 0 && (
         <ExpandModal
-          title="분기별 생존율 추이"
+          title="생존율 추이"
           subtitle={`${filterSummary}까지의 상권별 생존율(%) 추이`}
           onClose={() => setModal(null)}
         >
@@ -556,7 +601,7 @@ export default function ComparePage() {
             <div className={styles.legendTop}>
               <Legend names={names} />
             </div>
-            <LineChartSvg labels={trendLabels} series={trendSeries} width={760} height={360} />
+            <LineChartSvg labels={trendLabels} series={trendSeries} width={860} height={420} />
           </div>
         </ExpandModal>
       )}
@@ -605,13 +650,94 @@ function SectionTitle({
   );
 }
 
-function ChartHeader({ title, onExpand }: { title: string; onExpand: () => void }) {
+function ChartHeader({
+  title,
+  subtitle,
+  onExpand,
+}: {
+  title: string;
+  subtitle?: string;
+  onExpand: () => void;
+}) {
   return (
     <div className={styles.chartHeader}>
-      <h3 className={styles.chartTitle}>{title}</h3>
+      <div>
+        <h3 className={styles.chartTitle}>{title}</h3>
+        {subtitle && <p className={styles.chartSubTitle}>{subtitle}</p>}
+      </div>
       <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label={`${title} 확대`}>
         {EXPAND_ICON}
       </button>
+    </div>
+  );
+}
+
+function FilterDropdown({
+  label,
+  value,
+  options,
+  disabled,
+  open,
+  onToggle,
+  onClose,
+  onChange,
+  compact = false,
+}: {
+  label: string;
+  value: string;
+  options: SelectorOption[];
+  disabled: boolean;
+  open: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  onChange: (value: string) => void;
+  compact?: boolean;
+}) {
+  const selectedLabel = options.find((option) => option.value === value)?.label ?? options[0]?.label ?? "-";
+
+  return (
+    <div
+      className={`${styles.selectorDropdown} ${compact ? styles.selectorDropdownCompact : ""}`}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) onClose();
+      }}
+    >
+      <button
+        type="button"
+        className={styles.selectorTrigger}
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={onToggle}
+      >
+        <span className={styles.selectorLabel}>{label}</span>
+        <span className={styles.selectorValue}>{selectedLabel}</span>
+        <span className={styles.selectorArrow} aria-hidden>
+          ▾
+        </span>
+      </button>
+      {open && !disabled && (
+        <div className={styles.selectorMenu} role="listbox" aria-label={label}>
+          {options.map((option) => {
+            const selected = option.value === value;
+            return (
+              <button
+                key={option.value || "all"}
+                type="button"
+                className={`${styles.selectorOption} ${selected ? styles.selectorOptionActive : ""}`}
+                role="option"
+                aria-selected={selected}
+                onClick={() => {
+                  onChange(option.value);
+                  onClose();
+                }}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -672,7 +798,7 @@ function MetricsTable({ districts }: { districts: DistrictCompareResponse["distr
 
   const scores = districts.map((d) => d.district_score);
   const survivals = districts.map((d) => d.survival_rate);
-  const closures = districts.map((d) => d.closure_rate);
+  const openRates = districts.map((d) => d.open_rate);
   const populations = districts.map((d) => d.avg_population);
 
   const rows = [
@@ -687,9 +813,9 @@ function MetricsTable({ districts }: { districts: DistrictCompareResponse["distr
       cells: districts.map((d) => fmtPct(d.survival_rate)),
     },
     {
-      label: "폐업 위험",
-      best: bestIndex(closures, "min"),
-      cells: districts.map((d) => closureRiskLabel(d.closure_rate)),
+      label: "개업률",
+      best: bestIndex(openRates, "max"),
+      cells: districts.map((d) => fmtPct(d.open_rate)),
     },
     {
       label: "유동인구",
@@ -727,46 +853,49 @@ function MetricsTable({ districts }: { districts: DistrictCompareResponse["distr
   );
 }
 
-/** 레이더 확대 모달의 축별 값 테이블. 축마다 최고값 시리즈색 강조. */
+/** 레이더 확대 모달의 지표별 값 테이블. 지표마다 최고값 시리즈색 강조. */
 function RadarValueTable({ axes, series }: { axes: string[]; series: RadarSeries[] }) {
   return (
-    <table className={styles.table}>
-      <thead>
-        <tr>
-          <th className={styles.metricCol}>축</th>
-          {series.map((s, i) => (
-            <th key={i} className={styles.numCell}>
-              <span className={styles.thDot} style={{ background: seriesGradient(i) }} />
-              {s.name}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {axes.map((axis, ai) => {
-          const vals = series.map((s) => s.values[ai] ?? null);
-          let best = -1;
-          let bestVal: number | null = null;
-          vals.forEach((v, i) => {
-            if (v == null) return;
-            if (bestVal == null || v > bestVal) {
-              bestVal = v;
-              best = i;
-            }
-          });
-          return (
-            <tr key={axis}>
-              <td className={styles.metricCol}>{axis}</td>
-              {vals.map((v, i) => (
-                <td key={i} className={`${styles.numCell} ${i === best ? styles.bestCell : ""}`}>
-                  {fmtNum(v, 0)}
-                </td>
-              ))}
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
+    <>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th className={styles.metricCol}>지표</th>
+            {series.map((s, i) => (
+              <th key={i} className={styles.numCell}>
+                <span className={styles.thDot} style={{ background: seriesGradient(i) }} />
+                {s.name}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {axes.map((axis, ai) => {
+            const vals = series.map((s) => s.values[ai] ?? null);
+            let best = -1;
+            let bestVal: number | null = null;
+            vals.forEach((v, i) => {
+              if (v == null) return;
+              if (bestVal == null || v > bestVal) {
+                bestVal = v;
+                best = i;
+              }
+            });
+            return (
+              <tr key={axis}>
+                <td className={styles.metricCol}>{axis}</td>
+                {vals.map((v, i) => (
+                  <td key={i} className={`${styles.numCell} ${i === best ? styles.bestCell : ""}`}>
+                    {fmtNum(v, 0)}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <div className={styles.scoreUnitNote}>단위: 점</div>
+    </>
   );
 }
 

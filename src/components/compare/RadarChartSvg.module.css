@@ -14,27 +14,47 @@
 .axis {
   stroke: var(--color-border);
   stroke-width: 1;
+  transition:
+    stroke 0.15s ease,
+    stroke-width 0.15s ease;
+}
+.axisActive {
+  stroke: var(--color-border-strong);
+  stroke-width: 1.8;
+}
+.axisHitArea {
+  stroke: transparent;
+  stroke-width: 28;
+  cursor: default;
+  pointer-events: stroke;
 }
 .label {
   font-family: var(--font-sans);
   font-size: 11px;
   fill: var(--color-muted);
+  cursor: default;
+  transition: fill 0.15s ease;
+}
+.label:hover {
+  fill: var(--color-text);
 }
 .seriesShape {
-  cursor: help;
+  pointer-events: none;
   transition:
     fill-opacity 0.15s ease,
     stroke-width 0.15s ease;
 }
-.seriesShape:hover {
-  fill-opacity: 0.22;
-  stroke-width: 2.8;
+.axisPoint {
+  pointer-events: none;
+  stroke: var(--color-surface);
+  stroke-width: 2;
+  filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--color-text) 18%, transparent));
 }
 .tooltip {
   position: absolute;
   z-index: 3;
-  min-width: 160px;
-  max-width: 220px;
+  min-width: 190px;
+  max-width: 240px;
   padding: 10px 12px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
@@ -55,6 +75,26 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+.tooltipRow span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.tooltipRow em {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: var(--radius-pill);
+  background: var(--color-chip);
+  color: var(--color-muted);
+  font-family: var(--font-num);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
 }
 .tooltipRow b {
   flex: none;

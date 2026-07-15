@@ -22,9 +22,10 @@ const MAX = 100;
 interface TooltipState {
   x: number;
   y: number;
-  name: string;
+  axisIndex: number;
+  title: string;
   color: string;
-  details: Array<{ axis: string; value: string }>;
+  details: Array<{ name: string; value: string; color: string }>;
 }
 
 /** N각형 꼭짓점 좌표(반지름 r, 값 0~1 스케일된 factor). */
@@ -48,8 +49,16 @@ function formatScore(value: number): string {
   return String(Math.round(value * 10) / 10);
 }
 
-function seriesDetails(axes: string[], values: number[]): TooltipState["details"] {
-  return axes.map((axis, i) => ({ axis, value: formatScore(values[i] ?? 0) }));
+function axisDetails(series: RadarSeries[], axisIndex: number): TooltipState["details"] {
+  return series
+    .map((s, i) => ({
+      name: s.name,
+      rawValue: s.values[axisIndex] ?? 0,
+      value: formatScore(s.values[axisIndex] ?? 0),
+      color: seriesColor(i),
+    }))
+    .sort((a, b) => b.rawValue - a.rawValue)
+    .map(({ name, value, color }) => ({ name, value, color }));
 }
 
 /** 다중 상권 오버레이 레이더 차트(순수 SVG). */
@@ -86,18 +95,27 @@ export default function RadarChartSvg({ axes, series, size = 420 }: Props) {
     return { x, y, anchor };
   });
 
-  const moveTooltip = (event: MouseEvent<SVGPolygonElement>, s: RadarSeries, color: string) => {
+  const valuePointOnAxis = (axisIndex: number, value: number) => {
+    const angle = (Math.PI * 2 * axisIndex) / n - Math.PI / 2;
+    const r = radius * Math.max(0, Math.min(1, value / MAX));
+    return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+  };
+
+  const moveTooltip = (event: MouseEvent<SVGElement>, axisIndex: number) => {
     const svg = event.currentTarget.ownerSVGElement;
     const rect = svg?.getBoundingClientRect();
     if (!rect) return;
     setTooltip({
       x: event.clientX - rect.left + 14,
       y: event.clientY - rect.top + 14,
-      name: s.name,
-      color,
-      details: seriesDetails(axes, s.values),
+      axisIndex,
+      title: `${axes[axisIndex]} 순위`,
+      color: "var(--color-border-strong)",
+      details: axisDetails(series, axisIndex),
     });
   };
+
+  const activeAxis = tooltip?.axisIndex ?? null;
 
   return (
     <div className={styles.wrap} style={{ maxWidth: size }} onMouseLeave={() => setTooltip(null)}>
@@ -112,7 +130,14 @@ export default function RadarChartSvg({ axes, series, size = 420 }: Props) {
           <polygon key={`ring-${i}`} className={styles.ring} points={ring} />
         ))}
         {axisEnds.map((p, i) => (
-          <line key={`axis-${i}`} className={styles.axis} x1={cx} y1={cy} x2={p.x} y2={p.y} />
+          <line
+            key={`axis-${i}`}
+            className={`${styles.axis} ${activeAxis === i ? styles.axisActive : ""}`}
+            x1={cx}
+            y1={cy}
+            x2={p.x}
+            y2={p.y}
+          />
         ))}
         {series.map((s, si) => {
           const factors = s.values.map((v) => Math.max(0, Math.min(1, v / MAX)));
@@ -126,11 +151,37 @@ export default function RadarChartSvg({ axes, series, size = 420 }: Props) {
               fillOpacity={0.14}
               stroke={color}
               strokeWidth={2}
-              onMouseEnter={(event) => moveTooltip(event, s, color)}
-              onMouseMove={(event) => moveTooltip(event, s, color)}
             />
-          );
-        })}
+            );
+          })}
+        {axisEnds.map((p, i) => (
+          <line
+            key={`axis-hit-${i}`}
+            className={styles.axisHitArea}
+            x1={cx}
+            y1={cy}
+            x2={p.x}
+            y2={p.y}
+            onMouseEnter={(event) => moveTooltip(event, i)}
+            onMouseMove={(event) => moveTooltip(event, i)}
+          />
+        ))}
+        {activeAxis != null &&
+          series.map((s, si) => {
+            const value = s.values[activeAxis] ?? 0;
+            const point = valuePointOnAxis(activeAxis, value);
+            const color = seriesColor(si);
+            return (
+              <circle
+                key={`axis-point-${activeAxis}-${si}`}
+                className={styles.axisPoint}
+                cx={point.x}
+                cy={point.y}
+                r={4.5}
+                fill={color}
+              />
+            );
+          })}
         {labelPos.map((p, i) => (
           <text
             key={`label-${i}`}
@@ -139,6 +190,9 @@ export default function RadarChartSvg({ axes, series, size = 420 }: Props) {
             y={p.y}
             textAnchor={p.anchor}
             dominantBaseline="middle"
+            onMouseEnter={(event) => moveTooltip(event, i)}
+            onMouseMove={(event) => moveTooltip(event, i)}
+            onMouseLeave={() => setTooltip(null)}
           >
             {axes[i]}
           </text>
@@ -149,11 +203,14 @@ export default function RadarChartSvg({ axes, series, size = 420 }: Props) {
           className={styles.tooltip}
           style={{ left: tooltip.x, top: tooltip.y, borderColor: tooltip.color }}
         >
-          <strong style={{ color: tooltip.color }}>{tooltip.name}</strong>
-          {tooltip.details.map((detail) => (
-            <span key={detail.axis} className={styles.tooltipRow}>
-              <span>{detail.axis}</span>
-              <b style={{ color: tooltip.color }}>{detail.value}</b>
+          <strong>{tooltip.title}</strong>
+          {tooltip.details.map((detail, i) => (
+            <span key={detail.name} className={styles.tooltipRow}>
+              <span>
+                <em>{i + 1}</em>
+                {detail.name}
+              </span>
+              <b style={{ color: detail.color }}>{detail.value}</b>
             </span>
           ))}
         </div>

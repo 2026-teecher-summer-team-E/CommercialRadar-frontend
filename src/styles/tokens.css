@@ -64,21 +64,21 @@
   --series-8-bg: #f3e8ff;
 
   /* Compare series — 크림 배경과 어울리는 muted gradient 팔레트 */
-  --compare-series-1: #24398a;
-  --compare-series-1-bg: #e8ebf5;
-  --compare-series-1-gradient: linear-gradient(135deg, #5266b5 0%, #24398a 100%);
-  --compare-series-2: #2f6f73;
-  --compare-series-2-bg: #e8f2f2;
-  --compare-series-2-gradient: linear-gradient(135deg, #64a6a3 0%, #2f6f73 100%);
-  --compare-series-3: #6b5c8f;
-  --compare-series-3-bg: #f0edf7;
-  --compare-series-3-gradient: linear-gradient(135deg, #9a86be 0%, #6b5c8f 100%);
-  --compare-series-4: #9a6a2f;
-  --compare-series-4-bg: #f6efe5;
-  --compare-series-4-gradient: linear-gradient(135deg, #d0a05c 0%, #9a6a2f 100%);
-  --compare-series-5: #8b4d5a;
-  --compare-series-5-bg: #f5eaed;
-  --compare-series-5-gradient: linear-gradient(135deg, #bd7a88 0%, #8b4d5a 100%);
+  --compare-series-1: #1f3f9f;
+  --compare-series-1-bg: #e7ebf8;
+  --compare-series-1-gradient: linear-gradient(135deg, #5b72c8 0%, #1f3f9f 100%);
+  --compare-series-2: #147d78;
+  --compare-series-2-bg: #e5f3f1;
+  --compare-series-2-gradient: linear-gradient(135deg, #5ab3ac 0%, #147d78 100%);
+  --compare-series-3: #7552a3;
+  --compare-series-3-bg: #f0ebf8;
+  --compare-series-3-gradient: linear-gradient(135deg, #a47bd0 0%, #7552a3 100%);
+  --compare-series-4: #ad6a1d;
+  --compare-series-4-bg: #f7eee3;
+  --compare-series-4-gradient: linear-gradient(135deg, #d99a45 0%, #ad6a1d 100%);
+  --compare-series-5: #a3435c;
+  --compare-series-5-bg: #f6e9ee;
+  --compare-series-5-gradient: linear-gradient(135deg, #ca7588 0%, #a3435c 100%);
 
   /* Radius — Zapier 시그니처 미들 라디우스 */
   --radius-sm: 6px;
