@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useDistrictRanking } from "../hooks/queries";
 import type { DistrictCompareItem, DistrictRankingItem } from "../types";
 import Leaderboard, { type SortableKey, type SortState } from "../components/ranking/Leaderboard";
+import FilterDropdown from "../components/common/FilterDropdown";
 import styles from "./RankingPage.module.css";
 
 /** 필터 적용을 위해 전 상권을 받아온다(약 1650개). 렌더는 '더보기'로 점진 노출. */
@@ -101,32 +102,8 @@ export default function RankingPage() {
       {!loading && !error && (
         <div className={styles.controls}>
           <div className={styles.filters}>
-            <select
-              className={styles.select}
-              value={gu}
-              onChange={(e) => setGu(e.target.value)}
-              aria-label="자치구 필터"
-            >
-              <option value="">자치구 전체</option>
-              {guOptions.map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
-              ))}
-            </select>
-            <select
-              className={styles.select}
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              aria-label="상권유형 필터"
-            >
-              <option value="">유형 전체</option>
-              {typeOptions.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
+            <FilterDropdown label="자치구" value={gu} options={guOptions} onChange={setGu} ariaLabel="자치구 필터" />
+            <FilterDropdown label="유형" value={type} options={typeOptions} onChange={setType} ariaLabel="상권유형 필터" />
           </div>
           <span className={styles.count}>
             {visible.length}/{sorted.length}개 표시
