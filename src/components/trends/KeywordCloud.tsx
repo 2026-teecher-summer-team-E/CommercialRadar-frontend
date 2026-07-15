@@ -29,20 +29,26 @@ function layoutKeywords(items: PopularCategoryItem[]): Placement[] {
   const cellW = 100 / columns;
   const cellH = 100 / rows;
   const maxIndex = Math.max(...items.map((item) => item.popularity_index), 1);
+  const minIndex = Math.min(...items.map((item) => item.popularity_index), 0);
+  const spread = maxIndex - minIndex || 1;
+  // 최하위(9위)는 기존 크기 그대로 두고, 1위는 기존 최대 크기 그대로 두되, 그 사이
+  // 순위들만 커 보이게 만든다 — 1위(앵커)가 나머지보다 압도적으로 커서 선형 비례로는
+  // 2~8위가 전부 최소 크기 근처로 뭉쳐 보였다. sqrt 곡선으로 중간 순위를 부풀린다.
+  const floorScale = 0.85 + Math.max(0, Math.min(1, minIndex / maxIndex)) * 0.6;
+  const ceilScale = 1.85;
 
   return items.map((item, i) => {
     const col = i % columns;
     const row = Math.floor(i / columns);
     const jitterX = (pseudoRandom(i * 3 + 1) - 0.5) * cellW * 0.6;
     const jitterY = (pseudoRandom(i * 7 + 2) - 0.5) * cellH * 0.6;
-    // 검색량이 많을수록 키워드를 크게 그려 인기도를 한눈에 보이게 한다.
-    const magnitude = Math.max(0, Math.min(1, item.popularity_index / maxIndex));
+    const t = Math.max(0, Math.min(1, (item.popularity_index - minIndex) / spread));
     return {
       left: Math.min(94, Math.max(6, col * cellW + cellW / 2 + jitterX)),
       top: Math.min(88, Math.max(10, row * cellH + cellH / 2 + jitterY)),
       duration: 4 + pseudoRandom(i * 11 + 3) * 3,
       delay: pseudoRandom(i * 13 + 5) * -6,
-      scale: 0.85 + magnitude * 0.6,
+      scale: floorScale + Math.sqrt(t) * (ceilScale - floorScale),
     };
   });
 }
@@ -131,6 +137,10 @@ export default function KeywordCloud({ items }: Props) {
                 <span className={styles.relatedMetricValue}>
                   <TrendValue value={selected.qoq_business_change} format={fmtCountMagnitude} />
                 </span>
+              </span>
+              <span className={styles.relatedMetric}>
+                <span className={styles.relatedMetricLabel}>핵심 수요층</span>
+                <span className={styles.relatedMetricValue}>{selected.core_age_group ?? "—"}</span>
               </span>
             </div>
             <p className={styles.relatedIntro}>이 업종과 검색 추이가 비슷하게 움직이는 업종</p>
