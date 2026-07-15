@@ -25,6 +25,7 @@ import BuzzGapCard from "../components/dashboard/BuzzGapCard";
 import SalesForecastCard from "../components/dashboard/SalesForecastCard";
 import { DayNightCard, ForeignCard, PerCapitaCard, PopulationRhythmCard, WeekendCard } from "../components/dashboard/StatCards";
 import ExpandModal from "../components/dashboard/ExpandModal";
+import ForeignDonut from "../components/dashboard/ForeignDonut";
 import { quarterShort } from "../components/dashboard/format";
 import { useFavoriteDistrict } from "../hooks/useFavoriteDistrict";
 import { queryKeys, useCategoryRanking, useDistrictSearch } from "../hooks/queries";
@@ -217,7 +218,7 @@ export default function DashboardPage() {
     return districtCode && Number.isFinite(n) && n > 0 ? n : null;
   }, [districtCode]);
 
-  const [modal, setModal] = useState<"heatmap" | null>(null);
+  const [modal, setModal] = useState<"heatmap" | "foreign" | null>(null);
   const [sim, setSim] = useState<"low" | "mid" | "high" | null>(null);
   // 생존율 예측 업종 필터. null = 전체 상권(기존 기본 동작).
   const [selCategory, setSelCategory] = useState<string | null>(null);
@@ -699,6 +700,7 @@ export default function DashboardPage() {
             pct={data.foreign?.foreigner_pct ?? null}
             count={data.foreign?.foreigner_count ?? null}
             total={data.foreign?.total_count ?? null}
+            onExpand={data.foreign?.foreigner_pct != null ? () => setModal("foreign") : undefined}
           />
         </div>
       </section>
@@ -745,6 +747,21 @@ export default function DashboardPage() {
           onClose={() => setModal(null)}
         >
           <PopulationHeatmap byTime={data.heatmap.by_time} byDay={data.heatmap.by_day} showValues wide />
+        </ExpandModal>
+      )}
+
+      {/* 확대 모달: 외국인 비중 도넛 */}
+      {modal === "foreign" && data.foreign?.foreigner_pct != null && (
+        <ExpandModal
+          title="외국인 비중"
+          subtitle="생활인구 중 외국인 vs 내국인 구성"
+          onClose={() => setModal(null)}
+        >
+          <ForeignDonut
+            pct={data.foreign.foreigner_pct}
+            count={data.foreign.foreigner_count ?? null}
+            total={data.foreign.total_count ?? null}
+          />
         </ExpandModal>
       )}
 

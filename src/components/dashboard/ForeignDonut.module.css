@@ -1,0 +1,92 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 8px 4px 4px;
+}
+
+/* 원근 무대: 도넛을 눕히면 세로가 짧아 보이므로 높이를 줄인다. */
+.stage {
+  perspective: 760px;
+  width: 260px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.donut {
+  position: relative;
+  width: 236px;
+  height: 236px;
+  /* 뉘이기: X축으로 눕혀 3D 원근을 준다. */
+  transform: rotateX(62deg);
+  transform-style: preserve-3d;
+}
+
+/* 도넛 링(윗면). conic-gradient로 외국인/내국인 두 구간, radial mask로 가운데를 비운다. */
+.ring,
+.depth {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--color-primary) 0 var(--pct),
+    var(--color-primary-light) var(--pct) 100%
+  );
+  -webkit-mask: radial-gradient(circle at center, transparent 52%, #000 53%);
+  mask: radial-gradient(circle at center, transparent 52%, #000 53%);
+}
+/* 두께(옆면): 윗면 아래로 내린 어두운 복제. */
+.depth {
+  background: conic-gradient(
+    color-mix(in srgb, var(--color-primary) 60%, #000) 0 var(--pct),
+    color-mix(in srgb, var(--color-primary-light) 82%, #000) var(--pct) 100%
+  );
+  transform: translateZ(-18px);
+}
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+}
+.legendRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--color-text);
+}
+.dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+.dotForeign {
+  background: var(--color-primary);
+}
+.dotDomestic {
+  background: var(--color-primary-light);
+}
+.legendName {
+  font-weight: 600;
+}
+.legendPct {
+  font-family: var(--font-num);
+  font-weight: 800;
+  color: var(--color-primary);
+}
+.legendSub {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-muted);
+}
