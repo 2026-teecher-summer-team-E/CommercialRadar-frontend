@@ -6,8 +6,8 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
-  /* 옆 카드 높이에 맞춰 늘어날 때, 늘어난 여백이 한 곳에 몰리지 않고 섹션 사이사이에
-     고르게 퍼지도록 한다(콘텐츠가 카드보다 작을 때만 작동, 평소엔 영향 없음). */
+  /* topGridLeft에서 flex:1로 살짝 늘어날 때, 그 여백이 섹션 사이사이에 고르게
+     퍼지도록 한다(콘텐츠가 카드보다 작을 때만 작동, 평소엔 영향 없음). */
   justify-content: space-between;
 }
 .head {
@@ -20,7 +20,7 @@
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-muted);
+  color: var(--color-text);
 }
 .expandBtn {
   border: 1px solid var(--color-border);
@@ -104,64 +104,6 @@
   color: var(--color-muted);
 }
 
-.identity {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: var(--color-primary-light);
-  border-radius: var(--radius);
-  margin-bottom: 16px;
-}
-.avatar {
-  flex: none;
-  width: 84px;
-  height: 84px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-}
-.avatarInitials {
-  font-size: 24px;
-  font-weight: 800;
-}
-.avatarSub {
-  font-size: 10px;
-  opacity: 0.85;
-}
-.identityBody {
-  min-width: 0;
-}
-.identityName {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--color-text);
-}
-.identityType {
-  margin: 4px 0 0;
-  font-size: 13px;
-  color: var(--color-text-body);
-}
-.identityRegion {
-  margin: 3px 0 0;
-  font-size: 12px;
-  color: var(--color-muted);
-}
-.identityLink {
-  display: inline-block;
-  margin-top: 8px;
-  font-size: 13px;
-  color: var(--color-primary);
-  font-weight: 600;
-  cursor: pointer;
-}
-
 .pillRow {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -198,29 +140,6 @@
   font-family: var(--font-num);
   color: var(--color-text);
   white-space: nowrap;
-}
-
-.growthRow {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-.growthTag {
-  padding: 4px 12px;
-  border-radius: var(--radius-pill);
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-  font-size: 12px;
-  font-weight: 600;
-}
-.peakTag {
-  padding: 4px 12px;
-  border-radius: var(--radius-pill);
-  background: var(--color-orange-bg);
-  color: var(--color-orange);
-  font-size: 12px;
-  font-weight: 600;
 }
 
 .flowLabels {

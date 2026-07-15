@@ -7,9 +7,6 @@ export interface ScoreBadge {
 }
 
 interface ScoreCardProps {
-  districtName: string;
-  typeName: string | null;
-  regionLine: string | null;
   /** 0~100 종합 점수. */
   score: number | null;
   /** 점수 구성요소 배지(안전존·유동인구·매출). value 없으면 목업 표기. */
@@ -21,16 +18,9 @@ interface ScoreCardProps {
   weekdayPct: number | null;
   /** 유입 비율(주말) 0~100. 실데이터 없으면 null → 지표없음. */
   weekendPct: number | null;
-  /** 유동인구 피크 시간대 라벨(예: "17~21시"). 없으면 지표없음. */
-  peakLabel?: string | null;
   /** 종합점수 순위 라벨(예: "서울 10위"). 없으면 지표없음. */
   rankLabel?: string | null;
   onExpand?: () => void;
-}
-
-/** 상권명 앞 2글자(공백 제거). */
-function initials(name: string): string {
-  return name.replace(/\s/g, "").slice(0, 2) || "상권";
 }
 
 /**
@@ -39,9 +29,6 @@ function initials(name: string): string {
  * 지표 pill 3개, 성장 소label, 유출/유입 진행바.
  */
 export default function ScoreCard({
-  districtName,
-  typeName,
-  regionLine,
   score,
   badges,
   survivalRate,
@@ -49,14 +36,13 @@ export default function ScoreCard({
   avgPopulation,
   weekdayPct,
   weekendPct,
-  peakLabel,
   rankLabel,
   onExpand,
 }: ScoreCardProps) {
   return (
     <div className={styles.card}>
       <div className={styles.head}>
-        <h3 className={styles.title}>종합 점수</h3>
+        <h3 className={styles.title}>상권 종합 점수</h3>
         {onExpand && (
           <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="종합 점수 확대">
             ⤢
@@ -93,18 +79,6 @@ export default function ScoreCard({
         ))}
       </div>
 
-      <div className={styles.identity}>
-        <div className={styles.avatar}>
-          <span className={styles.avatarInitials}>{initials(districtName)}</span>
-          <span className={styles.avatarSub}>{districtName}</span>
-        </div>
-        <div className={styles.identityBody}>
-          <p className={styles.identityName}>{districtName}</p>
-          <p className={styles.identityType}>{typeName ?? "상권"}</p>
-          {regionLine && <p className={styles.identityRegion}>{regionLine}</p>}
-        </div>
-      </div>
-
       <div className={styles.pillRow}>
         <div className={styles.pill}>
           <span className={styles.pillLabel}>생존율</span>
@@ -122,15 +96,6 @@ export default function ScoreCard({
           <span className={styles.pillLabel}>유동인구</span>
           <span className={styles.pillValue}>{fmtDailyManUnit(avgPopulation)}·일</span>
         </div>
-      </div>
-
-      <div className={styles.growthRow}>
-        <span className={styles.growthTag}>{typeName ?? "상권"}</span>
-        {peakLabel ? (
-          <span className={styles.peakTag}>피크 {peakLabel}</span>
-        ) : (
-          <span className={styles.peakTag}>피크 지표없음</span>
-        )}
       </div>
 
       {weekdayPct != null && weekendPct != null ? (
