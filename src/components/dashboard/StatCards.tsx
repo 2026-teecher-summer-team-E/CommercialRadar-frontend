@@ -31,19 +31,15 @@ export function DayNightCard({
   return (
     <div className={styles.card}>
       <div className={styles.head}>
-        <h3 className={styles.title}>낮 vs 밤 매출</h3>
+        <h3 className={styles.title}>주·야간 매출 비중</h3>
         <p className={styles.sub}>시간대 매출 구성</p>
       </div>
       <div className={styles.dnHero}>
-        <span className={styles.dnBig}>낮 {hasData ? `${dayPct}%` : "—"}</span>
-        <span className={styles.dnBig}>밤 {hasData ? `${nightPct}%` : "—"}</span>
+        <span className={styles.dnBig}>주간 {hasData ? `${dayPct}%` : "—"}</span>
+        <span className={styles.dnBig}>야간 {hasData ? `${nightPct}%` : "—"}</span>
       </div>
       <div className={styles.dnBar}>
         <span className={styles.dnFill} style={{ width: `${hasData ? dayPct : 50}%` }} />
-      </div>
-      <div className={styles.dnLegend}>
-        <span>낮 {hasData ? `${dayPct}%` : "—"}</span>
-        <span>밤 {hasData ? `${nightPct}%` : "—"}</span>
       </div>
       <p className={styles.miniLabel}>시간대별 매출 구성</p>
       {bars ? (
@@ -90,17 +86,17 @@ export function PopulationRhythmCard({
       </div>
       <p className={styles.miniLabel}>가장 붐비는 시간</p>
       <div className={styles.bigNum}>{peakLabel ?? "—"}</div>
-      <p className={styles.miniLabel}>낮 vs 밤 유동인구</p>
+      <p className={styles.miniLabel}>주간 vs 야간 유동인구</p>
       <div className={styles.dnHero}>
-        <span className={styles.dnBig}>낮 {hasDN ? `${dayPct}%` : "—"}</span>
-        <span className={styles.dnBig}>밤 {hasDN ? `${nightPct}%` : "—"}</span>
+        <span className={styles.dnBig}>주간 {hasDN ? `${dayPct}%` : "—"}</span>
+        <span className={styles.dnBig}>야간 {hasDN ? `${nightPct}%` : "—"}</span>
       </div>
       <div className={styles.dnBar}>
         <span className={styles.dnFill} style={{ width: `${hasDN ? dayPct : 50}%` }} />
       </div>
       <div className={styles.dnLegend}>
-        <span>낮</span>
-        <span>밤</span>
+        <span>주간</span>
+        <span>야간</span>
       </div>
     </div>
   );

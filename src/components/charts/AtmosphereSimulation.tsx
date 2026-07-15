@@ -467,8 +467,8 @@ export default function AtmosphereSimulation({
         {dayDominant != null && (
           <div style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 10, padding: "4px 10px", borderRadius: 20, background: isDay ? SCENE_COLORS.dayChipBg : SCENE_COLORS.nightChipBg, fontSize: 12, color: isDay ? "var(--color-gold)" : "var(--series-1)" }}>
             {isDay
-              ? `☀️ 낮 매출${daySalesPct != null ? ` ${daySalesPct.toFixed(1)}%` : ""} — 낮이 유리한 상권`
-              : `🌙 밤 매출${daySalesPct != null ? ` ${daySalesPct.toFixed(1)}%` : ""} — 밤이 유리한 상권`}
+              ? `☀️ 주간 매출${daySalesPct != null ? ` ${daySalesPct.toFixed(1)}%` : ""} — 주간이 유리한 상권`
+              : `🌙 야간 매출${daySalesPct != null ? ` ${daySalesPct.toFixed(1)}%` : ""} — 야간이 유리한 상권`}
           </div>
         )}
 
@@ -657,7 +657,7 @@ export default function AtmosphereSimulation({
           <div style={{ fontSize: 11, color: "var(--color-muted)", marginTop: 4 }}>
             점포 불빛 = 분기별 누적 생존율 진행
             {footTraffic != null && footTraffic > 0
-              ? dayDominant != null ? " · 인원 = 낮/밤 시간대 유동인구 기반" : " · 인원 = 평균 유동인구 기반"
+              ? dayDominant != null ? " · 인원 = 주간/야간 시간대 유동인구 기반" : " · 인원 = 평균 유동인구 기반"
               : ""}
           </div>
         )}
