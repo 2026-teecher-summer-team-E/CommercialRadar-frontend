@@ -38,6 +38,7 @@ export interface DistrictCompareItem {
   avg_population: number | null;
   survival_rate: number | null;
   closure_rate: number | null;
+  open_rate: number | null;
   district_score: number | null;
 }
 export interface DistrictCompareResponse {

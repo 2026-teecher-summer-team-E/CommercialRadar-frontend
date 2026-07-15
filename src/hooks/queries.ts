@@ -18,8 +18,8 @@ export const queryKeys = {
   compareQuarters: (ids: number[]) => ["compare-quarters", ids] as const,
   compareCategories: (ids: number[], quarter: string) =>
     ["compare-categories", ids, quarter] as const,
-  comparePage: (ids: number[], quarter: string, category: string) =>
-    ["compare-page", ids, quarter, category] as const,
+  comparePage: (ids: number[], quarter: string, category: string, rankingDistrictId?: number | null) =>
+    ["compare-page", ids, quarter, category, rankingDistrictId ?? null] as const,
   timeSeries: (id: number | string, params?: QP) => ["time-series", id, params ?? null] as const,
   categoryRanking: (id: number | string, params?: QP) =>
     ["category-ranking", id, params ?? null] as const,

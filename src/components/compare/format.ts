@@ -1,12 +1,36 @@
 /** 상권 비교 페이지에서 쓰는 숫자/텍스트 포맷 헬퍼. */
 
-/** 3개 시리즈 색상 토큰(순환). */
-export const SERIES_COLORS = ["var(--series-1)", "var(--series-2)", "var(--series-3)"] as const;
-export const SERIES_BG = ["var(--series-1-bg)", "var(--series-2-bg)", "var(--series-3-bg)"] as const;
+/** 최대 5개 상권을 차분한 톤 안에서 구분하기 위한 비교 시리즈 색상 토큰(순환). */
+export const SERIES_COLORS = [
+  "var(--compare-series-1)",
+  "var(--compare-series-2)",
+  "var(--compare-series-3)",
+  "var(--compare-series-4)",
+  "var(--compare-series-5)",
+] as const;
+export const SERIES_BG = [
+  "var(--compare-series-1-bg)",
+  "var(--compare-series-2-bg)",
+  "var(--compare-series-3-bg)",
+  "var(--compare-series-4-bg)",
+  "var(--compare-series-5-bg)",
+] as const;
+export const SERIES_GRADIENTS = [
+  "var(--compare-series-1-gradient)",
+  "var(--compare-series-2-gradient)",
+  "var(--compare-series-3-gradient)",
+  "var(--compare-series-4-gradient)",
+  "var(--compare-series-5-gradient)",
+] as const;
 
-/** i번째 상권의 시리즈 색(3개 초과 시 순환). */
+/** i번째 상권의 시리즈 색(5개 초과 시 순환). */
 export function seriesColor(i: number): string {
   return SERIES_COLORS[i % SERIES_COLORS.length];
+}
+
+/** i번째 상권의 점/칩용 그라데이션 배경. */
+export function seriesGradient(i: number): string {
+  return SERIES_GRADIENTS[i % SERIES_GRADIENTS.length];
 }
 
 /** null 안전 소수 포맷. 값이 없으면 "-". */

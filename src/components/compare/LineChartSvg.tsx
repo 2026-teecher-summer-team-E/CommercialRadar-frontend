@@ -27,6 +27,11 @@ function niceStep(span: number, targetTicks = 5): number {
 
 const yearOf = (label: string) => label.slice(0, 4);
 
+function formatQuarterLabel(label: string): string {
+  const match = /^(\d{4})-Q([1-4])$/.exec(label);
+  return match ? `${match[1]}년 ${match[2]}분기` : label;
+}
+
 /** 문자 단위 대략 폭 추정(한글/한자 등 전각은 넓게, 영문/숫자/기호는 좁게). 캔버스 측정 없이 오버플로만 방지. */
 function estimateTextWidth(text: string, fontSize = 10): number {
   let w = 0;
@@ -40,7 +45,7 @@ function estimateTextWidth(text: string, fontSize = 10): number {
 /**
  * 다중 상권 오버레이 라인 차트(순수 SVG). 분기별 생존율(%) 스냅샷을 그대로 표시.
  * Y축 상한은 100 고정, 하한은 실제 최솟값보다 1%p 낮게 잡아 작은 변화도 잘 보이게 한다.
- * X축은 연도 단위로만 라벨을 표시하고(분기 상세는 tooltip), tick은 보기 좋은 간격으로 자동 계산.
+ * X축은 연도 단위로 라벨을 표시하고, 분기 상세는 tooltip에서 확인한다.
  */
 export default function LineChartSvg({ labels, series, width = 520, height = 260 }: Props) {
   if (labels.length === 0) return null;
@@ -48,7 +53,7 @@ export default function LineChartSvg({ labels, series, width = 520, height = 260
   const padL = 40;
   const padR = 12;
   const padT = 22;
-  const padB = 28;
+  const padB = 34;
   const plotW = width - padL - padR;
   const plotH = height - padT - padB;
 
@@ -83,6 +88,9 @@ export default function LineChartSvg({ labels, series, width = 520, height = 260
       <text className={styles.axisTitle} x={0} y={12}>
         생존율(%)
       </text>
+      <text className={styles.axisTitle} x={width - padR} y={height - padB + 20} textAnchor="end">
+        연도
+      </text>
 
       {yTicks.map((t, i) => {
         const y = yAt(t);
@@ -103,7 +111,7 @@ export default function LineChartSvg({ labels, series, width = 520, height = 260
             key={`xt-${i}`}
             className={styles.axisLabel}
             x={xAt(i)}
-            y={height - padB + 16}
+            y={height - padB + 20}
             textAnchor="middle"
           >
             {yearOf(label)}
@@ -123,7 +131,6 @@ export default function LineChartSvg({ labels, series, width = 520, height = 260
             <polyline className={styles.line} points={path} stroke={color} />
             {coords.map((c) => (
               <g key={`p-${si}-${c.i}`}>
-                <circle cx={c.x} cy={c.y} r={3} fill={color} />
                 <circle
                   cx={c.x}
                   cy={c.y}
@@ -146,7 +153,7 @@ export default function LineChartSvg({ labels, series, width = 520, height = 260
           const prev = hover.pi > 0 ? s.points[hover.pi - 1] : null;
           const delta = prev != null ? v - prev : null;
 
-          const titleText = `${labels[hover.pi]} · ${s.name}`;
+          const titleText = `${formatQuarterLabel(labels[hover.pi])} · ${s.name}`;
           const row2Text = `생존율 ${v.toFixed(1)}%`;
           const row3Text =
             delta == null
@@ -154,12 +161,12 @@ export default function LineChartSvg({ labels, series, width = 520, height = 260
               : `전분기 대비 ${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%p`;
 
           const boxW = Math.max(
-            128,
-            estimateTextWidth(titleText) + 20,
-            estimateTextWidth(row2Text) + 20,
-            estimateTextWidth(row3Text) + 20,
+            148,
+            estimateTextWidth(titleText) + 28,
+            estimateTextWidth(row2Text) + 28,
+            estimateTextWidth(row3Text) + 28,
           );
-          const boxH = 54;
+          const boxH = 62;
           const x = xAt(hover.pi);
           const y = yAt(v);
           const bx = Math.min(Math.max(x - boxW / 2, 2), width - boxW - 2);
