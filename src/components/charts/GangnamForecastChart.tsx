@@ -144,12 +144,12 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
   }, []);
   const marginRight = endLabels ? 68 : 24;
 
-  // 순차 draw: 실적/밴드(0ms)가 먼저 그려지고, 예측 시나리오 라인은 뒤이어 그려진다.
+  // draw-on: 실적/밴드와 예측 시나리오 라인을 모두 0ms에 함께 그려 동시에 나타나게 한다.
   const drawBase = sequentialDraw
     ? { isAnimationActive: true, animationBegin: 0, animationDuration: 700, animationEasing: "ease-out" as const }
     : {};
   const drawForecast = sequentialDraw
-    ? { isAnimationActive: true, animationBegin: 650, animationDuration: 850, animationEasing: "ease-out" as const }
+    ? { isAnimationActive: true, animationBegin: 0, animationDuration: 850, animationEasing: "ease-out" as const }
     : {};
 
   // rows 길이는 history + forecast 합산. makeDot은 rows 선언 전에 정의되므로 직접 계산.

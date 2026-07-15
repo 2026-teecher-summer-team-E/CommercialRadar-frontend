@@ -46,7 +46,9 @@ export default function HeroSection() {
           <span className={styles.heroTitleAccent}>상권과 창업의 가능성</span>
         </h1>
         <p className={styles.heroSub}>
-          지역을 검색하시면 해당 상권의 유동인구, 생존율, 예상 매출을 한눈에 분석해 드립니다.
+          지역을 검색하시면 해당 상권의 유동인구, 생존율, 예상 매출을
+          <br />
+          한눈에 분석해 드립니다.
         </p>
 
         <div className={styles.searchBar}>

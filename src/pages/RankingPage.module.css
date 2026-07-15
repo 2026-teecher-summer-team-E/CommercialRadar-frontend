@@ -1,8 +1,9 @@
 .page {
-  padding: 28px 32px 44px;
+  /* 상권비교(ComparePage) 페이지 레이아웃에 맞춤. */
+  padding: 26px 32px 44px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 22px;
 }
 
 /* 헤더 */
@@ -34,28 +35,6 @@
   display: flex;
   gap: 8px;
 }
-.select {
-  appearance: none;
-  -webkit-appearance: none;
-  border: 1px solid var(--color-border);
-  background-color: var(--color-surface);
-  color: var(--color-text);
-  border-radius: var(--radius-sm);
-  padding: 7px 30px 7px 12px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8f9c' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-}
-.select:hover {
-  border-color: var(--color-border-strong);
-}
-.select:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 1px;
-}
 .count {
   font-size: 13px;
   color: var(--color-faint);
@@ -70,6 +49,37 @@
   box-shadow: var(--shadow-card);
   padding: 8px 8px;
   overflow-x: auto;
+}
+
+/* 더보기 버튼 */
+.moreBtn {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 11px 22px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.moreBtn:hover {
+  background: var(--color-chip);
+  border-color: var(--color-border-strong);
+}
+.moreBtn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.moreCount {
+  font-family: var(--font-num);
+  font-size: 13px;
+  color: var(--color-muted);
 }
 
 /* 상태 */

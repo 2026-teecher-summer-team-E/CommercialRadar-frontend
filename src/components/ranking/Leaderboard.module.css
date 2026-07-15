@@ -2,6 +2,20 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  /* 열 너비를 내용(정렬로 바뀌는 상권명)에 의존하지 않게 고정 → 정렬 토글 시 열이 흔들리지 않음. */
+  table-layout: fixed;
+}
+.colRank {
+  width: 7%;
+}
+.colName {
+  width: 40%;
+}
+.colNum {
+  width: 14%;
+}
+.colRisk {
+  width: 12%;
 }
 .table th {
   padding: 10px 14px;
@@ -21,26 +35,43 @@
 .sortBtn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  border: none;
+  gap: 5px;
+  border: 1px solid transparent;
   background: transparent;
-  padding: 0;
+  padding: 5px 11px;
+  border-radius: var(--radius-pill);
   font: inherit;
-  color: inherit;
+  font-weight: 600;
+  color: var(--color-muted);
   cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .sortBtn:hover {
+  background: var(--color-chip);
+  border-color: var(--color-border);
   color: var(--color-text);
 }
+.sortBtn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
 .sortArrow {
-  font-size: 10px;
+  /* 고정폭 — ▾/▲/▼ 글리프가 바뀌어도 헤더 위치가 흔들리지 않게. */
+  display: inline-block;
+  width: 12px;
+  text-align: center;
+  font-size: 11px;
   color: var(--color-faint);
 }
-.sortBtnActive {
-  color: var(--color-primary);
+/* 활성 정렬 열 헤더: 굵기·크기 변화 없이(리플로우 방지) 진한 텍스트색으로만 강조. */
+.sortBtnActive,
+.sortBtnActive:hover {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-text);
 }
 .sortBtnActive .sortArrow {
-  color: var(--color-primary);
+  color: var(--color-text);
 }
 
 .row {
@@ -77,6 +108,8 @@
   font-weight: 600;
   color: var(--color-text);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .numCell {
   font-family: var(--font-num);
@@ -146,4 +179,20 @@
 }
 .scoreEmpty {
   color: var(--color-faint);
+}
+
+/* 현재 정렬 기준 열의 값 강조(헤더 알약과 함께 어느 열로 정렬됐는지 명확히). */
+/* 정렬로 선택한 열: 굵기 변화 없이(리플로우 방지) 배경 하이라이트로만 표시. */
+.sortedCol {
+  background: var(--color-chip);
+}
+/* 1~3위 행에선 해당 금/은/동을 행 배경보다 살짝 짙게(과하지 않게). */
+.rowGold .sortedCol {
+  background: #ffefba;
+}
+.rowSilver .sortedCol {
+  background: #e1e7ef;
+}
+.rowBronze .sortedCol {
+  background: #f6d8c2;
 }
