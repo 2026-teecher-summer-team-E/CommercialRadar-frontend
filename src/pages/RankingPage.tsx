@@ -21,6 +21,7 @@ function toLeaderboardItem(it: DistrictRankingItem): DistrictCompareItem {
     avg_population: it.avg_population,
     survival_rate: validSr,
     closure_rate: validSr != null ? 100 - validSr : null,
+    open_rate: null,
     district_score: it.district_score,
   };
 }
