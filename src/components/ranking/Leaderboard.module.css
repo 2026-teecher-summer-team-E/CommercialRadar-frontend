@@ -66,13 +66,13 @@
   background: var(--color-primary-light);
 }
 .rowGold {
-  background: #fff6da;
+  background: #ffeeb8;
 }
 .rowSilver {
-  background: #eef1f4;
+  background: #e3e8f0;
 }
 .rowBronze {
-  background: #fbe9dd;
+  background: #f6d9c2;
 }
 .table td {
   padding: 14px;
