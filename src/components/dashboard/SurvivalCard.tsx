@@ -26,7 +26,6 @@ interface SurvivalCardProps {
   onScenarioClick?: (s: "low" | "mid" | "high") => void;
   totalBusiness: number | null;
   closureRate: number | null;
-  onExpand?: () => void;
   /** 업종 선택 옵션(첫 항목 = 전체 상권). */
   categoryOptions?: string[];
   /** 선택된 업종(null = 전체 상권). */
@@ -85,7 +84,7 @@ function CategoryDropdown({ options, selected, onChange }: CategoryDropdownProps
         onClick={() => setOpen((v) => !v)}
       >
         <span className={styles.categoryValue}>{selected ?? "전체 상권"}</span>
-        <svg className={styles.categoryChevron} width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+        <svg className={styles.categoryChevron} width="10" height="10" viewBox="0 0 12 12" aria-hidden="true">
           <path
             d="M2.5 4.5 6 8l3.5-3.5"
             fill="none"
@@ -138,7 +137,6 @@ export default function SurvivalCard({
   onScenarioClick,
   totalBusiness,
   closureRate,
-  onExpand,
   categoryOptions,
   selectedCategory,
   onCategoryChange,
@@ -187,11 +185,6 @@ export default function SurvivalCard({
               selected={selectedCategory ?? null}
               onChange={(c) => onCategoryChange?.(c)}
             />
-          )}
-          {onExpand && hasChart && (
-            <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="생존율 예측 확대">
-              ⤢
-            </button>
           )}
         </div>
       </div>
@@ -249,40 +242,6 @@ export default function SurvivalCard({
               sequentialDraw
             />
           </Suspense>
-          {onScenarioClick && (
-            <div className={styles.scenarioBar}>
-              <span className={styles.scenarioHint}>상권 앞 분위기 시뮬레이션</span>
-              <div className={styles.scenarioBtns}>
-                <button
-                  type="button"
-                  className={`${styles.scenarioBtn} ${styles.scenarioBtnHigh}`}
-                  onClick={() => onScenarioClick("high")}
-                  aria-label="잘풀린 미래 시뮬레이션 열기"
-                >
-                  <span className={styles.scenarioDot} style={{ background: "var(--color-green)" }} />
-                  잘풀린 미래
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.scenarioBtn} ${styles.scenarioBtnMid}`}
-                  onClick={() => onScenarioClick("mid")}
-                  aria-label="보통 미래 시뮬레이션 열기"
-                >
-                  <span className={styles.scenarioDot} style={{ background: "var(--series-1)" }} />
-                  보통 미래
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.scenarioBtn} ${styles.scenarioBtnLow}`}
-                  onClick={() => onScenarioClick("low")}
-                  aria-label="안풀린 미래 시뮬레이션 열기"
-                >
-                  <span className={styles.scenarioDot} style={{ background: "var(--color-red)" }} />
-                  안풀린 미래
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       ) : (
         !isFallback && <div className={styles.empty}>예측 데이터가 없어요.</div>

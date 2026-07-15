@@ -217,7 +217,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
     unit === "won" ? `${Math.round(v / 1e8)}억` : `${Math.round(v * 100)}%`;
 
   const makeEndLabel =
-    (scenario: "high" | "mid" | "low", color: string, labelText: string, dy: number) =>
+    (scenario: "high" | "mid" | "low", color: string, dy: number) =>
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (props: any) => {
       const { x, y, index, value } = props;
@@ -236,7 +236,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           fontWeight={700}
           textAnchor="start"
         >
-          {labelText} {pct}%
+          {pct}%
         </text>
       );
     };
@@ -282,7 +282,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           // wrapper와 형제 관계)에 z-index를 줘야 범례 텍스트 위로 확실히 올라온다.
           wrapperStyle={{ zIndex: 50 }}
         />
-        <Legend wrapperStyle={{ transform: "translateX(20px)" }} />
+        <Legend wrapperStyle={{ transform: "translateX(40px)" }} />
         <Area
           dataKey="band"
           name="예측 범위"
@@ -303,7 +303,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           strokeWidth={clickable ? 2.5 : 1.5}
           strokeDasharray="5 5"
           dot={clickable ? makeDot("high", FORECAST_COLORS.high) : false}
-          label={makeEndLabel("high", FORECAST_COLORS.high, "잘풀린", -6)}
+          label={makeEndLabel("high", FORECAST_COLORS.high, -6)}
           connectNulls
           {...drawForecast}
         />
@@ -315,7 +315,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           strokeWidth={clickable ? 3 : 2}
           strokeDasharray="5 5"
           dot={clickable ? makeDot("mid", FORECAST_COLORS.mid) : { r: 2 }}
-          label={makeEndLabel("mid", FORECAST_COLORS.mid, "보통", 4)}
+          label={makeEndLabel("mid", FORECAST_COLORS.mid, 4)}
           connectNulls
           {...drawForecast}
         />
@@ -327,7 +327,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           strokeWidth={clickable ? 2.5 : 1.5}
           strokeDasharray="5 5"
           dot={clickable ? makeDot("low", FORECAST_COLORS.low) : false}
-          label={makeEndLabel("low", FORECAST_COLORS.low, "안풀린", 14)}
+          label={makeEndLabel("low", FORECAST_COLORS.low, 14)}
           connectNulls
           {...drawForecast}
         />

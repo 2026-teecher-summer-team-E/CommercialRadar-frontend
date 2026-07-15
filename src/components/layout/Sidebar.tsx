@@ -21,6 +21,14 @@ function MapIcon() {
     </svg>
   );
 }
+function DetailIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none">
+      <rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M8.5 8h7M8.5 12h7M8.5 16h4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  );
+}
 function CompareIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none">
@@ -61,15 +69,16 @@ function GearIcon() {
   );
 }
 
+// MapPage.DEFAULT_DISTRICT_ID(1315)와 동일하게 유지 — 사이드바에서 바로 진입할 기본 상권.
+const DEFAULT_DISTRICT_ID = 1315;
+
 const NAV = [
+  { to: "/", label: "지역 분석", Icon: MapIcon, end: true },
   {
-    to: "/",
-    label: "지역 분석",
-    Icon: MapIcon,
-    end: true,
-    // 상세 분석 페이지(/dashboard/:id)는 지도에서 상권을 골라 들어가는 하위 화면이라
-    // "지역 분석" 메뉴가 계속 선택된 상태로 보여야 자연스럽다.
-    activeMatch: (pathname: string) => pathname === "/" || pathname.startsWith("/dashboard"),
+    to: `/dashboard/${DEFAULT_DISTRICT_ID}`,
+    label: "상세 분석",
+    Icon: DetailIcon,
+    activeMatch: (pathname: string) => pathname.startsWith("/dashboard"),
   },
   { to: "/compare", label: "상권 비교", Icon: CompareIcon },
   { to: "/ranking", label: "랭킹", Icon: RankIcon },
