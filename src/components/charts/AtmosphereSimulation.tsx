@@ -15,8 +15,17 @@ const FILE_FACING: Record<string, number> = {
   "/lottie/walking-5.json": -1, // 뽀빠이(노인)는 기본과 반대를 봄
   "/lottie/walking-7.json": -1, // 노인 여성(보행보조기)도 기본과 반대를 봄
 };
-/** walking-2.json, walking-3.json … 최대 이 수까지 자동 감지 */
+/** walking-2.json, walking-3.json … 최대 이 수까지 존재 */
 const LOTTIE_VARIANT_MAX = 7;
+/**
+ * 사용할 Lottie 파일 고정 목록: walking.json(기본) + walking-2..MAX 변주.
+ * 파일이 리포에 고정돼 있어 런타임 HEAD 탐지 없이 첫 렌더부터 바로 쓴다.
+ * (탐지 지연 동안 기본 캐릭터로 떴다가 확 바뀌던 이질적인 스왑 제거)
+ */
+const LOTTIE_FILES: string[] = [
+  CROWD_LOTTIE_BASE,
+  ...Array.from({ length: LOTTIE_VARIANT_MAX - 1 }, (_, i) => `/lottie/walking-${i + 2}.json`),
+];
 
 /** 타임랩스: 분기당 표시 시간(ms), 끝에 정지 시간(ms), 총 분기 수 */
 const TIMELAPSE_QUARTER_MS = 1200;
@@ -295,33 +304,10 @@ export default function AtmosphereSimulation({
   // ── 폐업 수 계산 (100곳 기준) ─────────────────────────────────────────────
   const closedCount = Math.round((100 - liveRate));
 
-  // ── Lottie 파일 감지 ───────────────────────────────────────────────────────
-  const [lottieFiles, setLottieFiles] = useState<string[]>([]);
+  // ── Lottie 파일 ────────────────────────────────────────────────────────────
+  // 파일이 고정이라 런타임 탐지 없이 고정 목록을 즉시 사용 → 캐릭터 스왑(이질적 전환) 없음.
+  const lottieFiles = LOTTIE_FILES;
   const useLottie = lottieFiles.length > 0;
-
-  useEffect(() => {
-    let alive = true;
-    const checkFile = (path: string): Promise<string | null> =>
-      fetch(path, { method: "HEAD" })
-        .then((r) => {
-          const isJson = (r.headers.get("content-type") ?? "").includes("json");
-          return r.ok && isJson ? path : null;
-        })
-        .catch(() => null);
-
-    checkFile(CROWD_LOTTIE_BASE).then(async (base) => {
-      if (!alive || !base) return;
-      const found: string[] = [base];
-      for (let v = 2; v <= LOTTIE_VARIANT_MAX; v++) {
-        const path = `/lottie/walking-${v}.json`;
-        const result = await checkFile(path);
-        if (result) found.push(result);
-        else break;
-      }
-      if (alive) setLottieFiles(found);
-    });
-    return () => { alive = false; };
-  }, []);
 
   const players = useRef<(DotLottie | null)[]>([]);
   useEffect(() => {
