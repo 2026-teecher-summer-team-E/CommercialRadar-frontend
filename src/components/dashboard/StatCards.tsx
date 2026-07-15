@@ -182,27 +182,34 @@ export function WeekendCard({
           <h3 className={styles.title}>요일별 매출</h3>
           <p className={styles.sub}>유동인구 중 토·일 비중</p>
         </div>
-        {onExpand && (
-          <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="요일별 매출 확대">
-            ⤢
-          </button>
-        )}
+        <div className={styles.weekendHeadRight}>
+          <div className={styles.weekendHeadRightNum}>
+            {pct != null && (
+              <span className={`${styles.deltaTagBlue} ${styles.weekendTagInline}`}>
+                {pct >= WEEKEND_AVG_PCT ? "주말 집중" : "주중 우위"}
+              </span>
+            )}
+            {pct != null && <span className={styles.dnBig}>{pct}%</span>}
+            {onExpand && (
+              <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="요일별 매출 확대">
+                ⤢
+              </button>
+            )}
+          </div>
+          <p className={styles.weekendAvgNote}>전체 상권 평균 {WEEKEND_AVG_PCT}%</p>
+        </div>
       </div>
-      {pct != null && (
-        <span className={styles.deltaTagBlue}>{pct >= WEEKEND_AVG_PCT ? "주말 집중" : "주중 우위"}</span>
-      )}
       <div className={styles.weekendRow}>
-        <span className={styles.bigNum}>{pct != null ? `${pct}%` : "—"}</span>
         {bars ? (
-          <div className={styles.miniBars}>
+          <div className={`${styles.miniBars} ${styles.weekendBars}`}>
             {bars.map((h, i) => (
               <div key={days![i].slot} className={styles.miniCol}>
-                <span className={styles.miniVal}>{barPcts![i]}%</span>
+                <span className={`${styles.miniVal} ${styles.weekendMiniVal}`}>{barPcts![i]}%</span>
                 <span
                   className={h >= 100 ? styles.miniBarTop : styles.miniBar}
                   style={{ height: `${Math.max(10, h)}%` }}
                 />
-                <span className={styles.miniSlot}>{days![i].slot}</span>
+                <span className={`${styles.miniSlot} ${styles.weekendMiniSlot}`}>{days![i].slot}</span>
               </div>
             ))}
           </div>
@@ -210,7 +217,6 @@ export function WeekendCard({
           <div className={styles.miniEmpty}>지표없음</div>
         )}
       </div>
-      <p className={styles.note}>전체 상권 평균 {WEEKEND_AVG_PCT}%</p>
     </div>
   );
 }
