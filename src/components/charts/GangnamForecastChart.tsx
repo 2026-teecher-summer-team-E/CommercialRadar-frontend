@@ -84,9 +84,9 @@ function ForecastTooltip({
   for (const p of payload) byKey[p.dataKey] = p.value;
   const order: [string, string, string][] = [
     ["actual", "실적", FORECAST_COLORS.actual],
-    ["mid", "보통 미래(p50)", FORECAST_COLORS.mid],
-    ["low", "안풀린 미래(p10)", FORECAST_COLORS.low],
-    ["high", "잘풀린 미래(p90)", FORECAST_COLORS.high],
+    ["mid", "중립 시나리오(p50)", FORECAST_COLORS.mid],
+    ["low", "부정적 시나리오(p10)", FORECAST_COLORS.low],
+    ["high", "긍정적 시나리오(p90)", FORECAST_COLORS.high],
   ];
   const lines = order
     .map(([key, name, color]) => ({ name, color, value: byKey[key] }))
@@ -298,7 +298,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
         <Line
           type="monotone"
           dataKey="high"
-          name="잘풀린 미래(p90)"
+          name="긍정적 시나리오(p90)"
           stroke={FORECAST_COLORS.high}
           strokeWidth={clickable ? 2.5 : 1.5}
           strokeDasharray="5 5"
@@ -310,7 +310,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
         <Line
           type="monotone"
           dataKey="mid"
-          name="보통 미래(p50)"
+          name="중립 시나리오(p50)"
           stroke={FORECAST_COLORS.mid}
           strokeWidth={clickable ? 3 : 2}
           strokeDasharray="5 5"
@@ -322,7 +322,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
         <Line
           type="monotone"
           dataKey="low"
-          name="안풀린 미래(p10)"
+          name="부정적 시나리오(p10)"
           stroke={FORECAST_COLORS.low}
           strokeWidth={clickable ? 2.5 : 1.5}
           strokeDasharray="5 5"

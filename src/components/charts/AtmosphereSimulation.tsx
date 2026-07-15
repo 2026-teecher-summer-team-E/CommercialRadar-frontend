@@ -132,9 +132,9 @@ const MONTHS_PER_QUARTER = 3;
 const SCENARIO_MIN_CLOSED: Record<AtmoScenario, number> = { high: 1, mid: 2, low: 3 };
 
 const SCENARIO = {
-  high: { title: "잘풀린 미래", mood: "활기찬 상권", count: 16, lit: 0.65, street: "var(--color-border-strong)", accent: "var(--color-green)", desc: "사람이 북적이는 미래 — 유동인구가 몰립니다." },
-  mid:  { title: "보통 미래",   mood: "무난한 상권", count: 9,  lit: 0.4,  street: "var(--color-border)", accent: "var(--series-1)", desc: "평소 수준의 미래 — 꾸준한 발걸음." },
-  low:  { title: "안풀린 미래", mood: "한산한 상권", count: 4,  lit: 0.15, street: "var(--color-faint)", accent: "var(--color-red)", desc: "발길이 뜸한 미래 — 거리가 비어갑니다." },
+  high: { title: "긍정적 시나리오", mood: "활기찬 상권", count: 16, lit: 0.65, street: "var(--color-border-strong)", accent: "var(--color-green)", desc: "사람이 북적이는 미래 — 유동인구가 몰립니다." },
+  mid:  { title: "중립 시나리오",   mood: "무난한 상권", count: 9,  lit: 0.4,  street: "var(--color-border)", accent: "var(--series-1)", desc: "평소 수준의 미래 — 꾸준한 발걸음." },
+  low:  { title: "부정적 시나리오", mood: "한산한 상권", count: 4,  lit: 0.15, street: "var(--color-faint)", accent: "var(--color-red)", desc: "발길이 뜸한 미래 — 거리가 비어갑니다." },
 } as const;
 
 const SCENE_COLORS = {
