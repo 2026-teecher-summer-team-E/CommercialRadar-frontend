@@ -4,3 +4,9 @@
 .chartWrap :global(.recharts-wrapper) *:focus {
   outline: none;
 }
+
+/* 범례 항목(긍정적/중립/부정적) 사이 기본 간격(marginRight:10px)이 너무 좁아 보여 넓힌다. */
+.chartWrap :global(.recharts-legend-item) {
+  margin-right: 20px !important;
+}
+

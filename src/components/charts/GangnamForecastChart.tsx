@@ -282,7 +282,14 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           // wrapper와 형제 관계)에 z-index를 줘야 범례 텍스트 위로 확실히 올라온다.
           wrapperStyle={{ zIndex: 50 }}
         />
-        <Legend wrapperStyle={{ transform: "translateX(40px)" }} />
+        {/* itemSorter 기본값("value")은 라벨 텍스트를 가나다순 정렬해 "긍정적·부정적·중립"
+            순으로 보이게 만든다. dataKey 기준 고정 순위로 긍정적·중립·부정적 순을 강제한다. */}
+        <Legend
+          wrapperStyle={{ transform: "translateX(40px)" }}
+          itemSorter={(item) =>
+            ({ high: 0, mid: 1, low: 2 } as Record<string, number>)[item.dataKey as string] ?? 99
+          }
+        />
         <Area
           dataKey="band"
           name="예측 범위"
