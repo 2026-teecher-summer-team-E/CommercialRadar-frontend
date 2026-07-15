@@ -43,8 +43,8 @@ export default function GangnamCafeDemoPage() {
       <h1>강남역 상권 · 카페(커피-음료)</h1>
       <p style={{ color: "#555" }}>
         {metric === "survival"
-          ? "누적 생존율(복리) — 창업 시점 대비 살아남은 비율. 시간이 갈수록 감소하며, 미래는 가능한 범위(안풀린·보통·잘풀린 미래, 점선 + 밴드)."
-          : "과거 실적(실선)과 가능한 미래 범위(안풀린·보통·잘풀린 미래, 점선 + 밴드)."}
+          ? "누적 생존율(복리) — 창업 시점 대비 살아남은 비율. 시간이 갈수록 감소하며, 미래는 가능한 범위(부정적·중립·긍정적 시나리오, 점선 + 밴드)."
+          : "과거 실적(실선)과 가능한 미래 범위(부정적·중립·긍정적 시나리오, 점선 + 밴드)."}
       </p>
 
       <div style={{ display: "flex", gap: 8, margin: "16px 0" }}>
@@ -60,7 +60,7 @@ export default function GangnamCafeDemoPage() {
             <ForecastChart history={data.history} forecast={data.forecast} unit={data.unit} onScenarioClick={setSim} />
           </Suspense>
           <p style={{ color: "#8b90a0", fontSize: 13, marginTop: 4 }}>
-            💡 미래 선(안풀린·보통·잘풀린)을 클릭하면 그 미래의 <b>상권 분위기</b>가 재생됩니다.
+            💡 미래 선(부정적·중립·긍정적)을 클릭하면 그 미래의 <b>상권 분위기</b>가 재생됩니다.
           </p>
         </>
       ) : (

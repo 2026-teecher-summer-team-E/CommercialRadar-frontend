@@ -92,18 +92,6 @@ export const AUDIENCE_CARDS: AudienceCard[] = [
   },
 ];
 
-export interface StatItem {
-  value: string;
-  label: string;
-  note: string;
-}
-
-export const STATS: StatItem[] = [
-  { value: "150,000건+", label: "누적 분석 건수", note: "공공데이터 기반 · 2026.06 기준" },
-  { value: "50,000명+", label: "활용 회원 수", note: "공공데이터 기반 · 2026.06 기준" },
-  { value: "424개", label: "총 행정동 수", note: "공공데이터 기반 · 2026.06 기준" },
-];
-
 export const DATA_PARTNERS = [
   "통신사 유동인구",
   "카드사 매출",

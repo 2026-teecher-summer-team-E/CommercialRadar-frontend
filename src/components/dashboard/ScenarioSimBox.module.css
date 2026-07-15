@@ -1,0 +1,75 @@
+/* 옆 카드(종합점수/생존율예측)와 동일한 흰 카드 컨테이너 톤(테두리+그림자 포함) —
+   안쪽 회색 pill이 아니라 카드 자체의 배경(흰색)에 맞춘다. */
+.scenarioBar {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+/* 위 카드(상권 종합 점수/생존율 예측)의 타이틀과 동일한 위치·정렬·크기·패딩:
+   카드 맨 위, 좌측 정렬. */
+.scenarioHint {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: left;
+}
+.scenarioBtns {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.scenarioBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.scenarioBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card);
+}
+.scenarioDot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-surface);
+  flex: none;
+}
+.scenarioBtnHigh {
+  background: var(--color-green-bg);
+  color: var(--color-green);
+}
+.scenarioBtnHigh:hover {
+  background: var(--color-green);
+  color: #fff;
+}
+.scenarioBtnMid {
+  background: var(--series-1-bg);
+  color: var(--color-primary-dark);
+}
+.scenarioBtnMid:hover {
+  background: var(--series-1);
+  color: #fff;
+}
+.scenarioBtnLow {
+  background: var(--series-7-bg);
+  color: var(--color-red);
+}
+.scenarioBtnLow:hover {
+  background: var(--color-red);
+  color: #fff;
+}

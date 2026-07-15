@@ -38,6 +38,7 @@ export interface DistrictCompareItem {
   avg_population: number | null;
   survival_rate: number | null;
   closure_rate: number | null;
+  open_rate: number | null;
   district_score: number | null;
 }
 export interface DistrictCompareResponse {
@@ -121,11 +122,28 @@ export interface PopularCategoryItem {
   popularity_index: number;
   trend_pct: number | null;
   qoq_business_change: number | null;
+  core_age_group: string | null;
 }
 export interface PopularCategoriesResponse {
   period: string | null;
   anchor: string;
   items: PopularCategoryItem[];
+}
+
+// ── 인기 업종 월별 추이 (GET /api/categories/popular/history) ──
+export interface PopularityHistoryPoint {
+  period: string;
+  popularity_index: number;
+}
+export interface PopularityHistorySeries {
+  category_name: string;
+  values: PopularityHistoryPoint[];
+}
+export interface PopularityHistoryResponse {
+  year: string | null;
+  available_years: string[];
+  periods: string[];
+  series: PopularityHistorySeries[];
 }
 
 // ── 검색 추이가 비슷한 업종 (GET /api/categories/{category_name}/related) ──

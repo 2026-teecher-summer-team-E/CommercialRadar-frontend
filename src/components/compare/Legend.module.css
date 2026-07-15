@@ -13,9 +13,11 @@
   gap: 6px;
 }
 .dot {
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
+  border: 1px solid color-mix(in srgb, var(--color-surface) 75%, transparent);
   border-radius: var(--radius-pill);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text) 8%, transparent);
   flex: none;
 }
 .name {

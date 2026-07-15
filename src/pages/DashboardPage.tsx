@@ -1,5 +1,5 @@
-import { lazy, Suspense, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "../lib/apiClient";
 import { commercialApi } from "../services/commercialApi";
@@ -13,8 +13,10 @@ import type {
   AgeSlice,
 } from "../types";
 import type { ForecastPoint } from "../components/charts/ForecastChart";
+import type { DistrictSearchResult } from "../components/map/mapData";
 import ScoreCard from "../components/dashboard/ScoreCard";
 import SurvivalCard from "../components/dashboard/SurvivalCard";
+import ScenarioSimBox from "../components/dashboard/ScenarioSimBox";
 import PopulationHeatmap from "../components/dashboard/PopulationHeatmap";
 import AgeGenderCard from "../components/dashboard/AgeGenderCard";
 import RentCard from "../components/dashboard/RentCard";
@@ -25,7 +27,7 @@ import { DayNightCard, ForeignCard, PerCapitaCard, PopulationRhythmCard, Weekend
 import ExpandModal from "../components/dashboard/ExpandModal";
 import { quarterShort } from "../components/dashboard/format";
 import { useFavoriteDistrict } from "../hooks/useFavoriteDistrict";
-import { queryKeys, useCategoryRanking } from "../hooks/queries";
+import { queryKeys, useCategoryRanking, useDistrictSearch } from "../hooks/queries";
 import FavoriteStar from "../components/common/FavoriteStar";
 import PageLoader from "../components/common/PageLoader";
 import styles from "./DashboardPage.module.css";
@@ -209,15 +211,48 @@ async function fetchDashboard(id: number): Promise<DashboardData> {
 
 export default function DashboardPage() {
   const { districtCode } = useParams();
+  const navigate = useNavigate();
   const id = useMemo<number | null>(() => {
     const n = Number(districtCode);
     return districtCode && Number.isFinite(n) && n > 0 ? n : null;
   }, [districtCode]);
 
-  const [modal, setModal] = useState<"forecast" | "heatmap" | null>(null);
+  const [modal, setModal] = useState<"heatmap" | null>(null);
   const [sim, setSim] = useState<"low" | "mid" | "high" | null>(null);
   // 생존율 예측 업종 필터. null = 전체 상권(기존 기본 동작).
   const [selCategory, setSelCategory] = useState<string | null>(null);
+
+  // 상단 검색 바(지역 분석 페이지와 동일한 스타일) — 검색해서 다른 상권 상세로 바로 이동.
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchBarRef = useRef<HTMLDivElement | null>(null);
+  const keyword = query.trim();
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(keyword), 300);
+    return () => clearTimeout(t);
+  }, [keyword]);
+  const searchQuery = useDistrictSearch(debouncedQuery);
+  const searchOptions: DistrictSearchResult[] =
+    (keyword && debouncedQuery ? searchQuery.data : undefined) ?? [];
+  const handlePickSearch = (result: DistrictSearchResult) => {
+    setQuery("");
+    setSearchFocused(false);
+    navigate(`/dashboard/${result.id}`);
+  };
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchOptions.length > 0) handlePickSearch(searchOptions[0]);
+  };
+  useEffect(() => {
+    if (!searchFocused) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (searchBarRef.current && !searchBarRef.current.contains(e.target as Node)) {
+        setSearchFocused(false);
+      }
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [searchFocused]);
 
   const dashboardQuery = useQuery({
     queryKey: queryKeys.dashboard(id ?? -1),
@@ -517,15 +552,21 @@ export default function DashboardPage() {
   }, [stats, d]);
 
   const region = d ? [d.gu_name, d.dong_name].filter(Boolean).join(" ") || null : null;
-  const regionLine = d
-    ? [d.gu_name, d.dong_name, d.district_name].filter(Boolean).join(" ") || null
-    : null;
 
   // ── 상태 렌더 ───────────────────────────────────────────
   if (loading) {
     return (
       <div className={styles.page}>
-        <PageNav />
+        <TopSearchBar
+          query={query}
+          onQueryChange={setQuery}
+          searchFocused={searchFocused}
+          onFocus={() => setSearchFocused(true)}
+          onKeyDown={handleSearchKeyDown}
+          searchBarRef={searchBarRef}
+          searchOptions={searchOptions}
+          onPickSearch={handlePickSearch}
+        />
         <Header name={null} region={null} typeName={null} />
         <div className={styles.skeletonWrap}>
           <div className={styles.skeleton} />
@@ -539,7 +580,16 @@ export default function DashboardPage() {
   if (error || !data || !d) {
     return (
       <div className={styles.page}>
-        <PageNav />
+        <TopSearchBar
+          query={query}
+          onQueryChange={setQuery}
+          searchFocused={searchFocused}
+          onFocus={() => setSearchFocused(true)}
+          onKeyDown={handleSearchKeyDown}
+          searchBarRef={searchBarRef}
+          searchOptions={searchOptions}
+          onPickSearch={handlePickSearch}
+        />
         <Header name={null} region={null} typeName={null} />
         <div className={styles.empty}>상권 데이터를 불러오는 데 실패했어요. 새로고침하거나 다른 상권을 선택해보세요.</div>
       </div>
@@ -559,26 +609,20 @@ export default function DashboardPage() {
 
   return (
     <div className={styles.page}>
-      <PageNav />
+      <TopSearchBar
+        query={query}
+        onQueryChange={setQuery}
+        searchFocused={searchFocused}
+        onFocus={() => setSearchFocused(true)}
+        onKeyDown={handleSearchKeyDown}
+        searchBarRef={searchBarRef}
+        searchOptions={searchOptions}
+        onPickSearch={handlePickSearch}
+      />
       <Header name={d.district_name} region={region} typeName={d.type_name} districtId={d.id} />
 
-      {/* 상단 2열: 종합점수 + 생존율 예측 */}
+      {/* 상단 2열: 생존율 예측 + 종합점수(+시뮬레이션 진입) */}
       <section className={styles.topGrid}>
-        <ScoreCard
-          districtName={d.district_name}
-          typeName={d.type_name}
-          regionLine={regionLine}
-          score={activeStats?.district_score ?? null}
-          badges={scoreBadges}
-          survivalRate={activeStats?.survival_rate ?? null}
-          closureRate={activeStats?.closure_rate ?? null}
-          avgPopulation={d.avg_population}
-          weekdayPct={flow?.weekday ?? null}
-          weekendPct={flow?.weekend ?? null}
-          peakLabel={peakLabel}
-          rankLabel={rankLabel}
-        />
-
         <SurvivalCard
           current={survivalStartPct}
           forecast={forecastNextPct}
@@ -589,12 +633,25 @@ export default function DashboardPage() {
           onScenarioClick={setSim}
           totalBusiness={activeStats?.total_business ?? null}
           closureRate={activeStats?.closure_rate ?? null}
-          onExpand={() => setModal("forecast")}
           categoryOptions={categoryOptions}
           selectedCategory={selCategory}
           onCategoryChange={setSelCategory}
           fallbackNote={fallbackNote}
         />
+
+        <div className={styles.topGridLeft}>
+          <ScoreCard
+            score={activeStats?.district_score ?? null}
+            badges={scoreBadges}
+            survivalRate={activeStats?.survival_rate ?? null}
+            closureRate={activeStats?.closure_rate ?? null}
+            avgPopulation={d.avg_population}
+            weekdayPct={flow?.weekday ?? null}
+            weekendPct={flow?.weekend ?? null}
+            rankLabel={rankLabel}
+          />
+          <ScenarioSimBox onScenarioClick={setSim} />
+        </div>
       </section>
 
       {/* 유동인구 */}
@@ -619,7 +676,7 @@ export default function DashboardPage() {
               )}
             </div>
             {data.heatmap ? (
-              <PopulationHeatmap byTime={data.heatmap.by_time} byDay={data.heatmap.by_day} />
+              <PopulationHeatmap byTime={data.heatmap.by_time} byDay={data.heatmap.by_day} showValues />
             ) : (
               <div className={styles.empty}>이 상권의 유동인구 기록이 아직 없습니다.</div>
             )}
@@ -638,7 +695,11 @@ export default function DashboardPage() {
             nightPct={data.salesBands?.nighttime_pct ?? null}
             bands={data.salesBands?.bands ?? null}
           />
-          <ForeignCard pct={data.foreign?.foreigner_pct ?? null} />
+          <ForeignCard
+            pct={data.foreign?.foreigner_pct ?? null}
+            count={data.foreign?.foreigner_count ?? null}
+            total={data.foreign?.total_count ?? null}
+          />
         </div>
       </section>
 
@@ -676,33 +737,6 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* 확대 모달: 생존율 예측 */}
-      {modal === "forecast" && (
-        <ExpandModal
-          title="생존율 예측"
-          subtitle="ML 향후 4분기 전망"
-          onClose={() => setModal(null)}
-        >
-          <div className={styles.modalChart}>
-            <SurvivalCard
-              current={survivalStartPct}
-              forecast={forecastNextPct}
-              delta={forecastDelta}
-              points={forecastPoints}
-              history={survivalHistory}
-              forecastSeries={survivalForecast}
-              onScenarioClick={setSim}
-              totalBusiness={activeStats?.total_business ?? null}
-              closureRate={activeStats?.closure_rate ?? null}
-              categoryOptions={categoryOptions}
-              selectedCategory={selCategory}
-              onCategoryChange={setSelCategory}
-              fallbackNote={fallbackNote}
-            />
-          </div>
-        </ExpandModal>
-      )}
-
       {/* 확대 모달: 유동인구 히트맵 */}
       {modal === "heatmap" && data.heatmap && (
         <ExpandModal
@@ -710,7 +744,7 @@ export default function DashboardPage() {
           subtitle="시간대 × 요일 평균 유동인구 상세"
           onClose={() => setModal(null)}
         >
-          <PopulationHeatmap byTime={data.heatmap.by_time} byDay={data.heatmap.by_day} showValues />
+          <PopulationHeatmap byTime={data.heatmap.by_time} byDay={data.heatmap.by_day} showValues wide />
         </ExpandModal>
       )}
 
@@ -734,15 +768,95 @@ export default function DashboardPage() {
   );
 }
 
-/** 대시보드 상단 위치 표시줄: 어디서 왔고, 지금 어떤 페이지인지 보여준다. */
-function PageNav() {
+/** 상단 검색 바 — 지역 분석(지도) 페이지와 동일한 스타일. 검색해서 다른 상권 상세로 이동. */
+function TopSearchBar({
+  query,
+  onQueryChange,
+  searchFocused,
+  onFocus,
+  onKeyDown,
+  searchBarRef,
+  searchOptions,
+  onPickSearch,
+}: {
+  query: string;
+  onQueryChange: (v: string) => void;
+  searchFocused: boolean;
+  onFocus: () => void;
+  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  searchBarRef: React.RefObject<HTMLDivElement | null>;
+  searchOptions: DistrictSearchResult[];
+  onPickSearch: (result: DistrictSearchResult) => void;
+}) {
   return (
-    <div className={styles.pageNav}>
-      <Link to="/" className={styles.pageNavBack}>
-        ← 지역 분석
+    <div className={styles.topRow}>
+      <Link to="/" className={styles.backToMapBtn} aria-label="지역 분석으로 돌아가기">
+        ← 지역 분석으로 돌아가기
       </Link>
-      <span className={styles.pageNavDivider} />
-      <span className={styles.pageNavActive}>상세 분석 보기</span>
+      <div className={styles.searchBar} style={{ position: "relative" }} ref={searchBarRef}>
+        <span className={styles.searchIcon} aria-hidden>
+          ⌕
+        </span>
+        <input
+          className={styles.searchInput}
+          type="text"
+          placeholder="지역·상권·업종 검색…"
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
+          onFocus={onFocus}
+          onKeyDown={onKeyDown}
+        />
+        {searchFocused && query.trim() && searchOptions.length > 0 && (
+          <ul
+            style={{
+              position: "absolute",
+              top: "calc(100% + 6px)",
+              left: 0,
+              right: 0,
+              zIndex: 1200,
+              listStyle: "none",
+              margin: 0,
+              padding: 6,
+              background: "var(--color-surface)",
+              border: "1px solid var(--color-border)",
+              borderRadius: 12,
+              boxShadow: "var(--shadow-pop)",
+              maxHeight: 320,
+              overflowY: "auto",
+            }}
+          >
+            {searchOptions.map((o) => (
+              <li key={o.id}>
+                <button
+                  type="button"
+                  onClick={() => onPickSearch(o)}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "9px 12px",
+                    border: "none",
+                    background: "transparent",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    fontFamily: "var(--font-sans)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                  }}
+                >
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text)" }}>
+                    {o.district_name}
+                  </span>
+                  <span style={{ fontSize: 12, color: "var(--color-muted)" }}>
+                    {[o.gu_name, o.dong_name].filter(Boolean).join(" · ")}
+                    {o.type_name ? ` · ${o.type_name}` : ""}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

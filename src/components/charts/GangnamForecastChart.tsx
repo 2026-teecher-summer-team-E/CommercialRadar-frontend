@@ -84,9 +84,9 @@ function ForecastTooltip({
   for (const p of payload) byKey[p.dataKey] = p.value;
   const order: [string, string, string][] = [
     ["actual", "실적", FORECAST_COLORS.actual],
-    ["mid", "보통 미래(p50)", FORECAST_COLORS.mid],
-    ["low", "안풀린 미래(p10)", FORECAST_COLORS.low],
-    ["high", "잘풀린 미래(p90)", FORECAST_COLORS.high],
+    ["mid", "중립 시나리오(p50)", FORECAST_COLORS.mid],
+    ["low", "부정적 시나리오(p10)", FORECAST_COLORS.low],
+    ["high", "긍정적 시나리오(p90)", FORECAST_COLORS.high],
   ];
   const lines = order
     .map(([key, name, color]) => ({ name, color, value: byKey[key] }))
@@ -144,12 +144,12 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
   }, []);
   const marginRight = endLabels ? 68 : 24;
 
-  // 순차 draw: 실적/밴드(0ms)가 먼저 그려지고, 예측 시나리오 라인은 뒤이어 그려진다.
+  // draw-on: 실적/밴드와 예측 시나리오 라인을 모두 0ms에 함께 그려 동시에 나타나게 한다.
   const drawBase = sequentialDraw
     ? { isAnimationActive: true, animationBegin: 0, animationDuration: 700, animationEasing: "ease-out" as const }
     : {};
   const drawForecast = sequentialDraw
-    ? { isAnimationActive: true, animationBegin: 650, animationDuration: 850, animationEasing: "ease-out" as const }
+    ? { isAnimationActive: true, animationBegin: 0, animationDuration: 850, animationEasing: "ease-out" as const }
     : {};
 
   // rows 길이는 history + forecast 합산. makeDot은 rows 선언 전에 정의되므로 직접 계산.
@@ -217,7 +217,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
     unit === "won" ? `${Math.round(v / 1e8)}억` : `${Math.round(v * 100)}%`;
 
   const makeEndLabel =
-    (scenario: "high" | "mid" | "low", color: string, labelText: string, dy: number) =>
+    (scenario: "high" | "mid" | "low", color: string, dy: number) =>
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (props: any) => {
       const { x, y, index, value } = props;
@@ -236,7 +236,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           fontWeight={700}
           textAnchor="start"
         >
-          {labelText} {pct}%
+          {pct}%
         </text>
       );
     };
@@ -282,7 +282,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           // wrapper와 형제 관계)에 z-index를 줘야 범례 텍스트 위로 확실히 올라온다.
           wrapperStyle={{ zIndex: 50 }}
         />
-        <Legend wrapperStyle={{ transform: "translateX(20px)" }} />
+        <Legend wrapperStyle={{ transform: "translateX(40px)" }} />
         <Area
           dataKey="band"
           name="예측 범위"
@@ -298,36 +298,36 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
         <Line
           type="monotone"
           dataKey="high"
-          name="잘풀린 미래(p90)"
+          name="긍정적 시나리오(p90)"
           stroke={FORECAST_COLORS.high}
           strokeWidth={clickable ? 2.5 : 1.5}
           strokeDasharray="5 5"
           dot={clickable ? makeDot("high", FORECAST_COLORS.high) : false}
-          label={makeEndLabel("high", FORECAST_COLORS.high, "잘풀린", -6)}
+          label={makeEndLabel("high", FORECAST_COLORS.high, -6)}
           connectNulls
           {...drawForecast}
         />
         <Line
           type="monotone"
           dataKey="mid"
-          name="보통 미래(p50)"
+          name="중립 시나리오(p50)"
           stroke={FORECAST_COLORS.mid}
           strokeWidth={clickable ? 3 : 2}
           strokeDasharray="5 5"
           dot={clickable ? makeDot("mid", FORECAST_COLORS.mid) : { r: 2 }}
-          label={makeEndLabel("mid", FORECAST_COLORS.mid, "보통", 4)}
+          label={makeEndLabel("mid", FORECAST_COLORS.mid, 4)}
           connectNulls
           {...drawForecast}
         />
         <Line
           type="monotone"
           dataKey="low"
-          name="안풀린 미래(p10)"
+          name="부정적 시나리오(p10)"
           stroke={FORECAST_COLORS.low}
           strokeWidth={clickable ? 2.5 : 1.5}
           strokeDasharray="5 5"
           dot={clickable ? makeDot("low", FORECAST_COLORS.low) : false}
-          label={makeEndLabel("low", FORECAST_COLORS.low, "안풀린", 14)}
+          label={makeEndLabel("low", FORECAST_COLORS.low, 14)}
           connectNulls
           {...drawForecast}
         />

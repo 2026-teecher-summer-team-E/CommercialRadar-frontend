@@ -1,0 +1,106 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.period {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+  font-family: var(--font-num);
+}
+.playBtn {
+  border: 1px solid var(--color-border);
+  background: var(--color-chip);
+  color: var(--color-text);
+  border-radius: var(--radius-pill);
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.playBtn:hover {
+  border-color: var(--color-primary-soft);
+}
+
+.chart {
+  position: relative;
+}
+
+.row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: transform 900ms ease;
+}
+.rowLabel {
+  flex: 0 0 84px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.barTrack {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 18px;
+  background: var(--color-chip);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.bar {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transition: width 900ms ease, background-color 300ms ease;
+}
+.rowValue {
+  flex: 0 0 48px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-muted);
+  font-family: var(--font-num);
+}
+
+.scrubber {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-border-strong);
+  cursor: pointer;
+}
+.dotActive {
+  composes: dot;
+  width: 18px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+}
+
+.empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--color-muted);
+  font-size: 14px;
+}

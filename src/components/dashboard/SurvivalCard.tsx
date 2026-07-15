@@ -6,8 +6,12 @@ import { fmtPct, fmtInt } from "./format";
 import PageLoader from "../common/PageLoader";
 import styles from "./SurvivalCard.module.css";
 
-// recharts가 들어있어 무거움 — 카드가 실제로 차트를 그릴 때만 로드.
-const GangnamForecastChart = lazy(() => import("../charts/GangnamForecastChart"));
+// recharts가 들어있어 무거움 — 별도 청크로 분리하되, 이 카드 모듈이 로드되는 즉시
+// 청크를 프리워밍한다. 그래야 카드 렌더 시점엔 이미 준비돼 Suspense 지연 없이
+// 생존율 카운트업과 차트 draw가 '동시에' 시작된다.
+const importForecastChart = () => import("../charts/GangnamForecastChart");
+const GangnamForecastChart = lazy(importForecastChart);
+void importForecastChart();
 
 interface SurvivalCardProps {
   /** 현재(첫) 생존율 %. */
@@ -26,7 +30,6 @@ interface SurvivalCardProps {
   onScenarioClick?: (s: "low" | "mid" | "high") => void;
   totalBusiness: number | null;
   closureRate: number | null;
-  onExpand?: () => void;
   /** 업종 선택 옵션(첫 항목 = 전체 상권). */
   categoryOptions?: string[];
   /** 선택된 업종(null = 전체 상권). */
@@ -85,7 +88,7 @@ function CategoryDropdown({ options, selected, onChange }: CategoryDropdownProps
         onClick={() => setOpen((v) => !v)}
       >
         <span className={styles.categoryValue}>{selected ?? "전체 상권"}</span>
-        <svg className={styles.categoryChevron} width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+        <svg className={styles.categoryChevron} width="10" height="10" viewBox="0 0 12 12" aria-hidden="true">
           <path
             d="M2.5 4.5 6 8l3.5-3.5"
             fill="none"
@@ -138,7 +141,6 @@ export default function SurvivalCard({
   onScenarioClick,
   totalBusiness,
   closureRate,
-  onExpand,
   categoryOptions,
   selectedCategory,
   onCategoryChange,
@@ -188,11 +190,6 @@ export default function SurvivalCard({
               onChange={(c) => onCategoryChange?.(c)}
             />
           )}
-          {onExpand && hasChart && (
-            <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="생존율 예측 확대">
-              ⤢
-            </button>
-          )}
         </div>
       </div>
 
@@ -204,8 +201,6 @@ export default function SurvivalCard({
             </div>
           ) : (
             <div className={styles.hero}>
-              <span className={styles.heroNow}>{fmtPct(animCurrent, 0)}</span>
-              <span className={styles.arrow}>→</span>
               <span className={styles.heroNext}>{fmtPct(animForecast, 0)}</span>
             </div>
           )}
@@ -249,40 +244,6 @@ export default function SurvivalCard({
               sequentialDraw
             />
           </Suspense>
-          {onScenarioClick && (
-            <div className={styles.scenarioBar}>
-              <span className={styles.scenarioHint}>상권 앞 분위기 시뮬레이션</span>
-              <div className={styles.scenarioBtns}>
-                <button
-                  type="button"
-                  className={`${styles.scenarioBtn} ${styles.scenarioBtnHigh}`}
-                  onClick={() => onScenarioClick("high")}
-                  aria-label="잘풀린 미래 시뮬레이션 열기"
-                >
-                  <span className={styles.scenarioDot} style={{ background: "var(--color-green)" }} />
-                  잘풀린 미래
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.scenarioBtn} ${styles.scenarioBtnMid}`}
-                  onClick={() => onScenarioClick("mid")}
-                  aria-label="보통 미래 시뮬레이션 열기"
-                >
-                  <span className={styles.scenarioDot} style={{ background: "var(--series-1)" }} />
-                  보통 미래
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.scenarioBtn} ${styles.scenarioBtnLow}`}
-                  onClick={() => onScenarioClick("low")}
-                  aria-label="안풀린 미래 시뮬레이션 열기"
-                >
-                  <span className={styles.scenarioDot} style={{ background: "var(--color-red)" }} />
-                  안풀린 미래
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       ) : (
         !isFallback && <div className={styles.empty}>예측 데이터가 없어요.</div>

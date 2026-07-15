@@ -76,9 +76,11 @@
 }
 
 .chipDot {
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
+  border: 1px solid color-mix(in srgb, var(--color-surface) 75%, transparent);
   border-radius: var(--radius-pill);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text) 8%, transparent);
 }
 
 .chipClose {
@@ -245,43 +247,136 @@
 
 .selectors {
   display: flex;
-  align-items: flex-end;
-  gap: 10px;
+  align-items: flex-start;
+  gap: 12px;
 }
 
-.selectorGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+.selectorDropdown {
+  position: relative;
+  min-width: 168px;
 }
 
-.selectorGroup > span {
-  padding-left: 2px;
-  color: var(--color-muted);
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.selector {
+.selectorDropdownCompact {
   min-width: 150px;
-  padding: 8px 34px 8px 12px;
-  background: var(--color-surface);
+}
+
+.selectorTrigger {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "label arrow"
+    "value arrow";
+  align-items: center;
+  column-gap: 10px;
+  width: 100%;
+  min-height: 50px;
+  padding: 8px 12px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  font-size: 13px;
+  background: color-mix(in srgb, var(--color-chip) 82%, var(--color-surface));
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--color-surface) 80%, transparent) inset;
+}
+
+.selectorDropdownCompact .selectorTrigger {
+  min-height: 44px;
+  padding: 7px 11px;
+}
+
+.selectorDropdownCompact .selectorMenu {
+  min-width: 190px;
+  right: 0;
+  left: auto;
+}
+
+.selectorTrigger:hover:not(:disabled),
+.selectorTrigger[aria-expanded="true"] {
+  border-color: var(--color-border-strong);
+  background: var(--color-chip);
+}
+
+.selectorTrigger:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.selectorTrigger:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.selectorLabel {
+  grid-area: label;
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.selectorValue {
+  grid-area: value;
+  margin-top: 3px;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.selectorArrow {
+  grid-area: arrow;
+  color: var(--color-muted);
+  font-size: 11px;
+  transform: translateY(-7px);
+}
+
+.selectorMenu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  max-height: 280px;
+  padding: 6px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-pop);
+}
+
+.selectorOption {
+  display: block;
+  width: 100%;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
   color: var(--color-text-body);
+  font-size: 14px;
+  line-height: 1.25;
+  text-align: left;
   cursor: pointer;
 }
 
-.selector:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  color: var(--color-faint);
+.selectorOption:hover {
+  background: var(--color-chip);
+  color: var(--color-text);
 }
 
-.selector:focus {
-  outline: 3px solid var(--color-primary-light);
-  border-color: var(--color-primary);
+.selectorOptionActive {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.rankingHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 /* 섹션 */
@@ -364,6 +459,62 @@
   font-family: var(--font-num);
 }
 
+.scoreCriteria {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--color-chip) 46%, var(--color-surface));
+}
+
+.scoreCriteria h3 {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.criteriaGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.criteriaGrid > div {
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.criteriaGrid strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--color-text);
+  font-size: 12px;
+}
+
+.criteriaGrid p {
+  margin: 0;
+  color: var(--color-text-body);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.criteriaGrid small {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-muted);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
 .leftCell {
   text-align: center;
 }
@@ -377,10 +528,12 @@
 
 .thDot {
   display: inline-block;
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
+  border: 1px solid color-mix(in srgb, var(--color-surface) 75%, transparent);
   border-radius: var(--radius-pill);
   margin-right: 6px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text) 8%, transparent);
   vertical-align: middle;
 }
 
@@ -392,6 +545,16 @@
 }
 
 /* 차트 2열 */
+.scoreUnitNote {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin-top: 6px;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .chartsGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -401,6 +564,16 @@
 @media (max-width: 900px) {
   .chartsGrid {
     grid-template-columns: 1fr;
+  }
+  .rankingHeader {
+    flex-direction: column;
+  }
+  .scoreCriteria {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .criteriaGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -418,11 +591,8 @@
     width: 100%;
   }
 
-  .selectorGroup {
+  .selectorDropdown {
     flex: 1;
-  }
-
-  .selector {
     width: 100%;
     min-width: 0;
   }
@@ -440,6 +610,13 @@
   font-size: 15px;
   font-weight: 700;
   color: var(--color-text);
+}
+
+.chartSubTitle {
+  margin: 4px 0 0;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .expandBtn {

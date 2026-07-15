@@ -2,6 +2,13 @@ import styles from "./StatCards.module.css";
 
 const WEEKEND_AVG_PCT = 28.4;
 
+/** 인원수를 한국식으로 축약(예: 12716 → "1.3만 명", 8200 → "8,200명"). */
+function formatCountKo(n: number): string {
+  const v = Math.round(n);
+  if (v >= 10000) return `${(v / 10000).toFixed(1)}만 명`;
+  return `${v.toLocaleString("ko-KR")}명`;
+}
+
 /** 낮 vs 밤 매출 카드. sales-time-bands API 실데이터(낮=06~17, 밤=17~06). */
 export function DayNightCard({
   dayPct = null,
@@ -24,19 +31,15 @@ export function DayNightCard({
   return (
     <div className={styles.card}>
       <div className={styles.head}>
-        <h3 className={styles.title}>낮 vs 밤 매출</h3>
+        <h3 className={styles.title}>주·야간 매출 비중</h3>
         <p className={styles.sub}>시간대 매출 구성</p>
       </div>
       <div className={styles.dnHero}>
-        <span className={styles.dnBig}>낮 {hasData ? `${dayPct}%` : "—"}</span>
-        <span className={styles.dnBig}>밤 {hasData ? `${nightPct}%` : "—"}</span>
+        <span className={styles.dnBig}>주간 {hasData ? `${dayPct}%` : "—"}</span>
+        <span className={styles.dnBig}>{hasData ? `${nightPct}%` : "—"} 야간</span>
       </div>
       <div className={styles.dnBar}>
         <span className={styles.dnFill} style={{ width: `${hasData ? dayPct : 50}%` }} />
-      </div>
-      <div className={styles.dnLegend}>
-        <span>낮 {hasData ? `${dayPct}%` : "—"}</span>
-        <span>밤 {hasData ? `${nightPct}%` : "—"}</span>
       </div>
       <p className={styles.miniLabel}>시간대별 매출 구성</p>
       {bars ? (
@@ -83,24 +86,32 @@ export function PopulationRhythmCard({
       </div>
       <p className={styles.miniLabel}>가장 붐비는 시간</p>
       <div className={styles.bigNum}>{peakLabel ?? "—"}</div>
-      <p className={styles.miniLabel}>낮 vs 밤 유동인구</p>
+      <p className={`${styles.miniLabel} ${styles.rhythmGap}`}>주간 vs 야간 유동인구</p>
       <div className={styles.dnHero}>
-        <span className={styles.dnBig}>낮 {hasDN ? `${dayPct}%` : "—"}</span>
-        <span className={styles.dnBig}>밤 {hasDN ? `${nightPct}%` : "—"}</span>
+        <span className={styles.dnBig}>주간 {hasDN ? `${dayPct}%` : "—"}</span>
+        <span className={styles.dnBig}>야간 {hasDN ? `${nightPct}%` : "—"}</span>
       </div>
       <div className={styles.dnBar}>
         <span className={styles.dnFill} style={{ width: `${hasDN ? dayPct : 50}%` }} />
-      </div>
-      <div className={styles.dnLegend}>
-        <span>낮</span>
-        <span>밤</span>
       </div>
     </div>
   );
 }
 
-/** 외국인 비중 카드. pct는 foreign-ratio API 실데이터(생활인구 중 외국인 %). */
-export function ForeignCard({ pct = null, onExpand }: { pct?: number | null; onExpand?: () => void }) {
+/** 외국인 비중 카드. pct/count/total은 foreign-ratio API 실데이터(생활인구 중 외국인). */
+export function ForeignCard({
+  pct = null,
+  count = null,
+  total = null,
+  onExpand,
+}: {
+  pct?: number | null;
+  count?: number | null;
+  total?: number | null;
+  onExpand?: () => void;
+}) {
+  const countLabel = count != null ? `약 ${formatCountKo(count)}` : null;
+  const note = total != null ? `생활인구 ${formatCountKo(total)} 기준` : "생활인구 대비 비율";
   return (
     <div className={styles.card}>
       <div className={styles.head}>
@@ -116,9 +127,9 @@ export function ForeignCard({ pct = null, onExpand }: { pct?: number | null; onE
       </div>
       <div className={styles.foreignRow}>
         <span className={styles.bigNum}>{pct != null ? `${pct}%` : "—"}</span>
-        <div className={styles.miniEmpty}>지표없음</div>
+        {countLabel && <span className={styles.foreignCount}>{countLabel}</span>}
       </div>
-      <p className={styles.note}>서울 평균 지표없음</p>
+      <p className={`${styles.note} ${styles.foreignNote}`}>{note}</p>
     </div>
   );
 }

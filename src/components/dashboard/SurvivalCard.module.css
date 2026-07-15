@@ -6,6 +6,8 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-width: 0;
   transition: box-shadow 0.22s ease, transform 0.22s ease, border-color 0.22s ease;
   animation: surv-card-in 0.5s ease-out both;
 }
@@ -88,10 +90,10 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 .categoryLabel {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--color-muted);
   white-space: nowrap;
@@ -100,15 +102,15 @@
 .categoryTrigger {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-width: 118px;
-  max-width: 190px;
-  padding: 9px 12px;
+  gap: 6px;
+  min-width: 84px;
+  max-width: 140px;
+  padding: 6px 10px;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: border-color 0.15s ease;
@@ -347,80 +349,6 @@
   text-align: center;
   color: var(--color-muted);
   font-size: 14px;
-}
-
-/* 힘줘서 만든 기능이라 눈에 띄어야 한다 — 조용한 텍스트+아웃라인 버튼 대신
-   구분되는 배경 박스 안에, 시나리오별로 색이 처음부터 채워진 버튼으로 강조. */
-.scenarioBar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 14px;
-  padding: 12px 14px;
-  background: var(--color-chip);
-  border-radius: var(--radius);
-  flex-wrap: wrap;
-}
-.scenarioHint {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--color-text);
-  white-space: nowrap;
-  flex: none;
-}
-.scenarioBtns {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.scenarioBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  border-radius: var(--radius-pill);
-  border: 1px solid transparent;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-.scenarioBtn:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-card);
-}
-.scenarioDot {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  border: 1.5px solid var(--color-surface);
-  flex: none;
-}
-.scenarioBtnHigh {
-  background: var(--color-green-bg);
-  color: var(--color-green);
-}
-.scenarioBtnHigh:hover {
-  background: var(--color-green);
-  color: #fff;
-}
-.scenarioBtnMid {
-  background: var(--series-1-bg);
-  color: var(--color-primary-dark);
-}
-.scenarioBtnMid:hover {
-  background: var(--series-1);
-  color: #fff;
-}
-.scenarioBtnLow {
-  background: var(--series-7-bg);
-  color: var(--color-red);
-}
-.scenarioBtnLow:hover {
-  background: var(--color-red);
-  color: #fff;
 }
 
 /* 접근성: '모션 줄이기'가 켜지면 진입/반복 애니메이션을 끈다(호버 트랜지션은 유지). */

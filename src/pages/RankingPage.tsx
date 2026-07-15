@@ -1,11 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDistrictRanking } from "../hooks/queries";
 import type { DistrictCompareItem, DistrictRankingItem } from "../types";
 import Leaderboard, { type SortableKey, type SortState } from "../components/ranking/Leaderboard";
+import FilterDropdown from "../components/common/FilterDropdown";
 import styles from "./RankingPage.module.css";
 
-/** 리더보드에 노출할 상위 상권 수(종합점수 기준). */
-const RANKING_LIMIT = 100;
+/** 필터 적용을 위해 전 상권을 받아온다(약 1650개). 렌더는 '더보기'로 점진 노출. */
+const FETCH_LIMIT = 2000;
+/** '더보기' 한 번에 추가로 노출할 상권 수. */
+const PAGE_SIZE = 10;
 
 /**
  * 랭킹 API 항목을 리더보드(DistrictCompareItem) 형태로 변환.
@@ -21,6 +24,7 @@ function toLeaderboardItem(it: DistrictRankingItem): DistrictCompareItem {
     avg_population: it.avg_population,
     survival_rate: validSr,
     closure_rate: validSr != null ? 100 - validSr : null,
+    open_rate: null, // 랭킹 API(DistrictRankingItem)엔 개업률이 없어 null.
     district_score: it.district_score,
   };
 }
@@ -43,8 +47,21 @@ function sortDistricts(districts: DistrictCompareItem[], sort: SortState): Distr
   });
 }
 
+/** 문자열 목록에서 null 제거 후 한글 정렬한 고유값. 필터 옵션 소싱용. */
+function distinctSorted(values: Array<string | null>): string[] {
+  return [...new Set(values.filter((v): v is string => Boolean(v)))].sort((a, b) => a.localeCompare(b, "ko"));
+}
+
 export default function RankingPage() {
   const [sort, setSort] = useState<SortState>({ key: "score", direction: "desc" });
+  const [gu, setGu] = useState("");
+  const [type, setType] = useState("");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  // 필터가 바뀌면 다시 처음 PAGE_SIZE개부터 보여준다.
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [gu, type]);
 
   const handleSort = (key: SortableKey) => {
     setSort((prev) =>
@@ -52,15 +69,27 @@ export default function RankingPage() {
     );
   };
 
-  // 서울 전체 상권을 종합점수 순으로 조회(상위 RANKING_LIMIT개). 강남역 포함 전 상권 대상.
+  // 서울 전 상권을 종합점수 순으로 받아 클라이언트에서 자치구·상권유형 필터를 적용한다.
   const { data: rankingItems = [], isPending: loading, isError: error } = useDistrictRanking({
     scope: "seoul",
     sort: "score",
-    limit: RANKING_LIMIT,
+    limit: FETCH_LIMIT,
   });
 
-  const districts = useMemo(() => rankingItems.map(toLeaderboardItem), [rankingItems]);
-  const sorted = useMemo(() => sortDistricts(districts, sort), [districts, sort]);
+  const guOptions = useMemo(() => distinctSorted(rankingItems.map((it) => it.gu_name)), [rankingItems]);
+  const typeOptions = useMemo(() => distinctSorted(rankingItems.map((it) => it.type_name)), [rankingItems]);
+
+  // 필터 → 리더보드 변환 → 정렬 → '더보기'로 visibleCount개까지 노출.
+  const filtered = useMemo(
+    () =>
+      rankingItems.filter(
+        (it) => (gu === "" || it.gu_name === gu) && (type === "" || it.type_name === type),
+      ),
+    [rankingItems, gu, type],
+  );
+  const sorted = useMemo(() => sortDistricts(filtered.map(toLeaderboardItem), sort), [filtered, sort]);
+  const visible = useMemo(() => sorted.slice(0, visibleCount), [sorted, visibleCount]);
+  const remaining = sorted.length - visible.length;
 
   return (
     <div className={styles.page}>
@@ -71,9 +100,15 @@ export default function RankingPage() {
         </p>
       </div>
 
-      {!loading && !error && sorted.length > 0 && (
+      {!loading && !error && (
         <div className={styles.controls}>
-          <span className={styles.count}>{sorted.length}개 상권</span>
+          <div className={styles.filters}>
+            <FilterDropdown label="자치구" value={gu} options={guOptions} onChange={setGu} ariaLabel="자치구 필터" />
+            <FilterDropdown label="유형" value={type} options={typeOptions} onChange={setType} ariaLabel="상권유형 필터" />
+          </div>
+          <span className={styles.count}>
+            {visible.length}/{sorted.length}개 표시
+          </span>
         </div>
       )}
 
@@ -85,12 +120,23 @@ export default function RankingPage() {
         </div>
       ) : error ? (
         <div className={styles.state}>랭킹 데이터를 가져오다 멈췄어요. 새로고침해보세요.</div>
-      ) : sorted.length === 0 ? (
+      ) : visible.length === 0 ? (
         <div className={styles.state}>조건에 맞는 상권이 보이지 않습니다.</div>
       ) : (
-        <div className={styles.card}>
-          <Leaderboard districts={sorted} sort={sort} onSort={handleSort} />
-        </div>
+        <>
+          <div className={styles.card}>
+            <Leaderboard districts={visible} sort={sort} onSort={handleSort} />
+          </div>
+          {remaining > 0 && (
+            <button
+              type="button"
+              className={styles.moreBtn}
+              onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+            >
+              더보기 <span className={styles.moreCount}>+{Math.min(PAGE_SIZE, remaining)}</span>
+            </button>
+          )}
+        </>
       )}
     </div>
   );

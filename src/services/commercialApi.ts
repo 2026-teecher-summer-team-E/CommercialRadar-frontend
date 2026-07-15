@@ -7,6 +7,7 @@ import type {
   CityCategoryRankingResponse,
   CategorySearchTrendRankingResponse,
   PopularCategoriesResponse,
+  PopularityHistoryResponse,
   RelatedCategoriesResponse,
   DistrictCategoryStatsResponse,
   RadarResponse,
@@ -48,6 +49,10 @@ export const commercialApi = {
   /** 앵커 업종 대비 재정규화된 검색 상대지수 기준, 가장 많이 검색된 업종. */
   popularCategories: (params?: QP) =>
     apiClient.get<PopularCategoriesResponse>("/api/categories/popular", { params }),
+
+  /** 현재 인기 업종 상위 N개의 월별 popularity_index 추이(바 차트 레이스용). */
+  popularityHistory: (params?: QP) =>
+    apiClient.get<PopularityHistoryResponse>("/api/categories/popular/history", { params }),
 
   /** 기준 업종과 검색 추이(피어슨 상관계수)가 비슷한 업종. */
   relatedCategories: (categoryName: string, params?: QP) =>
