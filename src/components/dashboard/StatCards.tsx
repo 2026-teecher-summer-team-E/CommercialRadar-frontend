@@ -36,7 +36,7 @@ export function DayNightCard({
       </div>
       <div className={styles.dnHero}>
         <span className={styles.dnBig}>주간 {hasData ? `${dayPct}%` : "—"}</span>
-        <span className={styles.dnBig}>야간 {hasData ? `${nightPct}%` : "—"}</span>
+        <span className={styles.dnBig}>{hasData ? `${nightPct}%` : "—"} 야간</span>
       </div>
       <div className={styles.dnBar}>
         <span className={styles.dnFill} style={{ width: `${hasData ? dayPct : 50}%` }} />
@@ -86,17 +86,13 @@ export function PopulationRhythmCard({
       </div>
       <p className={styles.miniLabel}>가장 붐비는 시간</p>
       <div className={styles.bigNum}>{peakLabel ?? "—"}</div>
-      <p className={styles.miniLabel}>주간 vs 야간 유동인구</p>
+      <p className={`${styles.miniLabel} ${styles.rhythmGap}`}>주간 vs 야간 유동인구</p>
       <div className={styles.dnHero}>
         <span className={styles.dnBig}>주간 {hasDN ? `${dayPct}%` : "—"}</span>
         <span className={styles.dnBig}>야간 {hasDN ? `${nightPct}%` : "—"}</span>
       </div>
       <div className={styles.dnBar}>
         <span className={styles.dnFill} style={{ width: `${hasDN ? dayPct : 50}%` }} />
-      </div>
-      <div className={styles.dnLegend}>
-        <span>주간</span>
-        <span>야간</span>
       </div>
     </div>
   );
