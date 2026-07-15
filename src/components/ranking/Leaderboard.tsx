@@ -83,6 +83,14 @@ export default function Leaderboard({
 
   return (
     <table className={styles.table}>
+      <colgroup>
+        <col className={styles.colRank} />
+        <col className={styles.colName} />
+        <col className={styles.colNum} />
+        <col className={styles.colRisk} />
+        <col className={styles.colNum} />
+        <col className={styles.colNum} />
+      </colgroup>
       <thead>
         <tr>
           <th className={styles.rankTh}>순위</th>
@@ -114,16 +122,20 @@ export default function Leaderboard({
               <td className={styles.rankCell}>
                 <span className={badgeClass(rank)}>{rank}</span>
               </td>
-              <td className={styles.nameCell}>{d.district_name}</td>
-              <td className={`${styles.numCell} ${styles.survival}`}>{fmtPct(d.survival_rate)}</td>
+              <td className={styles.nameCell} title={d.district_name}>{d.district_name}</td>
+              <td className={`${styles.numCell} ${styles.survival} ${sort.key === "survival" ? styles.sortedCol : ""}`}>
+                {fmtPct(d.survival_rate)}
+              </td>
               <td>
                 <span className={`${styles.risk} ${RISK_CLASS[risk]}`}>{closureRiskLabel(risk)}</span>
               </td>
-              <td className={styles.numCell}>{fmtPopulation(d.avg_population)}</td>
+              <td className={`${styles.numCell} ${sort.key === "population" ? styles.sortedCol : ""}`}>
+                {fmtPopulation(d.avg_population)}
+              </td>
               <td
                 className={`${styles.numCell} ${
                   d.district_score == null ? styles.scoreEmpty : styles.score
-                }`}
+                } ${sort.key === "score" ? styles.sortedCol : ""}`}
               >
                 {fmtNum(d.district_score, 1)}
               </td>

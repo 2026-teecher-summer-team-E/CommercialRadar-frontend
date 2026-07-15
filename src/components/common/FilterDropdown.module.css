@@ -1,0 +1,82 @@
+.wrap {
+  position: relative;
+}
+
+/* 트리거: 서비스 표준 드롭다운 톤(FilterBar 옵션 카드와 동일 계열). */
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.trigger:hover {
+  background: var(--color-chip);
+  border-color: var(--color-border-strong);
+}
+.trigger:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+.triggerActive {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+.triggerOpen {
+  border-color: var(--color-border-strong);
+}
+.caret {
+  font-size: 10px;
+  color: var(--color-faint);
+}
+.triggerActive .caret {
+  color: var(--color-primary);
+}
+
+/* 옵션 목록: FilterBar .dropdown/.option 과 동일한 카드/행 스타일. */
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 160px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-pop);
+}
+.option {
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.option:hover {
+  background: var(--color-chip);
+}
+.optionActive {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-weight: 700;
+}

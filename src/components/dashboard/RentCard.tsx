@@ -40,7 +40,7 @@ export default function RentCard({ perSqm, floorLabel, bars }: RentCardProps) {
 
       {hasBars && (
         <>
-          <p className={styles.barsLabel}>최근 4분기</p>
+          <p className={styles.barsLabel}>층별 임대료</p>
           <div className={styles.bars}>
             {bars.map((b, i) => (
               <div key={`${b.label}-${i}`} className={styles.barCol}>

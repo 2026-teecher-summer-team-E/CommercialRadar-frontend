@@ -104,6 +104,11 @@ export default function LeafletMap({
       programmaticMoveTimerRef.current = null;
     }, 1200);
   };
+  // effect 4는 마운트 시에도 한 번 실행되는데, 그때 guFilter 기본값("전체")이
+  // effect 3의 flyToBounds(딥링크로 들어온 selectedId 확대) 직후 카메라를
+  // 서울 전체 뷰로 되돌려버려 확대가 무효화된다. 마운트 시 첫 실행은 건너뛰고
+  // 사용자가 실제로 필터를 바꿀 때만 카메라를 움직이도록 이 ref로 구분한다.
+  const guFilterMountedRef = useRef(false);
 
   // 선택 상권 팝업 DOM(이름/유형/점수 + 프로필 버튼).
   const buildPopup = () => {
@@ -166,6 +171,13 @@ export default function LeafletMap({
     };
     map.on("zoomend", onViewChanged);
     map.on("moveend", onMoveEnded);
+    // flownRef/guFilterMountedRef는 "이 map 인스턴스로 이미 카메라를 움직였는지"를
+    // 추적하는 값이라 컴포넌트가 아니라 map 인스턴스 생애주기에 묶여야 한다.
+    // (React StrictMode dev 모드는 마운트 시 effect를 한 번 더 실행해 이 map을
+    // 버리고 새로 만드는데, ref 자체는 그 사이에도 유지되므로 여기서 다시 초기화하지
+    // 않으면 실제로 남는 map엔 카메라 이동이 한 번도 적용되지 않는다.)
+    flownRef.current = null;
+    guFilterMountedRef.current = false;
     setTimeout(() => map.invalidateSize(), 0);
 
     // 사이드바 접힘/펼침 등 부모 크기 변화를 Leaflet이 스스로 감지하지 못해 지도가 잘리므로,
@@ -251,6 +263,10 @@ export default function LeafletMap({
 
   // 4) 자치구 필터 변경 시 해당 자치구 범위로 카메라 이동
   useEffect(() => {
+    if (!guFilterMountedRef.current) {
+      guFilterMountedRef.current = true;
+      return;
+    }
     const map = mapRef.current;
     if (!map) return;
     if (!guFilterReadyRef.current) {
