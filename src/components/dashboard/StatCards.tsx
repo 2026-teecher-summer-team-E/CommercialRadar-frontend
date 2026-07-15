@@ -67,20 +67,50 @@ export function DayNightCard({
   );
 }
 
+/** 시간대 유동인구를 부드러운 area/line 경로로(viewBox 0 0 100 40). Catmull-Rom→베지어 스무딩. */
+function buildRhythmPath(vals: number[]) {
+  const W = 100, H = 40, padT = 5, padB = 4;
+  const max = Math.max(...vals, 1);
+  const n = vals.length;
+  const pts = vals.map((v, i) => ({
+    x: n > 1 ? (i / (n - 1)) * W : W / 2,
+    y: H - padB - (v / max) * (H - padT - padB),
+  }));
+  let line = `M ${pts[0].x.toFixed(2)} ${pts[0].y.toFixed(2)}`;
+  for (let i = 0; i < n - 1; i++) {
+    const p0 = pts[i - 1] ?? pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2] ?? p2;
+    const c1x = p1.x + (p2.x - p0.x) / 6;
+    const c1y = p1.y + (p2.y - p0.y) / 6;
+    const c2x = p2.x - (p3.x - p1.x) / 6;
+    const c2y = p2.y - (p3.y - p1.y) / 6;
+    line += ` C ${c1x.toFixed(2)} ${c1y.toFixed(2)} ${c2x.toFixed(2)} ${c2y.toFixed(2)} ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+  }
+  const area = `${line} L ${W} ${H} L 0 ${H} Z`;
+  const peakIdx = vals.reduce((best, v, i) => (v > vals[best] ? i : best), 0);
+  return { line, area, pts, peakIdx };
+}
+
 /**
- * 유동인구 리듬 카드. 시간·요일 히트맵 옆에 배치해 "언제 붐비나"를 요약한다.
- * peakLabel = heatmap by_time 최댓값 시간대, day/nightPct = population-ratios 유동인구 낮/밤 비중(매출 아님).
+ * 유동인구 리듬 카드. 시간대별 유동인구를 물결(area) 스파크라인으로 그려 "언제 붐비나"를 보여준다.
+ * peakLabel = by_time 최댓값 시간대, byTime = 시간대별 유동인구, day/nightPct = 낮/밤 비중.
  */
 export function PopulationRhythmCard({
   peakLabel = null,
   dayPct = null,
   nightPct = null,
+  byTime = null,
 }: {
   peakLabel?: string | null;
   dayPct?: number | null;
   nightPct?: number | null;
+  byTime?: { slot: string; avg_population: number | null }[] | null;
 }) {
   const hasDN = dayPct != null && nightPct != null;
+  const slots = byTime && byTime.length > 1 ? byTime : null;
+  const wave = slots ? buildRhythmPath(slots.map((s) => s.avg_population ?? 0)) : null;
   return (
     <div className={styles.card}>
       <div className={styles.head}>
@@ -91,18 +121,49 @@ export function PopulationRhythmCard({
       </div>
       <p className={styles.miniLabel}>가장 붐비는 시간</p>
       <div className={styles.bigNum}>{peakLabel ?? "—"}</div>
-      <p className={styles.miniLabel}>낮 vs 밤 유동인구</p>
-      <div className={styles.dnHero}>
-        <span className={styles.dnBig}>낮 {hasDN ? `${dayPct}%` : "—"}</span>
-        <span className={styles.dnBig}>밤 {hasDN ? `${nightPct}%` : "—"}</span>
-      </div>
-      <div className={styles.dnBar}>
-        <span className={styles.dnFill} style={{ width: `${hasDN ? dayPct : 50}%` }} />
-      </div>
-      <div className={styles.dnLegend}>
-        <span>낮</span>
-        <span>밤</span>
-      </div>
+
+      {wave && slots ? (
+        <>
+          <div className={styles.rhythmWrap}>
+            <svg className={styles.rhythmSvg} viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden>
+              <defs>
+                <linearGradient id="rhythmGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.32" />
+                  <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0.02" />
+                </linearGradient>
+              </defs>
+              <path d={wave.area} fill="url(#rhythmGrad)" />
+              <path
+                d={wave.line}
+                fill="none"
+                stroke="var(--color-primary)"
+                strokeWidth="1.6"
+                vectorEffect="non-scaling-stroke"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span
+              className={styles.rhythmPeak}
+              style={{
+                left: `${wave.pts[wave.peakIdx].x}%`,
+                top: `${(wave.pts[wave.peakIdx].y / 40) * 100}%`,
+              }}
+            />
+          </div>
+          <div className={styles.rhythmLabels}>
+            {slots.map((s, i) => (
+              <span key={s.slot} className={i === wave.peakIdx ? styles.rhythmLabelPeak : ""}>
+                {s.slot.split("~")[0]}
+              </span>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className={styles.miniEmpty}>지표없음</div>
+      )}
+
+      {hasDN && <p className={styles.rhythmDN}>낮 {dayPct}% · 밤 {nightPct}%</p>}
     </div>
   );
 }
@@ -171,7 +232,7 @@ export function PerCapitaCard({ wonValue = null, onExpand }: { wonValue?: number
       <div className={styles.big}>
         <span className={styles.bigNum}>{manText}</span>
       </div>
-      <p className={styles.note}>총매출 ÷ 유동인구</p>
+      <p className={`${styles.note} ${styles.noteBottomRight}`}>총매출 ÷ 유동인구</p>
     </div>
   );
 }

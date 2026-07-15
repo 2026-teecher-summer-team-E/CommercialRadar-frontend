@@ -686,6 +686,7 @@ export default function DashboardPage() {
             peakLabel={peakLabel}
             dayPct={data.popRatios?.daytime_pct ?? null}
             nightPct={data.popRatios?.nighttime_pct ?? null}
+            byTime={data.heatmap?.by_time ?? null}
           />
         </div>
 
