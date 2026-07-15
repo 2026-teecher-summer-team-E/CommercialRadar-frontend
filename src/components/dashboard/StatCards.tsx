@@ -136,14 +136,16 @@ export function ForeignCard({
       </div>
       <div className={styles.foreignRow}>
         <span className={styles.bigNum}>{pct != null ? `${pct}%` : "—"}</span>
-        {countLabel && <span className={styles.foreignCount}>{countLabel}</span>}
         {pct != null && (
           <div className={styles.foreignDonutMini}>
             <ForeignDonut pct={pct} size={104} compact />
           </div>
         )}
       </div>
-      <p className={`${styles.note} ${styles.foreignNote}`}>{note}</p>
+      <div className={styles.foreignBottom}>
+        <p className={styles.note}>{note}</p>
+        {countLabel && <span className={styles.foreignCount}>{countLabel}</span>}
+      </div>
     </div>
   );
 }

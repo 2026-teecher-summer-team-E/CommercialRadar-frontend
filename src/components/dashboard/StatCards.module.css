@@ -142,15 +142,22 @@
   color: var(--color-muted);
 }
 .foreignCount {
-  align-self: flex-end;
-  padding-bottom: 4px;
   font-size: 13px;
   font-weight: 600;
   color: var(--color-muted);
+  white-space: nowrap;
 }
 .foreignDonutMini {
   margin-left: auto;
   align-self: center;
+}
+/* 카드 하단: 기준 문구(좌) + 인원수(우)를 바닥에 정렬. */
+.foreignBottom {
+  margin-top: auto;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
 }
 .miniCol {
   flex: 1 1 0;

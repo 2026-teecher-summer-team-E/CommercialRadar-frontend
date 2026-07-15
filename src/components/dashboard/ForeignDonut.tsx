@@ -37,7 +37,6 @@ export default function ForeignDonut({ pct, count = null, total = null, size = 2
     <div className={`${styles.wrap} ${compact ? styles.compact : ""}`} style={wrapStyle}>
       <div className={styles.stage}>
         <div className={styles.donut} style={donutStyle}>
-          <div className={styles.depth} aria-hidden />
           <div className={styles.ring} aria-hidden />
         </div>
       </div>
