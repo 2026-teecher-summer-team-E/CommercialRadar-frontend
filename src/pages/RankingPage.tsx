@@ -23,6 +23,7 @@ function toLeaderboardItem(it: DistrictRankingItem): DistrictCompareItem {
     avg_population: it.avg_population,
     survival_rate: validSr,
     closure_rate: validSr != null ? 100 - validSr : null,
+    open_rate: null, // 랭킹 API(DistrictRankingItem)엔 개업률이 없어 null.
     district_score: it.district_score,
   };
 }
