@@ -375,14 +375,16 @@ export default function AtmosphereSimulation({
       let lottieFile: string;
       if (!hasVariants) {
         lottieFile = f(0);
+      } else if (isForeigner) {
+        // 국적을 나이/성별보다 먼저 판정 — 외국인 비율이 노인/오피스맨 로직에 가려지지 않게.
+        // (전용 노인 외국인 에셋은 없어 성인 외국인 에셋으로 통일.)
+        lottieFile = isFemale ? f(3) : f(2);
       } else if (ageBucket === "50대" || ageBucket === "60대+" || ageBucket === "60대이상") {
         // 노인 전용 애니메이션 (50대 이상). 여성=보행보조기 할머니(f6), 남성=할아버지(f4).
         lottieFile = isFemale ? f(6) : f(4);
       } else if (!isFemale && (ageBucket === "30대" || ageBucket === "40대")) {
         // 직장인 나이대 남성 → 오피스맨 (국적 무관)
         lottieFile = f(5);
-      } else if (isForeigner) {
-        lottieFile = isFemale ? f(3) : f(2);
       } else {
         lottieFile = isFemale ? f(1) : f(0);
       }      out.push({ id: i, color: weightedAge(r), bag: r2 > 0.55, row: (i % 5) / 4, ageBucket, isFemale, isForeigner, lottieFile });

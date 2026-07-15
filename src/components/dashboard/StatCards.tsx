@@ -2,6 +2,13 @@ import styles from "./StatCards.module.css";
 
 const WEEKEND_AVG_PCT = 28.4;
 
+/** 인원수를 한국식으로 축약(예: 12716 → "1.3만 명", 8200 → "8,200명"). */
+function formatCountKo(n: number): string {
+  const v = Math.round(n);
+  if (v >= 10000) return `${(v / 10000).toFixed(1)}만 명`;
+  return `${v.toLocaleString("ko-KR")}명`;
+}
+
 /** 낮 vs 밤 매출 카드. sales-time-bands API 실데이터(낮=06~17, 밤=17~06). */
 export function DayNightCard({
   dayPct = null,
@@ -99,8 +106,20 @@ export function PopulationRhythmCard({
   );
 }
 
-/** 외국인 비중 카드. pct는 foreign-ratio API 실데이터(생활인구 중 외국인 %). */
-export function ForeignCard({ pct = null, onExpand }: { pct?: number | null; onExpand?: () => void }) {
+/** 외국인 비중 카드. pct/count/total은 foreign-ratio API 실데이터(생활인구 중 외국인). */
+export function ForeignCard({
+  pct = null,
+  count = null,
+  total = null,
+  onExpand,
+}: {
+  pct?: number | null;
+  count?: number | null;
+  total?: number | null;
+  onExpand?: () => void;
+}) {
+  const countLabel = count != null ? `약 ${formatCountKo(count)}` : null;
+  const note = total != null ? `생활인구 ${formatCountKo(total)} 기준` : "생활인구 대비 비율";
   return (
     <div className={styles.card}>
       <div className={styles.head}>
@@ -116,9 +135,9 @@ export function ForeignCard({ pct = null, onExpand }: { pct?: number | null; onE
       </div>
       <div className={styles.foreignRow}>
         <span className={styles.bigNum}>{pct != null ? `${pct}%` : "—"}</span>
-        <div className={styles.miniEmpty}>지표없음</div>
+        {countLabel && <span className={styles.foreignCount}>{countLabel}</span>}
       </div>
-      <p className={styles.note}>서울 평균 지표없음</p>
+      <p className={`${styles.note} ${styles.foreignNote}`}>{note}</p>
     </div>
   );
 }
