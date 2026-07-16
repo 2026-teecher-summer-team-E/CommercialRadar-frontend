@@ -41,6 +41,8 @@ interface Props {
   survivalPct?: number | null;
   /** 유동인구(실데이터). 등장 인원 수에 사용. dayDominant 지정 시 해당 시간대 평균. */
   footTraffic?: number | null;
+  /** 1:1 비교 화면에서 유동인구 차이를 더 선명하게 보여주기 위한 시각용 군중 수 기준값. */
+  crowdBaseCount?: number | null;
   /** true=낮 테마, false=밤 테마(기존), null/undefined=밤 테마(칩 미표시). */
   dayDominant?: boolean | null;
   /** 유리한 쪽 매출 비중 %(낮 유리면 낮 비중, 밤 유리면 밤 비중). 칩 문구용. */
@@ -49,6 +51,12 @@ interface Props {
   foreignerPct?: number | null;
   /** 시작 분기 문자열(예: "2025-Q4"). 미전달 시 "1분기차"~"4분기차" 상대 표기. */
   startQuarter?: string | null;
+  /** 비교 화면처럼 다른 모달 안에 넣을 때 사용하는 패널 모드. */
+  embedded?: boolean;
+  /** 패널 상단에 표시할 보조 제목. */
+  panelLabel?: string;
+  /** 패널 모드에서 내부 닫기 버튼을 숨길지 여부. */
+  hideClose?: boolean;
   onClose: () => void;
 }
 
@@ -211,8 +219,8 @@ function quarterLabel(base: { year: number; q: number }, offset: number): string
 }
 
 export default function AtmosphereSimulation({
-  scenario, ageDistribution, survivalPct, footTraffic,
-  dayDominant, daySalesPct, foreignerPct, startQuarter, onClose,
+  scenario, ageDistribution, survivalPct, footTraffic, crowdBaseCount,
+  dayDominant, daySalesPct, foreignerPct, startQuarter, embedded = false, panelLabel, hideClose = false, onClose,
 }: Props) {
   const isDay = dayDominant === true;
   const cfg = SCENARIO[scenario];
@@ -222,7 +230,8 @@ export default function AtmosphereSimulation({
   const trafficBase =
     footTraffic != null && footTraffic > 0 ? clamp((Math.log10(footTraffic) - 3.5) * 5, 4, 20) : null;
   const scenarioMult = scenario === "high" ? 1.35 : scenario === "low" ? 0.6 : 1;
-  const count = trafficBase != null ? clamp(Math.round(trafficBase * scenarioMult), 3, 24) : cfg.count;
+  const countBase = crowdBaseCount ?? trafficBase;
+  const count = countBase != null ? clamp(Math.round(countBase * scenarioMult), 3, 24) : cfg.count;
   const realBased = survivalPct != null || (footTraffic != null && footTraffic > 0);
   const [playing, setPlaying] = useState(true);
 
@@ -422,8 +431,18 @@ export default function AtmosphereSimulation({
 
   return (
     <div
-      onClick={onClose}
-      style={{ position: "fixed", inset: 0, background: SCENE_COLORS.overlay, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, fontFamily: '"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif' }}
+      onClick={embedded ? undefined : onClose}
+      style={{
+        position: embedded ? "relative" : "fixed",
+        inset: embedded ? undefined : 0,
+        width: embedded ? "100%" : undefined,
+        background: embedded ? "transparent" : SCENE_COLORS.overlay,
+        display: "flex",
+        alignItems: embedded ? "stretch" : "center",
+        justifyContent: "center",
+        zIndex: embedded ? "auto" : 1000,
+        fontFamily: '"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif',
+      }}
     >
       <style>{`
         @keyframes atmo-bob  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
@@ -433,10 +452,10 @@ export default function AtmosphereSimulation({
         @keyframes atmo-stamp { 0%{transform:scale(1.6) rotate(var(--rot));opacity:0} 60%{opacity:1} 100%{transform:scale(1) rotate(var(--rot));opacity:1} }
       `}</style>
 
-      <div onClick={(e) => e.stopPropagation()} style={{ width: 560, background: "var(--color-surface)", borderRadius: 18, padding: "20px 22px", boxShadow: SCENE_COLORS.modalShadow }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: embedded ? "100%" : 560, background: "var(--color-surface)", borderRadius: 18, padding: "20px 22px", boxShadow: SCENE_COLORS.modalShadow }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <div style={{ fontSize: 12, color: "var(--color-muted)" }}>상권 분위기 시뮬레이션</div>
+            <div style={{ fontSize: 12, color: "var(--color-muted)" }}>{panelLabel ?? "상권 분위기 시뮬레이션"}</div>
             <div style={{ fontSize: 18, fontWeight: 800, color: cfg.accent, marginTop: 2 }}>
               {cfg.title} <span style={{ color: "var(--color-text)", fontWeight: 700 }}>· {cfg.mood}</span>
             </div>
@@ -445,7 +464,9 @@ export default function AtmosphereSimulation({
             <button onClick={() => setPlaying((p) => !p)} style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)", borderRadius: 8, padding: "6px 12px", fontSize: 13, cursor: "pointer" }}>
               {playing ? "⏸ 정지" : "▶ 재생"}
             </button>
-            <button onClick={onClose} style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)", borderRadius: 8, width: 32, cursor: "pointer", fontSize: 15 }}>✕</button>
+            {!hideClose && (
+              <button onClick={onClose} style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)", borderRadius: 8, width: 32, cursor: "pointer", fontSize: 15 }}>✕</button>
+            )}
           </div>
         </div>
 
