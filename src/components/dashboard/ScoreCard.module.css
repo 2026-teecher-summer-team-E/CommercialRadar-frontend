@@ -50,7 +50,7 @@
   gap: 4px;
 }
 .scoreNum {
-  font-size: 52px;
+  font-size: 64px;
   font-weight: 800;
   line-height: 1;
   color: var(--color-primary);
