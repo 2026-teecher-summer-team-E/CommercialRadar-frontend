@@ -20,7 +20,11 @@
   text-align: left;
 }
 .scenarioBtns {
+  /* align-items:stretch(부모 기본값)로 인해 이 행이 카드 전체 너비로 늘어나면
+     버튼들은 왼쪽에 붙고 오른쪽에 안 쓰는 여백만 남아 좌우 여백이 달라 보인다.
+     align-self:flex-start로 늘어남을 막아 버튼 내용 너비만큼만 차지하게 한다. */
   display: flex;
+  align-self: flex-start;
   gap: 8px;
   margin-top: 12px;
   flex-wrap: wrap;

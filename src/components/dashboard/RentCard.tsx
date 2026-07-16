@@ -9,8 +9,8 @@ export interface RentBar {
 interface RentCardProps {
   /** 대표 ㎡당 임대료(만원 환산 전, 원 단위). null 이면 "—". */
   perSqm: number | null;
-  floorLabel: string | null;
-  bars: RentBar[];
+  /** 대표값의 상가유형(소규모/중대형/집합). 건물 층수가 아니라 R-ONE 상가유형 분류. */
+  typeLabel: string | null;
 }
 
 /** 원 → ₩ + 천단위 콤마(예: ₩85,203). null 이면 "—". */
@@ -19,16 +19,15 @@ function fmtWon(won: number | null): string {
   return `₩${Math.round(won).toLocaleString("ko-KR")}`;
 }
 
-/** 임대료(m²당) 카드. Figma 재현: 큰 값 + 안내 태그 + 층별 미니 막대. */
-export default function RentCard({ perSqm, floorLabel, bars }: RentCardProps) {
-  const max = Math.max(1, ...bars.map((b) => b.value ?? 0));
-  const hasBars = bars.some((b) => b.value != null);
-
+/** 임대료(m²당) 카드. Figma 재현: 큰 값 + 안내 태그. 상가유형별 막대는 FloorRentCard로 분리. */
+export default function RentCard({ perSqm, typeLabel }: RentCardProps) {
   return (
     <div className={styles.card}>
       <div className={styles.head}>
         <h3 className={styles.title}>임대료</h3>
-        <span className={styles.sub}>{floorLabel ? `${floorLabel} 기준 · ㎡당 환산 임대료` : "㎡당 환산 임대료"}</span>
+        <span className={styles.sub}>
+          {typeLabel ? `${typeLabel}상가 기준 · ㎡당 환산 임대료` : "㎡당 환산 임대료"}
+        </span>
       </div>
 
       <div className={styles.big}>
@@ -37,23 +36,6 @@ export default function RentCard({ perSqm, floorLabel, bars }: RentCardProps) {
       </div>
 
       <p className={styles.note}>한국부동산원 R-ONE · 권리금 포함</p>
-
-      {hasBars && (
-        <>
-          <p className={styles.barsLabel}>층별 임대료</p>
-          <div className={styles.bars}>
-            {bars.map((b, i) => (
-              <div key={`${b.label}-${i}`} className={styles.barCol}>
-                <span
-                  className={i === bars.length - 1 ? styles.barTop : styles.bar}
-                  style={{ height: `${Math.max(8, ((b.value ?? 0) / max) * 100)}%` }}
-                  title={`${b.label}: ${fmtWon(b.value)}/㎡`}
-                />
-              </div>
-            ))}
-          </div>
-        </>
-      )}
     </div>
   );
 }
