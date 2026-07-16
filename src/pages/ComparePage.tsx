@@ -135,7 +135,6 @@ export default function ComparePage() {
   const [openSelector, setOpenSelector] = useState<SelectorKind>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [reportSaved, setReportSaved] = useState(false);
 
   useEffect(() => {
     try {
@@ -159,12 +158,6 @@ export default function ComparePage() {
     const timer = window.setTimeout(() => setDebouncedQuery(keyword), 250);
     return () => window.clearTimeout(timer);
   }, [keyword]);
-
-  useEffect(() => {
-    if (!reportSaved) return;
-    const timer = window.setTimeout(() => setReportSaved(false), 2200);
-    return () => window.clearTimeout(timer);
-  }, [reportSaved]);
 
   const search = useDistrictSearch(debouncedQuery, isAdding);
   const searchResults: CommercialDistrictSearchResult[] =
@@ -454,7 +447,7 @@ export default function ComparePage() {
 
   return (
     <div className={styles.page}>
-      <Header onSaveReport={() => setReportSaved(true)} reportSaved={reportSaved} />
+      <Header />
 
       {/* 컨트롤 바 */}
       <div className={styles.controlBar}>
@@ -824,7 +817,7 @@ function formatQuarter(quarter: string) {
   return match ? `${match[1]}년 ${match[2]}분기` : quarter || "기준 분기 없음";
 }
 
-function Header({ onSaveReport, reportSaved }: { onSaveReport: () => void; reportSaved: boolean }) {
+function Header() {
   return (
     <div className={styles.header}>
       <div>
