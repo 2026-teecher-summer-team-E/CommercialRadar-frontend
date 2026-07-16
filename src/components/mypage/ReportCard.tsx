@@ -5,6 +5,7 @@ import styles from "./mypage.module.css";
 interface ReportCardProps {
   report: ReportListItem;
   index: number;
+  onView: (id: number) => void;
   onShare: (id: number) => void;
   onRemove: (id: number) => void;
   busy: boolean;
@@ -14,6 +15,7 @@ interface ReportCardProps {
 export default function ReportCard({
   report,
   index,
+  onView,
   onShare,
   onRemove,
   busy,
@@ -43,7 +45,12 @@ export default function ReportCard({
       </div>
 
       <div className={styles.cardActions}>
-        <button type="button" className={styles.linkBtn} disabled={busy}>
+        <button
+          type="button"
+          className={styles.linkBtn}
+          onClick={() => onView(report.id)}
+          disabled={busy}
+        >
           보기
         </button>
         <button

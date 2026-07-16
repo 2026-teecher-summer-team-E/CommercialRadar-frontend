@@ -54,7 +54,10 @@ function SortableTh({
 }) {
   const active = sort.key === columnKey;
   return (
-    <th aria-sort={active ? (sort.direction === "asc" ? "ascending" : "descending") : "none"}>
+    <th
+      className={active ? styles.thSortActive : undefined}
+      aria-sort={active ? (sort.direction === "asc" ? "ascending" : "descending") : "none"}
+    >
       <button
         type="button"
         className={`${styles.sortBtn} ${active ? styles.sortBtnActive : ""}`}
@@ -62,7 +65,7 @@ function SortableTh({
       >
         {label}
         <span className={styles.sortArrow} aria-hidden>
-          {active ? (sort.direction === "asc" ? "▲" : "▼") : "▾"}
+          {active && sort.direction === "asc" ? "▲" : "▼"}
         </span>
       </button>
     </th>
@@ -86,8 +89,8 @@ export default function Leaderboard({
       <colgroup>
         <col className={styles.colRank} />
         <col className={styles.colName} />
-        <col className={styles.colNum} />
         <col className={styles.colRisk} />
+        <col className={styles.colNum} />
         <col className={styles.colNum} />
         <col className={styles.colNum} />
       </colgroup>
@@ -95,8 +98,8 @@ export default function Leaderboard({
         <tr>
           <th className={styles.rankTh}>순위</th>
           <th className={styles.nameTh}>상권</th>
-          <SortableTh label="생존율" columnKey="survival" sort={sort} onSort={onSort} />
           <th>폐업 위험</th>
+          <SortableTh label="생존율" columnKey="survival" sort={sort} onSort={onSort} />
           <SortableTh label="유동인구" columnKey="population" sort={sort} onSort={onSort} />
           <SortableTh label="종합 점수" columnKey="score" sort={sort} onSort={onSort} />
         </tr>
@@ -109,13 +112,13 @@ export default function Leaderboard({
             <tr
               key={d.id}
               className={rowClass(rank)}
-              onClick={() => navigate(`/?district=${d.id}`)}
+              onClick={() => navigate(`/?district=${d.id}`, { state: { flyToDistrict: true } })}
               role="link"
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  navigate(`/?district=${d.id}`);
+                  navigate(`/?district=${d.id}`, { state: { flyToDistrict: true } });
                 }
               }}
             >
@@ -123,19 +126,19 @@ export default function Leaderboard({
                 <span className={badgeClass(rank)}>{rank}</span>
               </td>
               <td className={styles.nameCell} title={d.district_name}>{d.district_name}</td>
-              <td className={`${styles.numCell} ${styles.survival} ${sort.key === "survival" ? styles.sortedCol : ""}`}>
-                {fmtPct(d.survival_rate)}
-              </td>
               <td>
                 <span className={`${styles.risk} ${RISK_CLASS[risk]}`}>{closureRiskLabel(risk)}</span>
               </td>
-              <td className={`${styles.numCell} ${sort.key === "population" ? styles.sortedCol : ""}`}>
+              <td className={`${styles.numCell} ${styles.survival}`}>
+                {fmtPct(d.survival_rate)}
+              </td>
+              <td className={`${styles.numCell} ${styles.population}`}>
                 {fmtPopulation(d.avg_population)}
               </td>
               <td
                 className={`${styles.numCell} ${
                   d.district_score == null ? styles.scoreEmpty : styles.score
-                } ${sort.key === "score" ? styles.sortedCol : ""}`}
+                }`}
               >
                 {fmtNum(d.district_score, 1)}
               </td>

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import styles from "./FilterDropdown.module.css";
 
 interface Props {
-  /** 기본(전체) 상태에서 "{label} 전체"로 표시할 접두. */
+  /** 트리거 버튼에 표시할 이름(기본/전체 상태일 때 이 라벨 그대로 표시). */
   label: string;
   /** 현재 선택값. "" = 전체. */
   value: string;
@@ -52,7 +52,7 @@ export default function FilterDropdown({ label, value, options, onChange, ariaLa
         aria-expanded={open}
         aria-label={ariaLabel ?? label}
       >
-        {isDefault ? `${label} 전체` : value}
+        {isDefault ? label : value}
         <span className={styles.caret} aria-hidden>
           {open ? "▴" : "▾"}
         </span>
@@ -66,7 +66,7 @@ export default function FilterDropdown({ label, value, options, onChange, ariaLa
             className={`${styles.option} ${isDefault ? styles.optionActive : ""}`}
             onClick={() => select("")}
           >
-            {label} 전체
+            전체
           </button>
           {options.map((o) => (
             <button

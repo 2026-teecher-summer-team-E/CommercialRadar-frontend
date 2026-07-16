@@ -73,6 +73,10 @@
 .sortBtnActive .sortArrow {
   color: var(--color-text);
 }
+/* 활성 정렬 열 헤더 밑줄. box-shadow로 그려 border-bottom 두께 변화에 따른 리플로우를 피한다. */
+.thSortActive {
+  box-shadow: inset 0 -2px 0 0 var(--color-primary);
+}
 
 .row {
   cursor: pointer;
@@ -173,26 +177,13 @@
   font-weight: 700;
   color: var(--color-text);
 }
+.population {
+  font-weight: 700;
+}
 .score {
   font-weight: 700;
   color: var(--color-primary);
 }
 .scoreEmpty {
   color: var(--color-faint);
-}
-
-/* 현재 정렬 기준 열의 값 강조(헤더 알약과 함께 어느 열로 정렬됐는지 명확히). */
-/* 정렬로 선택한 열: 굵기 변화 없이(리플로우 방지) 배경 하이라이트로만 표시. */
-.sortedCol {
-  background: var(--color-chip);
-}
-/* 1~3위 행에선 해당 금/은/동을 행 배경보다 살짝 짙게(과하지 않게). */
-.rowGold .sortedCol {
-  background: #ffefba;
-}
-.rowSilver .sortedCol {
-  background: #e1e7ef;
-}
-.rowBronze .sortedCol {
-  background: #f6d8c2;
 }

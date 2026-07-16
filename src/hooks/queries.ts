@@ -15,6 +15,7 @@ export const queryKeys = {
   dashboard: (id: number) => ["dashboard", id] as const,
   compareDistricts: (ids: number[]) => ["compare-districts", ids] as const,
   ranking: (params?: QP) => ["district-ranking", params ?? null] as const,
+  searchTrendRanking: (params?: QP) => ["search-trend-ranking", params ?? null] as const,
   compareQuarters: (ids: number[]) => ["compare-quarters", ids] as const,
   compareCategories: (ids: number[], quarter: string) =>
     ["compare-categories", ids, quarter] as const,
@@ -65,17 +66,29 @@ export function useCompareDistricts(ids: number[]) {
 }
 
 /** 상권 종합 랭킹(scope/sort/limit). 랭킹 페이지 리더보드용. */
-export function useDistrictRanking(params?: {
-  scope?: "seoul" | "gu" | "type";
-  gu_name?: string;
-  type_name?: string;
-  sort?: "score" | "survival" | "population";
-  limit?: number;
-  offset?: number;
-}) {
+export function useDistrictRanking(
+  params?: {
+    scope?: "seoul" | "gu" | "type";
+    gu_name?: string;
+    type_name?: string;
+    sort?: "score" | "survival" | "population";
+    limit?: number;
+    offset?: number;
+  },
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: queryKeys.ranking(params as QP | undefined),
     queryFn: () => commercialApi.ranking(params).then((r) => r.data),
+    enabled: options?.enabled,
+  });
+}
+
+/** 업종 검색 관심도 변화율 랭킹(트렌드 업종). 랜딩 트렌드 패널 등에서 사용. */
+export function useSearchTrendRanking(params?: QP) {
+  return useQuery({
+    queryKey: queryKeys.searchTrendRanking(params),
+    queryFn: () => commercialApi.searchTrendRanking(params).then((r) => r.data),
   });
 }
 

@@ -104,7 +104,7 @@ export default function RankingPage() {
         <div className={styles.controls}>
           <div className={styles.filters}>
             <FilterDropdown label="자치구" value={gu} options={guOptions} onChange={setGu} ariaLabel="자치구 필터" />
-            <FilterDropdown label="유형" value={type} options={typeOptions} onChange={setType} ariaLabel="상권유형 필터" />
+            <FilterDropdown label="상권유형" value={type} options={typeOptions} onChange={setType} ariaLabel="상권유형 필터" />
           </div>
           <span className={styles.count}>
             {visible.length}/{sorted.length}개 표시
