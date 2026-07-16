@@ -84,9 +84,9 @@ function ForecastTooltip({
   for (const p of payload) byKey[p.dataKey] = p.value;
   const order: [string, string, string][] = [
     ["actual", "실적", FORECAST_COLORS.actual],
-    ["high", "Best(p90)", FORECAST_COLORS.high],
-    ["mid", "Normal(p50)", FORECAST_COLORS.mid],
-    ["low", "Worst(p10)", FORECAST_COLORS.low],
+    ["high", "Best", FORECAST_COLORS.high],
+    ["mid", "Normal", FORECAST_COLORS.mid],
+    ["low", "Worst", FORECAST_COLORS.low],
   ];
   const lines = order
     .map(([key, name, color]) => ({ name, color, value: byKey[key] }))
@@ -215,6 +215,11 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
   const formatValue = (v: number) => (unit === "won" ? `${fmtEok(v)}원` : formatRatio(v));
   const formatAxis = (v: number) =>
     unit === "won" ? `${Math.round(v / 1e8)}억` : `${Math.round(v * 100)}%`;
+  // 분기 코드(2026-Q1)를 X축 라벨용 "26 1분기"로. 형식이 다르면 원본 그대로.
+  const formatQuarter = (q: string) => {
+    const m = /^(\d{4})-Q([1-4])$/.exec(q);
+    return m ? `${m[1].slice(2)} ${m[2]}분기` : q;
+  };
 
   const makeEndLabel =
     (scenario: "high" | "mid" | "low", color: string, dy: number) =>
@@ -256,7 +261,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
         accessibilityLayer={false}
       >
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="quarter" tick={{ fontSize: 12 }} />
+        <XAxis dataKey="quarter" tick={{ fontSize: 12 }} tickFormatter={formatQuarter} />
         <YAxis
           tickFormatter={formatAxis}
           width={64}
@@ -305,7 +310,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
         <Line
           type="monotone"
           dataKey="high"
-          name="Best(p90)"
+          name="Best"
           stroke={FORECAST_COLORS.high}
           strokeWidth={clickable ? 2.5 : 1.5}
           strokeDasharray="5 5"
@@ -317,7 +322,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
         <Line
           type="monotone"
           dataKey="mid"
-          name="Normal(p50)"
+          name="Normal"
           stroke={FORECAST_COLORS.mid}
           strokeWidth={clickable ? 3 : 2}
           strokeDasharray="5 5"
@@ -329,7 +334,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
         <Line
           type="monotone"
           dataKey="low"
-          name="Worst(p10)"
+          name="Worst"
           stroke={FORECAST_COLORS.low}
           strokeWidth={clickable ? 2.5 : 1.5}
           strokeDasharray="5 5"

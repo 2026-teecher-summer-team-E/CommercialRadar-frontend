@@ -73,10 +73,10 @@ export function quarterLabel(yq: string | null | undefined): string {
   return `${m[1]}년 ${m[2]}분기`;
 }
 
-/** 짧은 분기 라벨 (2026-Q1 → "26 1Q"). 차트 X축용. */
+/** 짧은 분기 라벨 (2026-Q1 → "26 1분기"). 차트 X축용. */
 export function quarterShort(yq: string | null | undefined): string {
   if (!yq) return "";
   const m = /^(\d{4})-Q([1-4])$/.exec(yq);
   if (!m) return yq;
-  return `${m[1].slice(2)} ${m[2]}Q`;
+  return `${m[1].slice(2)} ${m[2]}분기`;
 }
