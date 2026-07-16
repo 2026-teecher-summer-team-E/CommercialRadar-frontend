@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { commercialApi } from "../services/commercialApi";
 import { queryKeys, useDistrictSearch } from "../hooks/queries";
@@ -15,6 +15,8 @@ import LineChartSvg from "../components/compare/LineChartSvg";
 import type { LineSeries } from "../components/compare/LineChartSvg";
 import Legend from "../components/compare/Legend";
 import ExpandModal from "../components/compare/ExpandModal";
+import PageLoader from "../components/common/PageLoader";
+import type { AtmoScenario } from "../components/charts/AtmosphereSimulation";
 import {
   seriesGradient,
   fmtNum,
@@ -23,8 +25,10 @@ import {
 } from "../components/compare/format";
 import styles from "./ComparePage.module.css";
 
+const AtmosphereSimulation = lazy(() => import("../components/charts/AtmosphereSimulation"));
+
 type ModalKind = "radar" | "trend" | null;
-type SelectorKind = "quarter" | "category" | "ranking" | null;
+type SelectorKind = "quarter" | "category" | "ranking" | "simulationA" | "simulationB" | "simulationScenario" | null;
 
 interface SelectorOption {
   value: string;
@@ -60,6 +64,12 @@ const DEFAULT_COMPARE_PAGE_STATE: PersistedComparePageState = {
   selectedRankingDistrictId: null,
   modal: null,
 };
+
+const SIMULATION_SCENARIO_OPTIONS: SelectorOption[] = [
+  { value: "mid", label: "중립 시나리오" },
+  { value: "high", label: "긍정적 시나리오" },
+  { value: "low", label: "부정적 시나리오" },
+];
 
 function readComparePageState(): PersistedComparePageState {
   if (typeof window === "undefined") return DEFAULT_COMPARE_PAGE_STATE;
@@ -116,11 +126,15 @@ export default function ComparePage() {
     initialState.selectedRankingDistrictId,
   );
   const [modal, setModal] = useState<ModalKind>(initialState.modal);
+  const [compareSim, setCompareSim] = useState<AtmoScenario | null>(null);
+  const [simulationPairIds, setSimulationPairIds] = useState<[number | null, number | null]>([
+    initialState.selectedIds[0] ?? null,
+    initialState.selectedIds[1] ?? null,
+  ]);
   const [isAdding, setIsAdding] = useState(false);
   const [openSelector, setOpenSelector] = useState<SelectorKind>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [reportSaved, setReportSaved] = useState(false);
 
   useEffect(() => {
     try {
@@ -144,12 +158,6 @@ export default function ComparePage() {
     const timer = window.setTimeout(() => setDebouncedQuery(keyword), 250);
     return () => window.clearTimeout(timer);
   }, [keyword]);
-
-  useEffect(() => {
-    if (!reportSaved) return;
-    const timer = window.setTimeout(() => setReportSaved(false), 2200);
-    return () => window.clearTimeout(timer);
-  }, [reportSaved]);
 
   const search = useDistrictSearch(debouncedQuery, isAdding);
   const searchResults: CommercialDistrictSearchResult[] =
@@ -309,6 +317,46 @@ export default function ComparePage() {
     chipDistricts.find((district) => district.id === effectiveRankingDistrictId)?.district_name ??
     "선택 상권";
   const names = districts.map((d) => d.district_name);
+  const simulationDistricts = simulationPairIds
+    .map((id) => districts.find((district) => district.id === id))
+    .filter((district): district is DistrictCompareResponse["districts"][number] => Boolean(district));
+  const simulationCrowdCounts = useMemo(() => {
+    if (simulationDistricts.length < MIN_DISTRICTS) return new Map<number, number>();
+
+    const trafficValues = simulationDistricts.map((district) => district.avg_population ?? 0);
+    const maxTraffic = Math.max(...trafficValues);
+    const minTraffic = Math.min(...trafficValues);
+
+    if (maxTraffic <= 0) return new Map<number, number>();
+    if (maxTraffic === minTraffic) {
+      return new Map(simulationDistricts.map((district) => [district.id, 14]));
+    }
+
+    return new Map(
+      simulationDistricts.map((district) => {
+        const ratio = Math.max(0, (district.avg_population ?? 0) / maxTraffic);
+        return [district.id, Math.round(6 + ratio * 16)];
+      }),
+    );
+  }, [simulationDistricts]);
+
+  useEffect(() => {
+    if (districts.length < MIN_DISTRICTS) {
+      setSimulationPairIds([null, null]);
+      return;
+    }
+
+    setSimulationPairIds(([firstId, secondId]) => {
+      const districtIds = districts.map((district) => district.id);
+      const validFirstId = firstId && districtIds.includes(firstId) ? firstId : districtIds[0];
+      const fallbackSecondId = districtIds.find((id) => id !== validFirstId) ?? null;
+      const validSecondId =
+        secondId && districtIds.includes(secondId) && secondId !== validFirstId
+          ? secondId
+          : fallbackSecondId;
+      return [validFirstId, validSecondId];
+    });
+  }, [districts]);
 
   // 레이더: 모든 상권의 지표 라벨은 동일하다고 가정, 첫 상권 지표를 기준으로 사용.
   const radarAxes = useMemo(() => data?.radars[0]?.axes.map((a) => a.label) ?? [], [data]);
@@ -351,6 +399,35 @@ export default function ComparePage() {
     setIsAdding(false);
   };
 
+  const openCompareSimulation = () => {
+    if (districts.length < MIN_DISTRICTS) return;
+    setSimulationPairIds(([firstId, secondId]) => {
+      const districtIds = districts.map((district) => district.id);
+      const nextFirstId = firstId && districtIds.includes(firstId) ? firstId : districtIds[0];
+      const nextSecondId =
+        secondId && districtIds.includes(secondId) && secondId !== nextFirstId
+          ? secondId
+          : (districtIds.find((id) => id !== nextFirstId) ?? null);
+      return [nextFirstId, nextSecondId];
+    });
+    setCompareSim("mid");
+  };
+
+  const changeSimulationPair = (position: 0 | 1, nextId: number) => {
+    setSimulationPairIds(([firstId, secondId]) => {
+      const districtIds = districts.map((district) => district.id);
+      const otherPosition = position === 0 ? 1 : 0;
+      const pair: [number | null, number | null] = [firstId, secondId];
+      pair[position] = nextId;
+
+      if (pair[otherPosition] === nextId) {
+        pair[otherPosition] = districtIds.find((id) => id !== nextId) ?? null;
+      }
+
+      return pair;
+    });
+  };
+
   const toggleAddPanel = () => {
     if (selectedIds.length >= MAX_DISTRICTS) return;
     setIsAdding((current) => !current);
@@ -370,7 +447,7 @@ export default function ComparePage() {
 
   return (
     <div className={styles.page}>
-      <Header onSaveReport={() => setReportSaved(true)} reportSaved={reportSaved} />
+      <Header />
 
       {/* 컨트롤 바 */}
       <div className={styles.controlBar}>
@@ -515,7 +592,13 @@ export default function ComparePage() {
       {canCompare && !loading && !error && data && (
         <>
       <section className={styles.section}>
-        <SectionTitle title="핵심 지표 비교" subtitle={`${filterSummary} 기준`} />
+        <div className={styles.sectionTitleRow}>
+          <SectionTitle title="핵심 지표 비교" subtitle={`${filterSummary} 기준`} />
+          <button type="button" className={styles.simulationBtn} onClick={openCompareSimulation}>
+            <span className={styles.simulationBadge}>NEW</span>
+            <span>1:1 비교 시뮬레이션 해보기</span>
+          </button>
+        </div>
         <div className={styles.card}>
           <MetricsTable districts={districts} />
         </div>
@@ -612,6 +695,117 @@ export default function ComparePage() {
           </div>
         </ExpandModal>
       )}
+
+      {compareSim && (
+        <div className={styles.compareSimulationOverlay} onClick={() => setCompareSim(null)}>
+          <div className={styles.compareSimulationModal} onClick={(event) => event.stopPropagation()}>
+            <div className={styles.compareSimulationHeader}>
+              <div>
+                <p className={styles.compareSimulationEyebrow}>1:1 상권 비교 시뮬레이션</p>
+                <h3 className={styles.compareSimulationTitle}>
+                  {simulationDistricts[0]?.district_name ?? "상권 A"} vs {simulationDistricts[1]?.district_name ?? "상권 B"}
+                </h3>
+              </div>
+              <div className={styles.compareSimulationControls}>
+                {[0].map((position) => {
+                  const selectorKind = position === 0 ? "simulationA" : "simulationB";
+                  const otherId = simulationPairIds[position === 0 ? 1 : 0];
+                  const options = districts
+                    .filter((district) => district.id !== otherId)
+                    .map((district) => ({
+                      value: String(district.id),
+                      label: district.district_name,
+                    }));
+
+                  return (
+                    <FilterDropdown
+                      key={position}
+                      label="상권 선택"
+                      value={simulationPairIds[position] ? String(simulationPairIds[position]) : ""}
+                      options={options}
+                      disabled={options.length === 0}
+                      open={openSelector === selectorKind}
+                      onToggle={() =>
+                        setOpenSelector((current) => (current === selectorKind ? null : selectorKind))
+                      }
+                      onClose={() => setOpenSelector(null)}
+                      onChange={(value) => changeSimulationPair(position as 0 | 1, Number(value))}
+                      compact
+                    />
+                  );
+                })}
+                <FilterDropdown
+                  label="시나리오"
+                  value={compareSim}
+                  options={SIMULATION_SCENARIO_OPTIONS}
+                  disabled={false}
+                  open={openSelector === "simulationScenario"}
+                  onToggle={() =>
+                    setOpenSelector((current) =>
+                      current === "simulationScenario" ? null : "simulationScenario",
+                    )
+                  }
+                  onClose={() => setOpenSelector(null)}
+                  onChange={(value) => setCompareSim(value as AtmoScenario)}
+                  compact
+                />
+                {[1].map((position) => {
+                  const selectorKind = position === 0 ? "simulationA" : "simulationB";
+                  const otherId = simulationPairIds[position === 0 ? 1 : 0];
+                  const options = districts
+                    .filter((district) => district.id !== otherId)
+                    .map((district) => ({
+                      value: String(district.id),
+                      label: district.district_name,
+                    }));
+
+                  return (
+                    <FilterDropdown
+                      key={position}
+                      label="상권 선택"
+                      value={simulationPairIds[position] ? String(simulationPairIds[position]) : ""}
+                      options={options}
+                      disabled={options.length === 0}
+                      open={openSelector === selectorKind}
+                      onToggle={() =>
+                        setOpenSelector((current) => (current === selectorKind ? null : selectorKind))
+                      }
+                      onClose={() => setOpenSelector(null)}
+                      onChange={(value) => changeSimulationPair(position as 0 | 1, Number(value))}
+                      compact
+                    />
+                  );
+                })}
+              </div>
+              <button type="button" className={styles.compareSimulationClose} onClick={() => setCompareSim(null)}>
+                ✕
+              </button>
+            </div>
+            {simulationDistricts.length >= MIN_DISTRICTS ? (
+              <div className={styles.compareSimulationGrid}>
+                <Suspense fallback={<PageLoader fullScreen={false} />}>
+                  {simulationDistricts.slice(0, 2).map((district) => (
+                    <AtmosphereSimulation
+                      key={district.id}
+                      scenario={compareSim}
+                      survivalPct={district.survival_rate}
+                      footTraffic={district.avg_population}
+                      crowdBaseCount={simulationCrowdCounts.get(district.id) ?? null}
+                      startQuarter={activeQuarter || null}
+                      panelLabel={district.district_name}
+                      embedded
+                      hideClose
+                      onClose={() => setCompareSim(null)}
+                    />
+                  ))}
+                </Suspense>
+              </div>
+            ) : (
+              <div className={styles.compareSimulationEmpty}>비교할 상권 2개를 선택해 주세요.</div>
+            )}
+          </div>
+        </div>
+      )}
         </>
       )}
     </div>
@@ -623,22 +817,12 @@ function formatQuarter(quarter: string) {
   return match ? `${match[1]}년 ${match[2]}분기` : quarter || "기준 분기 없음";
 }
 
-function Header({ onSaveReport, reportSaved }: { onSaveReport: () => void; reportSaved: boolean }) {
+function Header() {
   return (
     <div className={styles.header}>
       <div>
         <h1 className={styles.title}>상권 비교</h1>
-        <p className={styles.subtitle}>나란히 놓으면 보이는 것들이 있습니다</p>
-      </div>
-      <div className={styles.saveArea}>
-      <button type="button" className={styles.saveBtn} onClick={onSaveReport}>
-        리포트로 저장
-      </button>
-        {reportSaved && (
-          <div className={styles.saveNotice} role="status" aria-live="polite">
-            리포트가 저장됐습니다.
-          </div>
-        )}
+        <p className={styles.subtitle}>여러 상권을 한 화면에서 쉽게 비교해 보세요</p>
       </div>
     </div>
   );
@@ -708,6 +892,7 @@ function FilterDropdown({
   compact?: boolean;
 }) {
   const selectedLabel = options.find((option) => option.value === value)?.label ?? options[0]?.label ?? "-";
+  const displayLabel = selectedLabel;
 
   return (
     <div
@@ -716,6 +901,7 @@ function FilterDropdown({
         if (!event.currentTarget.contains(event.relatedTarget)) onClose();
       }}
     >
+      <span className={styles.selectorCaption}>{label}</span>
       <button
         type="button"
         className={styles.selectorTrigger}
@@ -724,8 +910,7 @@ function FilterDropdown({
         aria-expanded={open}
         onClick={onToggle}
       >
-        <span className={styles.selectorLabel}>{label}</span>
-        <span className={styles.selectorValue}>{selectedLabel}</span>
+        <span className={styles.selectorLabel}>{displayLabel}</span>
         <span className={styles.selectorArrow} aria-hidden>
           ▾
         </span>
@@ -783,8 +968,8 @@ function ScoreCriteria() {
         </div>
         <div>
           <strong>성장성</strong>
-          <p>개업률 × 5</p>
-          <small>개업률 20%를 100점으로 환산합니다.</small>
+          <p>√(개업률 ÷ 10%) × 100</p>
+          <small>낮은 개업률 구간의 차이도 보이도록 곡선형 점수로 환산합니다.</small>
         </div>
       </div>
     </aside>
@@ -900,7 +1085,7 @@ function RadarValueTable({ axes, series }: { axes: string[]; series: RadarSeries
                 <td className={styles.metricCol}>{axis}</td>
                 {vals.map((v, i) => (
                   <td key={i} className={`${styles.numCell} ${i === best ? styles.bestCell : ""}`}>
-                    {fmtNum(v, 0)}
+                    {axis === "생존율" ? fmtNum(v, 1) : fmtNum(v, 0)}
                   </td>
                 ))}
               </tr>

@@ -45,16 +45,17 @@ function points(
     .join(" ");
 }
 
-function formatScore(value: number): string {
-  return String(Math.round(value * 10) / 10);
+function formatScore(value: number, axisLabel: string): string {
+  return axisLabel === "생존율" ? value.toFixed(1) : value.toFixed(0);
 }
 
-function axisDetails(series: RadarSeries[], axisIndex: number): TooltipState["details"] {
+function axisDetails(series: RadarSeries[], axes: string[], axisIndex: number): TooltipState["details"] {
+  const axisLabel = axes[axisIndex] ?? "";
   return series
     .map((s, i) => ({
       name: s.name,
       rawValue: s.values[axisIndex] ?? 0,
-      value: formatScore(s.values[axisIndex] ?? 0),
+      value: formatScore(s.values[axisIndex] ?? 0, axisLabel),
       color: seriesColor(i),
     }))
     .sort((a, b) => b.rawValue - a.rawValue)
@@ -111,7 +112,7 @@ export default function RadarChartSvg({ axes, series, size = 420 }: Props) {
       axisIndex,
       title: `${axes[axisIndex]} 순위`,
       color: "var(--color-border-strong)",
-      details: axisDetails(series, axisIndex),
+      details: axisDetails(series, axes, axisIndex),
     });
   };
 
