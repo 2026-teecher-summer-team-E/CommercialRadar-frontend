@@ -40,7 +40,7 @@ export default function ScoreCard({
       <div className={styles.scoreRow}>
         <div className={styles.scoreBig}>
           <span className={styles.scoreNum}>{score != null ? Math.round(score) : "—"}</span>
-          <span className={styles.scoreDenom}>/100</span>
+          <span className={styles.scoreDenom}>점</span>
         </div>
         {rankLabel ? (
           <Link to="/ranking" className={styles.topPill} aria-label={`${rankLabel} — 랭킹 페이지로 이동`}>

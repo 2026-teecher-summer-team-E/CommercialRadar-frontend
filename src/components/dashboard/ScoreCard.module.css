@@ -6,8 +6,8 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
-  /* topGridLeft에서 옆 시뮬레이션 박스는 내용 높이만큼만 차지하므로, 남는 세로 공간은
-     이 카드가 전부 흡수한다(flex:1). 그 여백은 섹션 사이사이에 고르게 퍼지도록 한다. */
+  /* topGridLeft에서 남는 세로 공간을 시뮬레이션 박스(flex:0.7)와 나눠 갖는다
+     (이 카드가 더 많이 가져가되, 전부는 아님 — 시뮬레이션 박스 높이를 키우려고 배분). */
   flex: 1;
   justify-content: space-between;
 }
