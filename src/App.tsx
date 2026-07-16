@@ -17,6 +17,8 @@ const AdminPage = lazy(() => import("./pages/AdminPage"));
 const SignInPage = lazy(() => import("./pages/SignInPage"));
 const SignUpPage = lazy(() => import("./pages/SignUpPage"));
 const GangnamCafeDemoPage = lazy(() => import("./pages/GangnamCafeDemoPage"));
+const ShareReportPage = lazy(() => import("./pages/ShareReportPage"));
+const ReportDetailPage = lazy(() => import("./pages/ReportDetailPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 
 /** 앱 내부 페이지: 인증 가드 + 사이드바 레이아웃 공유. */
@@ -51,6 +53,8 @@ function App() {
             <Route path="/sign-up/*" element={<SignUpPage />} />
             {/* 딥러닝(강남역 카페) 예측 데모 */}
             <Route path="/demo/gangnam-cafe" element={<GangnamCafeDemoPage />} />
+            {/* 공유된 리포트(비로그인 접근 가능) */}
+            <Route path="/reports/share/:token" element={<ShareReportPage />} />
 
             {/* 앱 내부(가드 + 사이드바) */}
             <Route path="/" element={appRoute(<MapPage />)} />
@@ -60,6 +64,7 @@ function App() {
             <Route path="/trends" element={appRoute(<TrendsPage />)} />
             <Route path="/admin" element={adminRoute(<AdminPage />)} />
             <Route path="/mypage" element={appRoute(<MyPage />)} />
+            <Route path="/reports/:id" element={appRoute(<ReportDetailPage />)} />
 
             {/* 404 */}
             <Route path="*" element={<NotFoundPage />} />

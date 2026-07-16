@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { InterestDistrict } from "../../types";
-import { initialOf, seriesColor, seriesBg } from "./format";
+import { DistrictTypeIcon, districtTypeLabel, districtTypeStyle } from "./districtIcons";
 import styles from "./mypage.module.css";
 
 interface InterestCardProps {
   item: InterestDistrict;
-  index: number;
+  /** 랭킹에서 보강한 상권 정보(유형·이름). 로딩 전/미포함이면 undefined. */
+  info?: { name: string | null; type: string | null };
   /** 메모 저장 콜백. 빈 메모는 null 로 전달. */
   onSaveMemo: (id: number, memo: string | null) => void;
   busy: boolean;
@@ -17,7 +18,7 @@ const MEMO_MAX = 500;
 /** 관심 상권 1건 카드. 카드 클릭 시 랭킹처럼 상권 대시보드로 이동. 메모 추가/수정 가능. */
 export default function InterestCard({
   item,
-  index,
+  info,
   onSaveMemo,
   busy,
 }: InterestCardProps) {
@@ -25,7 +26,9 @@ export default function InterestCard({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(item.memo ?? "");
 
-  const title = item.district_name ?? `상권 #${item.commercial_district_id}`;
+  const districtType = info?.type ?? null;
+  const title = item.district_name ?? info?.name ?? `상권 #${item.commercial_district_id}`;
+  const typeStyle = districtTypeStyle(districtType);
   const goDashboard = () => navigate(`/dashboard/${item.commercial_district_id}`);
 
   const startEdit = () => {
@@ -58,10 +61,11 @@ export default function InterestCard({
     >
       <span
         className={styles.cardMark}
-        style={{ color: seriesColor(index), background: seriesBg(index) }}
+        style={{ color: typeStyle.color, background: typeStyle.bg }}
+        title={districtTypeLabel(districtType)}
         aria-hidden="true"
       >
-        {initialOf(title)}
+        <DistrictTypeIcon type={districtType} size={32} />
       </span>
 
       <div className={styles.cardBody}>

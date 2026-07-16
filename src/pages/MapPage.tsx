@@ -23,6 +23,53 @@ import styles from "./MapPage.module.css";
 
 const DEFAULT_DISTRICT_ID = 1315;
 const EMPTY_GEO: DistrictGeo[] = [];
+const MAP_PAGE_STORAGE_KEY = "commercialRadar.mapPageState.v1";
+
+interface PersistedMapPageState {
+  selectedId: number;
+  query: string;
+  typeFilter: string;
+  guFilter: string;
+  popFilter: PopulationBucket;
+  categoryFilter: string | null;
+}
+
+const DEFAULT_MAP_PAGE_STATE: PersistedMapPageState = {
+  selectedId: DEFAULT_DISTRICT_ID,
+  query: "",
+  typeFilter: "전체",
+  guFilter: "전체",
+  popFilter: "전체",
+  categoryFilter: null,
+};
+
+function readMapPageState(): PersistedMapPageState {
+  if (typeof window === "undefined") return DEFAULT_MAP_PAGE_STATE;
+  try {
+    const raw = window.localStorage.getItem(MAP_PAGE_STORAGE_KEY);
+    if (!raw) return DEFAULT_MAP_PAGE_STATE;
+    const parsed = JSON.parse(raw) as Partial<PersistedMapPageState>;
+    return {
+      selectedId:
+        typeof parsed.selectedId === "number" && Number.isFinite(parsed.selectedId) && parsed.selectedId > 0
+          ? parsed.selectedId
+          : DEFAULT_MAP_PAGE_STATE.selectedId,
+      query: typeof parsed.query === "string" ? parsed.query : DEFAULT_MAP_PAGE_STATE.query,
+      typeFilter: typeof parsed.typeFilter === "string" ? parsed.typeFilter : DEFAULT_MAP_PAGE_STATE.typeFilter,
+      guFilter: typeof parsed.guFilter === "string" ? parsed.guFilter : DEFAULT_MAP_PAGE_STATE.guFilter,
+      popFilter:
+        parsed.popFilter === "전체" || parsed.popFilter === "적음" || parsed.popFilter === "보통" || parsed.popFilter === "많음"
+          ? parsed.popFilter
+          : DEFAULT_MAP_PAGE_STATE.popFilter,
+      categoryFilter:
+        typeof parsed.categoryFilter === "string" || parsed.categoryFilter === null
+          ? parsed.categoryFilter
+          : DEFAULT_MAP_PAGE_STATE.categoryFilter,
+    };
+  } catch {
+    return DEFAULT_MAP_PAGE_STATE;
+  }
+}
 
 /** 좌측 패널 상세 5개 API 병렬 호출. 상권 상세 실패만 에러, 나머지는 null 허용(allSettled). */
 async function fetchMapSummary(
@@ -50,12 +97,13 @@ async function fetchMapSummary(
 export default function MapPage() {
   const navigate = useNavigate();
   const openProfile = useCallback((id: number) => navigate(`/dashboard/${id}`), [navigate]);
+  const [initialState] = useState(readMapPageState);
 
   // 다른 페이지(랭킹 등)에서 ?district=<id> 로 진입하면 그 상권을 선택된 상태로 연다.
   const [searchParams, setSearchParams] = useSearchParams();
   const districtParam = Number(searchParams.get("district"));
   const initialDistrictId =
-    Number.isFinite(districtParam) && districtParam > 0 ? districtParam : DEFAULT_DISTRICT_ID;
+    Number.isFinite(districtParam) && districtParam > 0 ? districtParam : initialState.selectedId;
 
   const [selectedId, setSelectedId] = useState<number>(initialDistrictId);
   // 마운트 시점 값을 기억해 두고, 실제로 그 값에서 벗어날 때만 URL에 반영한다.
@@ -74,19 +122,20 @@ export default function MapPage() {
       { replace: true },
     );
   }, [selectedId, setSearchParams]);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialState.query);
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const searchBarRef = useRef<HTMLDivElement | null>(null);
   const { items: recentSearches, addSearch, removeSearch } = useRecentSearches();
 
   // 지도 필터(구역 실필터): 상권유형/자치구/유동인구.
-  const [typeFilter, setTypeFilter] = useState<string>("전체");
-  const [guFilter, setGuFilter] = useState<string>("전체");
-  const [popFilter, setPopFilter] = useState<PopulationBucket>("전체");
+  const [typeFilter, setTypeFilter] = useState<string>(initialState.typeFilter);
+  const [guFilter, setGuFilter] = useState<string>(initialState.guFilter);
+  const [popFilter, setPopFilter] = useState<PopulationBucket>(initialState.popFilter);
 
   // 업종 필터(선택 상권 지표만 재조회, 마커/지도는 그대로).
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(initialState.categoryFilter);
+  const categoryResetReadyRef = useRef(false);
 
   // 전 상권 좌표(자치구 필터 카메라 이동용) + 경계 폴리곤(구역 표시). 전역 캐시라 페이지 재진입 시 재요청 없음.
   const geoQuery = useQuery({
@@ -110,8 +159,24 @@ export default function MapPage() {
   const loading = summaryQuery.isPending;
   const error = summaryQuery.isError;
 
+  useEffect(() => {
+    const state: PersistedMapPageState = {
+      selectedId,
+      query,
+      typeFilter,
+      guFilter,
+      popFilter,
+      categoryFilter,
+    };
+    window.localStorage.setItem(MAP_PAGE_STORAGE_KEY, JSON.stringify(state));
+  }, [selectedId, query, typeFilter, guFilter, popFilter, categoryFilter]);
+
   // 상권이 바뀌면 이전 상권 기준 업종 필터 선택값이 무의미해지므로 초기화.
   useEffect(() => {
+    if (!categoryResetReadyRef.current) {
+      categoryResetReadyRef.current = true;
+      return;
+    }
     setCategoryFilter(null);
   }, [selectedId]);
 

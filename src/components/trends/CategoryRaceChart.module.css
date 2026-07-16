@@ -42,7 +42,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  transition: transform 900ms ease;
+  transition: transform 450ms ease-out;
 }
 .rowLabel {
   flex: 0 0 84px;
@@ -65,7 +65,7 @@
 .bar {
   height: 100%;
   border-radius: var(--radius-pill);
-  transition: width 900ms ease, background-color 300ms ease;
+  transition: width 450ms ease-out, background-color 300ms ease-out;
 }
 .rowValue {
   flex: 0 0 48px;
@@ -77,25 +77,60 @@
 }
 
 .scrubber {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
-  justify-content: center;
+  justify-content: space-between;
+  width: 50%;
+  margin: 0 auto;
+  padding: 10px 2px;
+  cursor: grab;
+  touch-action: none;
+}
+.scrubberDragging {
+  cursor: grabbing;
+}
+.scrubberTrack {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+  background: var(--color-border);
+  border-radius: var(--radius-pill);
+  pointer-events: none;
 }
 .dot {
-  width: 7px;
-  height: 7px;
+  position: relative;
+  width: 6px;
+  height: 6px;
   padding: 0;
   border: none;
   border-radius: 50%;
   background: var(--color-border-strong);
   cursor: pointer;
+  pointer-events: none;
 }
-.dotActive {
-  composes: dot;
-  width: 18px;
-  border-radius: var(--radius-pill);
+
+/* 현재 위치를 보여주는 손잡이. 드래그 중엔 트랜지션 없이 마우스를 그대로 따라가고,
+   손을 떼면(클릭 이동·자동재생) 다시 부드럽게 미끄러지듯 이동한다. */
+.thumb {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
+  border-radius: 50%;
   background: var(--color-primary);
+  box-shadow: var(--shadow-pop);
+  transform: translateY(-50%);
+  transition: left 220ms ease;
+  pointer-events: none;
+}
+.thumbDragging {
+  transition: none;
 }
 
 .empty {

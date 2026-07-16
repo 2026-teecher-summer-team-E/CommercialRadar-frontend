@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import type {
   UserStats,
@@ -9,6 +10,7 @@ import { reportsApi } from "../services/reportsApi";
 import { interestApi } from "../services/interestApi";
 import {
   queryKeys,
+  useDistrictRanking,
   useInterestDistricts,
   useMe,
   useMyReports,
@@ -16,10 +18,19 @@ import {
 } from "../hooks/queries";
 import { formatJoinDate, initialOf } from "../components/mypage/format";
 import ReportCard from "../components/mypage/ReportCard";
+import SharedReportCard from "../components/mypage/SharedReportCard";
 import InterestCard from "../components/mypage/InterestCard";
 import EmptyState from "../components/mypage/EmptyState";
 import listStyles from "../components/mypage/mypage.module.css";
 import styles from "./MyPage.module.css";
+import Toast, { useToast } from "../components/common/Toast";
+import type { SharedReportEntry } from "../types";
+import {
+  addSharedReport,
+  getSharedReports,
+  removeSharedReport,
+  SHARED_REPORTS_EVENT,
+} from "../lib/sharedReports";
 import { useAuth, clerkEnabled } from "../lib/auth";
 
 type TabKey = "reports" | "interests" | "shared";
@@ -30,6 +41,7 @@ const REPORTS_PARAMS = { page: 1, limit: REPORTS_LIMIT };
 export default function MyPage() {
   const { signOut } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const [tab, setTab] = useState<TabKey>("interests");
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -37,12 +49,37 @@ export default function MyPage() {
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const cancelBtnRef = useRef<HTMLButtonElement>(null);
 
+  const { message: toast, showToast } = useToast();
+  // 공유된 리포트는 백엔드 목록 API가 없어 localStorage로 추적한다.
+  const [sharedReports, setSharedReports] = useState<SharedReportEntry[]>(() => getSharedReports());
+  useEffect(() => {
+    const sync = () => setSharedReports(getSharedReports());
+    window.addEventListener(SHARED_REPORTS_EVENT, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(SHARED_REPORTS_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
   // me / stats / reports 병렬 fetch. me 실패만 페이지 에러(stats·reports 는 없어도 렌더).
   const meQuery = useMe();
   const statsQuery = useMyStats();
   const reportsQuery = useMyReports(REPORTS_PARAMS);
   // 관심 상권은 탭 최초 진입 시 lazy fetch (이후엔 캐시 사용).
   const interestsQuery = useInterestDistricts(tab === "interests");
+  // 관심 상권 API 는 유형/이름을 주지 않으므로, 전 상권 랭킹(id→유형·이름, 앱 캐시 공유)으로 보강한다.
+  const rankingQuery = useDistrictRanking(
+    { scope: "seoul", sort: "score", limit: 2000 },
+    { enabled: tab === "interests" },
+  );
+  const districtInfo = useMemo(() => {
+    const map = new Map<number, { name: string | null; type: string | null }>();
+    for (const it of rankingQuery.data ?? []) {
+      map.set(it.id, { name: it.district_name, type: it.type_name });
+    }
+    return map;
+  }, [rankingQuery.data]);
 
   const user = meQuery.data ?? null;
   const stats = statsQuery.data ?? null;
@@ -68,10 +105,38 @@ export default function MyPage() {
     setBusyId(id);
     reportsApi
       .share(id)
-      .catch(() => {
-        /* 공유 실패는 조용히 무시 */
+      .then((res) => {
+        const report = reports.find((r) => r.id === id);
+        // 공유 링크(토큰)를 로컬에 보관 → 공유된 리포트 탭에 노출.
+        setSharedReports(
+          addSharedReport({
+            id,
+            title: report?.title ?? "리포트",
+            district_name: report?.district_name ?? null,
+            category_name: report?.category_name ?? null,
+            share_token: res.data.share_token,
+            share_url: res.data.share_url,
+            shared_at: new Date().toISOString(),
+          }),
+        );
+        showToast("공유 링크를 만들었어요. 공유된 리포트 탭에서 확인하세요.");
       })
+      .catch(() => showToast("공유에 실패했어요. 잠시 후 다시 시도해 주세요."))
       .finally(() => setBusyId(null));
+  };
+
+  const handleRemoveShared = (id: number) => {
+    setSharedReports(removeSharedReport(id));
+    showToast("공유 목록에서 제거했어요.");
+  };
+
+  const handleCopyShareLink = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast("공유 링크를 복사했어요.");
+    } catch {
+      showToast("링크 복사에 실패했어요.");
+    }
   };
 
   const handleMemoSave = (id: number, memo: string | null) => {
@@ -103,9 +168,11 @@ export default function MyPage() {
         queryClient.setQueryData<UserStats>(queryKeys.myStats, (s) =>
           s ? { ...s, saved_reports: Math.max(0, s.saved_reports - 1) } : s,
         );
+        showToast("리포트를 삭제했어요.");
       })
       .catch(() => {
         queryClient.setQueryData(reportsKey, prev); // 롤백
+        showToast("삭제에 실패했어요. 잠시 후 다시 시도해 주세요.");
       })
       .finally(() => setBusyId(null));
   };
@@ -131,7 +198,8 @@ export default function MyPage() {
   const name = user?.name ?? "게스트";
   const savedCount = stats?.saved_reports ?? reports.length;
   const interestCount = stats?.interest_districts ?? 0;
-  const sharedCount = stats?.shared_reports ?? 0;
+  // 공유는 로컬 추적이므로 화면과 일치하도록 로컬 목록 길이를 사용한다.
+  const sharedCount = sharedReports.length;
 
   const tabs: { key: TabKey; label: string; count: number }[] = [
     { key: "interests", label: "관심 상권", count: interestCount },
@@ -227,6 +295,7 @@ export default function MyPage() {
                   key={r.id}
                   report={r}
                   index={i}
+                  onView={(id) => navigate(`/reports/${id}`)}
                   onShare={handleShare}
                   onRemove={handleRemove}
                   busy={busyId === r.id}
@@ -245,11 +314,11 @@ export default function MyPage() {
             <div className={styles.state}>관심 상권 목록을 가져오는 중…</div>
           ) : interests.length > 0 ? (
             <ul className={listStyles.list}>
-              {interests.map((item, i) => (
+              {interests.map((item) => (
                 <InterestCard
                   key={item.id}
                   item={item}
-                  index={i}
+                  info={districtInfo.get(item.commercial_district_id)}
                   onSaveMemo={handleMemoSave}
                   busy={busyInterestId === item.id}
                 />
@@ -262,12 +331,25 @@ export default function MyPage() {
             />
           ))}
 
-        {tab === "shared" && (
-          <EmptyState
-            title="공유된 리포트가 아직 없어요"
-            description="리포트를 공유하면 공유 링크와 함께 이곳에 모입니다."
-          />
-        )}
+        {tab === "shared" &&
+          (sharedReports.length > 0 ? (
+            <ul className={listStyles.list}>
+              {sharedReports.map((item, i) => (
+                <SharedReportCard
+                  key={item.id}
+                  item={item}
+                  index={i}
+                  onCopyLink={handleCopyShareLink}
+                  onRemove={handleRemoveShared}
+                />
+              ))}
+            </ul>
+          ) : (
+            <EmptyState
+              title="공유된 리포트가 아직 없어요"
+              description="저장된 리포트에서 공유 버튼을 누르면 공유 링크와 함께 이곳에 모입니다."
+            />
+          ))}
       </section>
 
       {/* 로그아웃 확인 모달 */}
@@ -313,6 +395,8 @@ export default function MyPage() {
           </div>
         </div>
       )}
+
+      <Toast message={toast} />
     </div>
   );
 }
