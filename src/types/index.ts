@@ -122,6 +122,7 @@ export interface PopularCategoryItem {
   popularity_index: number;
   trend_pct: number | null;
   qoq_business_change: number | null;
+  qoq_sales_change_pct: number | null;
   core_age_group: string | null;
 }
 export interface PopularCategoriesResponse {
@@ -152,6 +153,7 @@ export interface RelatedCategoryItem {
   correlation: number;
   trend_pct: number | null;
   qoq_business_change: number | null;
+  qoq_sales_change_pct: number | null;
 }
 export interface RelatedCategoriesResponse {
   category_name: string;

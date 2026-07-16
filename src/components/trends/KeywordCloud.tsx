@@ -239,6 +239,12 @@ export default function KeywordCloud({ items, history }: Props) {
                 </span>
               </span>
               <span className={styles.relatedMetric}>
+                <span className={styles.relatedMetricLabel}>매출 증감</span>
+                <span className={styles.relatedMetricValue}>
+                  <TrendValue value={selected.qoq_sales_change_pct} format={fmtPctMagnitude} />
+                </span>
+              </span>
+              <span className={styles.relatedMetric}>
                 <span className={styles.relatedMetricLabel}>핵심 수요층</span>
                 <span className={styles.relatedMetricValue}>{selected.core_age_group ?? "—"}</span>
               </span>
@@ -340,6 +346,12 @@ export default function KeywordCloud({ items, history }: Props) {
                         <span className={styles.relatedMetricLabel}>전분기 대비</span>
                         <span className={styles.relatedMetricValue}>
                           <TrendValue value={item.qoq_business_change} format={fmtCountMagnitude} />
+                        </span>
+                      </span>
+                      <span className={styles.relatedMetric}>
+                        <span className={styles.relatedMetricLabel}>매출 증감</span>
+                        <span className={styles.relatedMetricValue}>
+                          <TrendValue value={item.qoq_sales_change_pct} format={fmtPctMagnitude} />
                         </span>
                       </span>
                     </div>
