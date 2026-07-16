@@ -13,6 +13,8 @@ interface LeafletMapProps {
   activeName: string | null;
   activeType: string | null;
   activeScore: number | null;
+  /** 마운트 시 selectedId로 명확한 포커스 이동 의도가 있었는지(랭킹 등에서 진입). true면 처음부터 flyToBounds+팝업, false면 카메라는 조용히 유지하되 팝업만 자동으로 연다. */
+  flyToSelectionOnMount: boolean;
   onSelect: (id: number) => void;
   onOpenProfile: (id: number) => void;
 }
@@ -69,6 +71,7 @@ export default function LeafletMap({
   activeName,
   activeType,
   activeScore,
+  flyToSelectionOnMount,
   onSelect,
   onOpenProfile,
 }: LeafletMapProps) {
@@ -92,6 +95,10 @@ export default function LeafletMap({
   // effect 3의 의존성에 geojson도 포함하는데, 그 재실행이 데이터 갱신처럼 선택과 무관한 이유일 때는
   // 카메라를 또 움직이지 않도록 이 ref로 "이미 이동했음"을 구분한다.
   const flownRef = useRef<number | null>(null);
+  // 마운트 후 팝업을 한 번이라도 자동으로 띄웠는지 추적(카메라 이동 여부와는 별개).
+  // flownRef는 "카메라를 움직였는가"만 의미하도록 하고, 팝업 자동 오픈은 이 ref로 독립적으로 관리해서
+  // "마운트 시 카메라는 조용히 유지 + 팝업은 자동으로 연다" 케이스를 표현할 수 있게 한다.
+  const initialPopupShownRef = useRef(false);
 
   const markProgrammaticMove = (map: L.Map) => {
     pendingProgrammaticViewRef.current = true;
@@ -143,9 +150,6 @@ export default function LeafletMap({
       // 좌측 상단에 플로팅 패널이 얹히므로 확대/축소 컨트롤은 우측 하단에 둔다.
       zoomControl: false,
     });
-    if (restoredView) {
-      flownRef.current = selectedId;
-    }
     L.control.zoom({ position: "bottomright" }).addTo(map);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
@@ -173,10 +177,13 @@ export default function LeafletMap({
     map.on("moveend", onMoveEnded);
     // flownRef/guFilterMountedRef는 "이 map 인스턴스로 이미 카메라를 움직였는지"를
     // 추적하는 값이라 컴포넌트가 아니라 map 인스턴스 생애주기에 묶여야 한다.
-    // (React StrictMode dev 모드는 마운트 시 effect를 한 번 더 실행해 이 map을
-    // 버리고 새로 만드는데, ref 자체는 그 사이에도 유지되므로 여기서 다시 초기화하지
-    // 않으면 실제로 남는 map엔 카메라 이동이 한 번도 적용되지 않는다.)
-    flownRef.current = null;
+    // - flyToSelectionOnMount가 false(새로고침/일반 진입): 마운트 시점 selectedId는 "이미 그
+    //   위치로 이동해 있는 것"으로 간주해 flownRef를 채워둔다 → effect 3이 마운트 직후
+    //   isNewSelection=false로 판단해 자동 flyToBounds를 건너뛴다(흔들림 방지).
+    // - flyToSelectionOnMount가 true(랭킹 등에서 특정 상권을 향한 명확한 이동 의도로 진입):
+    //   flownRef를 비워둬 effect 3이 "새 선택"으로 처리하게 해 정상적으로 flyToBounds가 실행되게 한다.
+    flownRef.current = flyToSelectionOnMount ? null : selectedId;
+    initialPopupShownRef.current = false;
     guFilterMountedRef.current = false;
     setTimeout(() => map.invalidateSize(), 0);
 
@@ -200,7 +207,8 @@ export default function LeafletMap({
       mapRef.current = null;
       polysRef.current.clear();
     };
-  }, []);
+    // selectedId는 마운트 시점 값만 참조(최초 flownRef 초기화용)하므로 의도적으로 deps에서 제외.
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 2) 구역(폴리곤) 레이어(geojson 변경 시)
   useEffect(() => {
@@ -256,7 +264,10 @@ export default function LeafletMap({
         map.flyToBounds(bounds, { padding: [80, 80], maxZoom: 17, duration: 0.8 });
       }
       sel.bindPopup(buildPopup(), { closeButton: true, minWidth: 170 });
-      if (isNewSelection || wasOpen) sel.openPopup();
+      // 팝업 자동 오픈은 카메라 이동(isNewSelection) 여부와 별개다: 마운트 시 카메라를 조용히
+      // 유지하는 경우(흔들림 방지)에도 선택된 상권의 팝업만큼은 처음 한 번은 자동으로 띄운다.
+      if (isNewSelection || wasOpen || !initialPopupShownRef.current) sel.openPopup();
+      initialPopupShownRef.current = true;
     }
     // geojson도 의존성에 포함: 데이터가 늦게 도착해 selectedId의 구역이 뒤늦게 생기는 경우를 다시 시도한다.
   }, [selectedId, activeName, activeType, activeScore, geojson]); // eslint-disable-line react-hooks/exhaustive-deps

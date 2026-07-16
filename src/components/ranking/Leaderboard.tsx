@@ -112,13 +112,13 @@ export default function Leaderboard({
             <tr
               key={d.id}
               className={rowClass(rank)}
-              onClick={() => navigate(`/?district=${d.id}`)}
+              onClick={() => navigate(`/?district=${d.id}`, { state: { flyToDistrict: true } })}
               role="link"
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  navigate(`/?district=${d.id}`);
+                  navigate(`/?district=${d.id}`, { state: { flyToDistrict: true } });
                 }
               }}
             >

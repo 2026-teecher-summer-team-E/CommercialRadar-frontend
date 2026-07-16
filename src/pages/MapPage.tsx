@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { commercialApi } from "../services/commercialApi";
 import { queryKeys, useDistrictSearch } from "../hooks/queries";
@@ -96,6 +96,7 @@ async function fetchMapSummary(
 
 export default function MapPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const openProfile = useCallback((id: number) => navigate(`/dashboard/${id}`), [navigate]);
   const [initialState] = useState(readMapPageState);
 
@@ -109,6 +110,21 @@ export default function MapPage() {
   // 마운트 시점 값을 기억해 두고, 실제로 그 값에서 벗어날 때만 URL에 반영한다.
   // (boolean 플래그로 "최초 1회"를 가리면 StrictMode의 effect 이중 실행에서 깨지므로 값 비교로 판단)
   const lastSyncedIdRef = useRef(initialDistrictId);
+
+  // 랭킹 등 다른 페이지에서 "이 상권으로 포커스 이동" 의도를 갖고 들어왔는지(navigate state로 전달).
+  // 새로고침 시에는 이 의도가 재현되면 안 되므로 마운트 시점 값만 한 번 읽어 기억해두고 즉시 state를 비운다.
+  const [focusOnMount] = useState<boolean>(
+    () => (location.state as { flyToDistrict?: boolean } | null)?.flyToDistrict === true,
+  );
+  useEffect(() => {
+    if (!location.state) return;
+    navigate(
+      { pathname: location.pathname, search: location.search },
+      { replace: true, state: null },
+    );
+    // 마운트 시 1회만 소비하면 되므로 의도적으로 빈 deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 사용자가 실제로 상권을 바꿀 때만 URL에 반영(진입 시 기본값으로 URL을 건드리지 않음). 히스토리 스팸 방지를 위해 replace 사용.
   useEffect(() => {
@@ -438,6 +454,7 @@ export default function MapPage() {
               activeName={summary?.detail?.district_name ?? null}
               activeType={summary?.detail?.type_name ?? null}
               activeScore={activeScore}
+              flyToSelectionOnMount={focusOnMount}
               onSelect={setSelectedId}
               onOpenProfile={openProfile}
             />
