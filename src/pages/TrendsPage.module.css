@@ -109,24 +109,25 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 /* 고정 열 너비 그리드 — 모든 행이 같은 트랙을 쓰므로 변화율/검색지수/전분기 대비가
    행마다 세로로 정확히 정렬된다. 이름 칸을 넉넉히(190px) 잡아 이름-지표 간격을
    자연스럽게 벌리고, 지표 칸끼리는 column-gap만큼만 촘촘히 붙인다. */
 .risingRow {
   display: grid;
-  grid-template-columns: 190px repeat(3, 70px);
+  grid-template-columns: 190px repeat(3, 80px);
   justify-content: center;
   column-gap: 16px;
   align-items: center;
-  padding: 12px 14px;
+  padding: 20px 18px 20px 8px;
   background: var(--color-chip);
   border-radius: var(--radius);
 }
 .risingName {
   min-width: 0;
-  font-size: 14px;
+  margin-left: -10px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--color-text);
   white-space: nowrap;
@@ -140,14 +141,14 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
+  gap: 4px;
 }
 .risingMetricLabel {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-muted);
 }
 .risingMetricValue {
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--color-text);
   font-family: var(--font-num);
