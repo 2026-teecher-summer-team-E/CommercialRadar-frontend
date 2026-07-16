@@ -333,6 +333,7 @@
 }
 .rankRow {
   display: flex;
+  flex: 1;
   align-items: center;
   gap: 12px;
   min-height: 58px;
@@ -346,7 +347,7 @@
   flex: none;
   width: 20px;
   text-align: center;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--color-faint);
   font-family: var(--font-num);
@@ -362,25 +363,27 @@
   gap: 12px;
 }
 .rankName {
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.4;
   font-weight: 600;
   color: var(--color-text);
 }
+.rankRight {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 .rankSub {
-  margin-top: 2px;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.4;
   color: var(--color-muted);
-}
-.rankSubSpacer {
-  visibility: hidden;
 }
 .rankDelta {
   flex: none;
   min-width: 42px;
   text-align: center;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--color-green);
   font-family: var(--font-num);
@@ -453,6 +456,34 @@
 }
 .downloadLink:hover {
   color: var(--color-primary-dark);
+}
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-text);
+  border-radius: 999px;
+  box-shadow: var(--shadow-pop);
+  animation: toastIn 0.2s ease-out;
+}
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 /* ── Audience section ───────────────────── */
