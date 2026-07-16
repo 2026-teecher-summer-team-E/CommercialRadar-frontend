@@ -55,15 +55,6 @@
   justify-content: flex-end;
   gap: 4px;
 }
-/* 모달(확대 보기)은 낮음/높음 범례를 왼쪽에 두고 단위 표기를 오른쪽 끝에 따로 둔다
-   (인라인은 값에 "만명" 접미사가 이미 붙어 있어 단위 표기 자체가 없다). */
-.legendWide {
-  justify-content: space-between;
-}
-.unitNote {
-  font-size: 12px;
-  color: var(--color-muted);
-}
 .legendLabel {
   font-size: 12px;
   color: var(--color-muted);

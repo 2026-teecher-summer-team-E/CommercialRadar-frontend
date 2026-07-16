@@ -443,9 +443,14 @@ export default function DashboardPage() {
       value: r.avg_rent_per_sqm == null ? null : r.avg_rent_per_sqm * 1000,
     }));
   }, [data]);
-  const rentRep = useMemo<RentStat | null>(() => {
-    const rows = data?.rent?.rent_stats ?? [];
-    return rows.length > 0 ? rows[0] : null;
+  // 대표 임대료 = "집합상가 기준" 같은 특정 상가유형 하나가 아니라, 이 상권에 있는
+  // 모든 상가유형(소규모/중대형/집합)의 ㎡당 임대료를 평균한 값.
+  const rentAvgPerSqm = useMemo<number | null>(() => {
+    const vals = (data?.rent?.rent_stats ?? [])
+      .map((r) => r.avg_rent_per_sqm)
+      .filter((v): v is number => v != null);
+    if (vals.length === 0) return null;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
   }, [data]);
 
   // AtmosphereSimulation용: 낮/밤 우위, 매출 비중, 시간대별 유동인구.
@@ -688,10 +693,7 @@ export default function DashboardPage() {
       <section className={styles.section}>
         <SectionTitle title="비용·리스크" subtitle="창업 전 반드시 확인할 비용과 신호" />
         <div className={styles.duoGrid}>
-          <RentCard
-            perSqm={rentRep?.avg_rent_per_sqm != null ? rentRep.avg_rent_per_sqm * 1000 : null}
-            typeLabel={rentRep?.floor_type ?? null}
-          />
+          <RentCard perSqm={rentAvgPerSqm != null ? rentAvgPerSqm * 1000 : null} />
           <FloorRentCard bars={rentBars} />
         </div>
       </section>

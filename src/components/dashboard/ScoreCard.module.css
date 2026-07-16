@@ -9,7 +9,7 @@
   /* topGridLeft에서 남는 세로 공간을 시뮬레이션 박스(flex:0.7)와 나눠 갖는다
      (이 카드가 더 많이 가져가되, 전부는 아님 — 시뮬레이션 박스 높이를 키우려고 배분). */
   flex: 1;
-  justify-content: space-between;
+  justify-content: flex-start;
 }
 .head {
   display: flex;
@@ -42,6 +42,7 @@
   display: flex;
   align-items: baseline;
   gap: 12px;
+  margin-top: 8px;
   margin-bottom: 12px;
 }
 .scoreBig {
@@ -53,6 +54,12 @@
   font-size: 64px;
   font-weight: 800;
   line-height: 1;
+  color: var(--color-primary);
+  font-family: var(--font-num);
+}
+.scoreUnit {
+  font-size: 24px;
+  font-weight: 800;
   color: var(--color-primary);
   font-family: var(--font-num);
 }
@@ -85,6 +92,7 @@ a.topPill:hover {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
+  margin-top: auto;
   margin-bottom: 14px;
 }
 .pill {
