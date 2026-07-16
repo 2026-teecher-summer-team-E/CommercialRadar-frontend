@@ -27,38 +27,42 @@
   color: var(--color-muted);
 }
 .scenarioBtns {
-  /* align-items:stretch(부모 기본값)로 인해 이 행이 카드 전체 너비로 늘어나면
-     버튼들은 왼쪽에 붙고 오른쪽에 안 쓰는 여백만 남아 좌우 여백이 달라 보인다.
-     align-self:flex-start로 늘어남을 막아 버튼 내용 너비만큼만 차지하게 한다. */
+  /* 제목 아래 남는 세로 공간을 이 행이 다 차지하고, 그 안에서 버튼을 가로·세로 모두
+     가운데 정렬한다 — 예전엔 margin-top만 줘서 버튼이 위쪽에 붙고 아래 여백만 남았다. */
   display: flex;
-  align-self: flex-start;
-  gap: 8px;
-  margin-top: 12px;
-  flex-wrap: wrap;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
 }
-/* 평상시에도 테두리+옅은 그림자로 "눌러지는 버튼"임을 드러낸다(기존엔 배경색만
-   있고 테두리가 투명이라 pill 라벨처럼 보였다). hover 시 배경이 진해지면서 살짝 뜬다. */
+/* 이 페이지에서 초록/빨강(riskColor, format.ts)은 항상 "연한 배경 + 진한 글자색/테두리"로만
+   쓰이지 큰 면적을 꽉 채운 적이 없다 — 진한 단색 배경은 페이지 톤과 안 맞고 너무 쨍해 보인다.
+   같은 어휘(연한 배경 + 컬러 텍스트/테두리)를 쓰되, 카드 그림자·라운드 사각으로 버튼임을
+   드러내고 hover 시에만 살짝 진해지게 해서 범례 칩과 구분한다. */
 .scenarioBtn {
   display: inline-flex;
+  flex: none;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 8px 18px;
-  border-radius: var(--radius-pill);
+  padding: 11px 28px;
   border-width: 1.5px;
   border-style: solid;
-  font-size: 13px;
+  border-radius: var(--radius);
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-card);
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 .scenarioBtn:hover {
   transform: translateY(-1px);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-pop);
+  color: var(--color-on-primary);
 }
 .scenarioBtn:active {
   transform: translateY(0);
-  box-shadow: none;
+  box-shadow: var(--shadow-card);
 }
 .scenarioBtnHigh {
   background: var(--color-green-bg);
@@ -67,23 +71,20 @@
 }
 .scenarioBtnHigh:hover {
   background: var(--color-green);
-  color: #fff;
 }
 .scenarioBtnMid {
-  background: var(--series-1-bg);
-  border-color: var(--color-primary-dark);
-  color: var(--color-primary-dark);
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 .scenarioBtnMid:hover {
-  background: var(--series-1);
-  color: #fff;
+  background: var(--color-primary);
 }
 .scenarioBtnLow {
-  background: var(--series-7-bg);
+  background: var(--color-red-bg);
   border-color: var(--color-red);
   color: var(--color-red);
 }
 .scenarioBtnLow:hover {
   background: var(--color-red);
-  color: #fff;
 }

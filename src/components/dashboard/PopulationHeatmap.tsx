@@ -114,13 +114,15 @@ export default function PopulationHeatmap({ byTime, byDay, showValues = false, w
         ))}
       </div>
       <div className={styles.bottomSpacer} />
-      <div className={`${styles.legend} ${wide ? styles.legendWide : ""}`}>
-        {!wide && <span className={styles.legendLabel}>낮음</span>}
-        {HEAT_COLORS.map((c) => (
-          <span key={c} className={styles.legendCell} style={{ backgroundColor: c }} />
-        ))}
-        {!wide && <span className={styles.legendLabel}>높음</span>}
-      </div>
+      {!wide && (
+        <div className={styles.legend}>
+          <span className={styles.legendLabel}>낮음</span>
+          {HEAT_COLORS.map((c) => (
+            <span key={c} className={styles.legendCell} style={{ backgroundColor: c }} />
+          ))}
+          <span className={styles.legendLabel}>높음</span>
+        </div>
+      )}
     </div>
   );
 }

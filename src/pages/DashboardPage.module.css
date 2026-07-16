@@ -247,7 +247,8 @@
 /* 2열 그리드(매출/비용) */
 .duoGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* 임대료 카드는 게이지+숫자만 있어 FloorRentCard(막대 여러 개)보다 넓을 필요가 없다. */
+  grid-template-columns: 0.8fr 1.2fr;
   gap: 22px;
 }
 @media (max-width: 980px) {
@@ -287,6 +288,9 @@
 }
 .salesRightCol > *:first-child {
   flex: 0.62;
+  /* 게이지 + 최대/평균 라벨 + 하단 노트까지 겹치지 않고, 최대/평균 라벨과 하단 노트 사이에도
+     숨 쉴 틈이 남으려면 205px로는 아슬아슬해서 둘이 다시 붙어 보였다 — 여유를 더 준다. */
+  min-height: 232px;
 }
 .salesRightCol > *:last-child {
   flex: 1.38;
