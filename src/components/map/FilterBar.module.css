@@ -1,5 +1,5 @@
-/* 검색바와 한 몸으로 통합된 바(topRow)에 얹히는 세그먼트라, 각진 채 개별 테두리 없이
-   구분선으로만 나뉜다(둥근 필 형태 대신 메뉴 형태). */
+/* 검색바와 한 몸으로 통합된 바(topRow)에 얹히는 세그먼트라, 세로 구분선으로만 나뉜다.
+   버튼 자체는 각지지 않게 살짝 여백을 두고 둥근 hover/active 배경을 띄워 topRow의 둥근 테두리와 톤을 맞춘다. */
 .bar {
   flex: none;
   display: flex;
@@ -35,9 +35,11 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 16px;
+  margin: 6px 3px;
+  padding: 8px 13px;
   border: none;
-  border-radius: 0;
+  /* hover/active 배경이 topRow의 둥근 테두리와 어울리도록 각진 사각형 대신 둥근 모서리로. */
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--color-text);
   font-family: var(--font-sans);
