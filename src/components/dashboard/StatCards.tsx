@@ -67,31 +67,33 @@ export function DayNightCard({
   );
 }
 
-/** 시간대 유동인구를 부드러운 area/line 경로로(viewBox 0 0 100 40). Catmull-Rom→베지어 스무딩. */
-function buildRhythmPath(vals: number[]) {
-  const W = 100, H = 40, padT = 5, padB = 4;
-  const max = Math.max(...vals, 1);
-  const n = vals.length;
-  const pts = vals.map((v, i) => ({
-    x: n > 1 ? (i / (n - 1)) * W : W / 2,
-    y: H - padB - (v / max) * (H - padT - padB),
-  }));
-  let line = `M ${pts[0].x.toFixed(2)} ${pts[0].y.toFixed(2)}`;
-  for (let i = 0; i < n - 1; i++) {
-    const p0 = pts[i - 1] ?? pts[i];
-    const p1 = pts[i];
-    const p2 = pts[i + 1];
-    const p3 = pts[i + 2] ?? p2;
-    const c1x = p1.x + (p2.x - p0.x) / 6;
-    const c1y = p1.y + (p2.y - p0.y) / 6;
-    const c2x = p2.x - (p3.x - p1.x) / 6;
-    const c2y = p2.y - (p3.y - p1.y) / 6;
-    line += ` C ${c1x.toFixed(2)} ${c1y.toFixed(2)} ${c2x.toFixed(2)} ${c2y.toFixed(2)} ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
-  }
-  const area = `${line} L ${W} ${H} L 0 ${H} Z`;
-  const peakIdx = vals.reduce((best, v, i) => (v > vals[best] ? i : best), 0);
-  return { line, area, pts, peakIdx };
+/** 시각(0~24h)을 시계 각도 좌표로. 0h=위(12시 방향), 시계방향. */
+function clockPoint(cx: number, cy: number, r: number, hour: number): [number, number] {
+  const a = (-90 + (hour / 24) * 360) * (Math.PI / 180);
+  return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
 }
+
+/** 시간대 유동인구를 24시간 시계형 로즈(부채꼴 반지름=유동인구)로. viewBox 0 0 120 120. */
+function buildClock(slots: { slot: string; avg_population: number | null }[]) {
+  const C = 60, RMAX = 50, RMIN = 16;
+  const vals = slots.map((s) => s.avg_population ?? 0);
+  const max = Math.max(...vals, 1);
+  const peakIdx = vals.reduce((best, v, i) => (v > vals[best] ? i : best), 0);
+  const sectors = slots.map((s, i) => {
+    const [a, b] = s.slot.split("~");
+    const h0 = Number(a);
+    const h1 = Number(b) === 0 ? 24 : Number(b);
+    const r = RMIN + (vals[i] / max) * (RMAX - RMIN);
+    const [x0, y0] = clockPoint(C, C, r, h0);
+    const [x1, y1] = clockPoint(C, C, r, h1);
+    const large = ((h1 - h0) / 24) * 360 > 180 ? 1 : 0;
+    const d = `M ${C} ${C} L ${x0.toFixed(2)} ${y0.toFixed(2)} A ${r.toFixed(2)} ${r.toFixed(2)} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} Z`;
+    return { d, isPeak: i === peakIdx, slot: s.slot };
+  });
+  return { sectors, peakIdx };
+}
+
+const CLOCK_TICKS = [0, 6, 12, 18];
 
 /**
  * 유동인구 리듬 카드. 시간대별 유동인구를 물결(area) 스파크라인으로 그려 "언제 붐비나"를 보여준다.
@@ -110,7 +112,7 @@ export function PopulationRhythmCard({
 }) {
   const hasDN = dayPct != null && nightPct != null;
   const slots = byTime && byTime.length > 1 ? byTime : null;
-  const wave = slots ? buildRhythmPath(slots.map((s) => s.avg_population ?? 0)) : null;
+  const clock = slots ? buildClock(slots) : null;
   return (
     <div className={styles.card}>
       <div className={styles.head}>
@@ -122,43 +124,24 @@ export function PopulationRhythmCard({
       <p className={styles.miniLabel}>가장 붐비는 시간</p>
       <div className={styles.bigNum}>{peakLabel ?? "—"}</div>
 
-      {wave && slots ? (
-        <>
-          <div className={styles.rhythmWrap}>
-            <svg className={styles.rhythmSvg} viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden>
-              <defs>
-                <linearGradient id="rhythmGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.32" />
-                  <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0.02" />
-                </linearGradient>
-              </defs>
-              <path d={wave.area} fill="url(#rhythmGrad)" />
-              <path
-                d={wave.line}
-                fill="none"
-                stroke="var(--color-primary)"
-                strokeWidth="1.6"
-                vectorEffect="non-scaling-stroke"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span
-              className={styles.rhythmPeak}
-              style={{
-                left: `${wave.pts[wave.peakIdx].x}%`,
-                top: `${(wave.pts[wave.peakIdx].y / 40) * 100}%`,
-              }}
-            />
-          </div>
-          <div className={styles.rhythmLabels}>
-            {slots.map((s, i) => (
-              <span key={s.slot} className={i === wave.peakIdx ? styles.rhythmLabelPeak : ""}>
-                {s.slot.split("~")[0]}
-              </span>
+      {clock ? (
+        <div className={styles.clockWrap}>
+          <svg viewBox="0 0 120 120" className={styles.clockSvg} aria-hidden>
+            <circle cx="60" cy="60" r="51" className={styles.clockRing} />
+            <circle cx="60" cy="60" r="16" className={styles.clockRing} />
+            {clock.sectors.map((s) => (
+              <path key={s.slot} d={s.d} className={s.isPeak ? styles.clockWedgePeak : styles.clockWedge} />
             ))}
-          </div>
-        </>
+            {CLOCK_TICKS.map((h) => {
+              const [tx, ty] = clockPoint(60, 60, 58, h);
+              return (
+                <text key={h} x={tx} y={ty} className={styles.clockTick}>
+                  {h}
+                </text>
+              );
+            })}
+          </svg>
+        </div>
       ) : (
         <div className={styles.miniEmpty}>지표없음</div>
       )}
