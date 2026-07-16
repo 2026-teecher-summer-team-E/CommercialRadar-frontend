@@ -274,6 +274,63 @@ export interface ReportListResponse {
   reports: ReportListItem[];
 }
 
+// ── 리포트 콘텐츠 (상세 지표 스냅샷) — 공유 리포트 조회 응답에 포함 ──
+export interface ReportContent {
+  survival_rate?: number | null;
+  closure_rate?: number | null;
+  open_rate?: number | null;
+  total_business?: number | null;
+  peak_start?: string | null;
+  peak_end?: string | null;
+  district_score?: number | null;
+  year_quarter?: string | null;
+  avg_rent_per_sqm?: number | null;
+  avg_population?: number | null;
+}
+
+// ── 리포트 공유 (POST /api/reports/{id}/share) ──
+export interface ReportShareResponse {
+  share_token: string;
+  share_url: string;
+}
+
+// ── 공유 리포트 조회 (GET /api/reports/share/{token}) — 비로그인 접근 가능 ──
+export interface SharedReportView {
+  id: number;
+  title: string;
+  district_name: string | null;
+  category_name: string | null;
+  memo: string | null;
+  created_at: string;
+  content: ReportContent;
+}
+
+// ── 리포트 단건 조회 (GET /api/reports/{id}) — 본인 리포트 상세 ──
+export interface ReportDetailOut {
+  id: number;
+  title: string;
+  district_name: string | null;
+  category_name: string | null;
+  memo: string | null;
+  share_token: string | null;
+  created_at: string;
+  content: ReportContent;
+}
+
+/**
+ * 공유된 리포트 로컬 추적 항목. 백엔드에 "내가 공유한 리포트 목록" API가 없어,
+ * 공유 시 받은 토큰/URL을 프론트(localStorage)에 보관해 마이페이지 공유 탭을 채운다.
+ */
+export interface SharedReportEntry {
+  id: number;
+  title: string;
+  district_name: string | null;
+  category_name: string | null;
+  share_token: string;
+  share_url: string;
+  shared_at: string;
+}
+
 // ── 관심 상권 (GET /api/interest-districts) ──
 export interface InterestDistrict {
   id: number;
