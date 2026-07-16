@@ -158,7 +158,7 @@
 }
 .cardSub {
   margin: 3px 0 0;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-muted);
 }
 .expandBtn {
@@ -191,7 +191,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  width: 400px;
+  width: 437.16px;
   flex: none;
 }
 @media (max-width: 980px) {
@@ -203,27 +203,43 @@
   }
 }
 
-/* 유동인구 상단: 시간·요일 히트맵 + 리듬 카드 2열. 와이드 화면에서 히트맵이 가로로 과하게 늘어지는 것 방지. */
+/* 유동인구 상단: 왼쪽은 리듬+외국인 카드를 위아래로 쌓고, 오른쪽은 시간·요일 히트맵(세로로 큼).
+   왼쪽 두 카드 높이 합(+gap)이 히트맵 카드 높이를 정하므로(grid align-items: stretch),
+   히트맵이 자연히 커진다. */
 .popTopGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr);
+  grid-template-columns: minmax(240px, 1fr) minmax(0, 2.2fr);
   gap: 22px;
   align-items: stretch;
 }
-@media (max-width: 980px) {
-  .popTopGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* 3열 그리드(유동인구 하위 카드) */
-.trioGrid {
-  display: grid;
-  grid-template-columns: 1.15fr 1fr 1fr;
+.popTopRight {
+  display: flex;
+  flex-direction: column;
   gap: 22px;
 }
+/* 리듬/외국인 카드는 다른 카드들과 달리 여기서 굳이 안 늘어나도 되므로, 내용 높이보다
+   살짝만 여유를 준 낮은 min-height로 고정한다(예전 3열 배치 때보다 낮음).
+   유동인구 리듬(위)이 외국인(아래)보다 내용이 더 여유로워 보이도록 늘어나는 비율을 다르게 준다. */
+.popTopRight > * {
+  flex: 1;
+  min-height: 170px;
+}
+/* 실제 필요한 콘텐츠 높이(제목+주야간행+막대+간격+요일/시간 2열, 패딩 포함)가 약
+   222px인데 예전 min-height(170px)가 그보다 낮게 남아있어서, flex 비율이 줄어들면
+   카드가 내용보다 짧아져 "가장 붐비는 요일" 줄이 하단 패딩을 뚫고 나가는 버그가 있었다.
+   실제 필요치보다 여유 있게 잡아 다시는 안 뚫리게 한다. */
+.popTopRight > *:first-child {
+  flex: 0.9;
+  min-height: 232px;
+}
+/* 외국인 카드는 도넛이 이제 절대배치라 카드 자연 높이에 영향을 안 주지만, 도넛(148px)이
+   위아래로 잘리지 않으려면 최소한 그만큼 + 패딩은 있어야 한다. */
+.popTopRight > *:last-child {
+  flex: 1.4;
+  min-height: 210px;
+}
 @media (max-width: 980px) {
-  .trioGrid {
+  .popTopGrid {
     grid-template-columns: 1fr;
   }
 }
@@ -236,6 +252,50 @@
 }
 @media (max-width: 980px) {
   .duoGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 매출·소비: 유동인구 섹션의 popTopGrid와 같은 구조. 왼쪽은 매출예측 + (요일별매출/
+   연령별매출) 2열이 위아래로 쌓인 덩어리, 오른쪽은 인당소비 + 주야간매출비중 2장이
+   위아래로 쌓인 덩어리. 오른쪽 전체가 grid stretch로 왼쪽 전체 높이에 맞춰지고,
+   오른쪽 내부 두 카드는 flex-grow 비율로 그 높이를 나눠 가진다(주야간매출비중이 더 큼). */
+.salesMainGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+  gap: 22px;
+  align-items: stretch;
+}
+.salesLeftCol {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.salesLeftBottomRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+.salesRightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.salesRightCol > * {
+  flex: 1;
+  min-height: 160px;
+}
+.salesRightCol > *:first-child {
+  flex: 0.62;
+}
+.salesRightCol > *:last-child {
+  flex: 1.38;
+}
+@media (max-width: 980px) {
+  .salesMainGrid {
+    grid-template-columns: 1fr;
+  }
+  .salesLeftBottomRow {
     grid-template-columns: 1fr;
   }
 }

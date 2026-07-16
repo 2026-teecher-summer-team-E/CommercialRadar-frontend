@@ -1,4 +1,5 @@
 .card {
+  position: relative;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -37,6 +38,9 @@
   font-size: 15px;
   font-weight: 700;
   color: var(--color-text);
+}
+.rhythmDnTitle {
+  margin-bottom: 10px;
 }
 .sub {
   margin: 3px 0 0;
@@ -81,6 +85,17 @@
 .foreignNote {
   margin-top: auto;
 }
+/** 인당 소비 카드 전용: 노트를 카드 바닥 우측에 고정. */
+.perCapitaNote {
+  margin-top: auto;
+  text-align: right;
+}
+.foreignNoteRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
 
 .deltaTag {
   align-self: flex-start;
@@ -121,18 +136,34 @@
   color: var(--color-primary);
   white-space: nowrap;
 }
+/* 비중이 더 작은 쪽 — 아래 막대 트랙(연한 파랑)과 같은 톤으로 옅게. */
+.dnBigMuted {
+  font-size: 26px;
+  font-weight: 800;
+  font-family: var(--font-num);
+  color: var(--color-primary-soft);
+  white-space: nowrap;
+}
+/* 두 구간(낮/밤 등)을 나란히 채우는 막대. 어느 쪽이 크든 항상 큰 쪽이 진한 파랑,
+   작은 쪽이 연한 파랑이 되도록 두 개의 세그먼트를 각각 조건부 색으로 그린다
+   (기존엔 왼쪽 구간을 무조건 진하게 칠해서, 오른쪽이 더 큰 값이어도 연하게 보였다). */
 .dnBar {
+  display: flex;
   height: 12px;
   border-radius: var(--radius-pill);
-  background: var(--color-primary-soft);
   overflow: hidden;
   margin-bottom: 6px;
 }
-.dnFill {
+.dnFillDark,
+.dnFillLight {
   display: block;
   height: 100%;
-  border-radius: var(--radius-pill);
+}
+.dnFillDark {
   background: var(--color-primary);
+}
+.dnFillLight {
+  background: var(--color-primary-soft);
 }
 .miniLabel {
   margin: 8px 0 6px;
@@ -140,8 +171,44 @@
   font-weight: 600;
   color: var(--color-text-body);
 }
-.rhythmGap {
-  margin-top: 32px;
+/* 주·야간 매출 비중 카드의 "시간대별 매출 구성" 라벨: 바로 위 진행바(선 그래프 아님, 낮/밤
+   막대)와 너무 붙어 있으면 아래 미니 막대들이 아니라 그 진행바를 설명하는 것처럼 보인다 —
+   위쪽 여백을 크게 줘서 아래 막대 그룹에 속한 라벨임을 명확히 한다. */
+.dnBarsLabel {
+  margin-top: 46px;
+  margin-bottom: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+/* 헤더(제목)는 카드 맨 위에 고정하고, 나머지 두 블록(붐비는 시간/주야간 비중)은
+   이 컨테이너가 남은 세로 공간을 flex:1로 흡수해 균등하게 펼쳐지도록 한다.
+   (카드 높이가 옆 카드에 맞춰 늘어나도 내용이 위쪽에만 몰리고 아래가 텅 비지 않게.) */
+.rhythmBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 28px;
+}
+/* 두 통계를 하나의 덩어리로 묶어 카드 중앙에 배치한다(좌우 여백 대칭). 각 통계 블록의
+   폭은 더 긴 라벨 텍스트가 정하는데, 값(예: "금요일")은 라벨보다 짧으므로 라벨/값
+   둘 다 가운데 정렬해야 블록 안에서 값이 한쪽으로 치우쳐 보이지 않는다. */
+.rhythmPeakGrid {
+  display: flex;
+  justify-content: center;
+  gap: 64px;
+  text-align: center;
+}
+.rhythmPeakValue {
+  margin-top: 6px;
+  margin-bottom: 6px;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--color-primary);
+  font-family: var(--font-num);
+  white-space: nowrap;
 }
 
 /* 미니 막대 그룹 */
@@ -151,6 +218,13 @@
   gap: 6px;
   height: 56px;
   flex: 1;
+}
+/* 주·야간 매출 비중 전용: 막대 자체(트랙)의 최대 높이만 캡핑해서, 카드가 옆(인당소비)보다
+   늘어나도 개별 막대가 지나치게 길어지지 않게 한다. 컨테이너(.miniBars)는 그대로 flex:1로
+   전체 공간을 채우고 align-items:flex-end로 캡핑된 막대들을 바닥에 붙이므로, 남는 여백은
+   차트 전체 "아래"가 아니라 막대들 "위"(헤드룸)로 자연스럽게 생긴다. */
+.dnMiniBars .miniTrack {
+  max-height: 170px;
 }
 .miniEmpty {
   display: flex;
@@ -162,9 +236,8 @@
   color: var(--color-muted);
 }
 .foreignCount {
-  align-self: flex-end;
-  padding-bottom: 4px;
-  font-size: 13px;
+  margin-top: 2px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--color-muted);
 }
@@ -177,8 +250,33 @@
   align-items: center;
   gap: 4px;
 }
+/* 막대 전용 트랙. 라벨(퍼센트/요일 텍스트) 높이를 뺀 나머지 공간만 차지하도록 flex:1로
+   확보해서, 막대의 height:%가 라벨 포함 전체 컬럼이 아니라 이 트랙 기준으로 계산되게 한다.
+   (트랙 없이 컬럼 전체를 기준으로 하면 라벨 높이만큼 배정 공간이 넘쳐 flex-shrink가 걸려
+   막대들이 값과 무관하게 비슷한 높이로 눌린다.) */
+.miniTrack {
+  flex: 1 1 0;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+/* 막대 + 그 값 라벨을 한 덩어리로 묶어 막대 높이(inline style)만큼만 차지하게 한다.
+   라벨이 막대 바깥(트랙 상단 고정)에 있으면 막대가 짧을 때 라벨과 막대 사이에 빈
+   공간이 생기므로, 라벨을 막대 꼭대기에 항상 붙여두려면 같은 높이 박스 안에 둬야 한다. */
+.miniBarWrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
 .miniBar,
 .miniBarTop {
+  display: block;
+  flex: 1 1 0;
+  min-height: 0;
   width: 100%;
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 }
@@ -190,13 +288,13 @@
 }
 .miniSlot {
   font-size: 9px;
-  color: var(--color-faint);
+  color: var(--color-muted);
   white-space: nowrap;
 }
 .miniVal {
   font-size: 9px;
   font-weight: 600;
-  color: var(--color-faint);
+  color: var(--color-muted);
   line-height: 1;
   text-align: center;
 }
@@ -208,12 +306,22 @@
   gap: 16px;
   margin-bottom: 8px;
 }
+.foreignRow {
+  flex: 1;
+  align-items: center;
+  /* 오른쪽에 절대배치되는 도넛(.donutWrap)과 안 겹치게 폭을 비워둔다. */
+  padding-right: 168px;
+}
 .weekendRow {
   flex: 1;
-  align-items: stretch;
+  align-items: flex-end;
 }
+/* 카드가 옆(연령별 매출 등)과 높이를 맞추려 늘어나도 막대 영역이 카드 상단까지
+   꽉 차지 않도록 최대 높이를 캡핑한다 — 남는 공간은 위쪽 여백으로 남고, 막대는
+   .weekendRow의 flex-end 정렬로 아래쪽에 자리잡는다. */
 .weekendBars {
   height: 100%;
+  max-height: 170px;
   min-height: 100px;
 }
 .weekendMiniVal,
@@ -221,7 +329,146 @@
   font-weight: 700;
   color: var(--color-text-body);
 }
-.foreignRow .bigNum,
 .weekendRow .bigNum {
   flex: none;
+}
+
+/* 외국인 도넛: 외국인/내국인 2분할 비중을 링으로. 트랙(내국인)은 연한 파랑, 채움(외국인)은
+   진한 파랑 — 다른 카드의 막대 트랙/채움 색과 동일한 규칙(연함=나머지, 진함=강조 대상). */
+/* 카드 전체 높이 기준 우측 정중앙에 고정(흐름에서 빼서 헤더/범례/노트 위치와 무관하게 유지). */
+.donutWrap {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 148px;
+  height: 148px;
+  flex: none;
+}
+.donut {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.donutTrack {
+  fill: none;
+  stroke: var(--color-primary-soft);
+  stroke-width: 12;
+}
+.donutFill {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 12;
+  stroke-linecap: round;
+}
+.donutCenter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.donutCenter .bigNum {
+  font-size: 29px;
+}
+.foreignLegend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+.legendRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-body);
+  font-family: var(--font-num);
+}
+.legendDotFill,
+.legendDotTrack {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.legendDotFill {
+  background: var(--color-primary);
+}
+.legendDotTrack {
+  background: var(--color-primary-soft);
+}
+
+/* 인당 소비 반원 게이지: 이 상권 값(채움, 진한 파랑) + 전체 평균(눈금선)을 같은 스케일에. */
+.perCapitaRow {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 14px;
+}
+/* aspect-ratio로 높이를 명시적으로 고정한다 — 안 그러면 .gaugeAvgLabel의 top:%가
+   이 컨테이너의 (불확실한) auto 높이 기준으로 계산돼 엉뚱한 위치(카드 상단 근처)에
+   뜬다. viewBox(100 54)와 동일한 비율. */
+.gaugeWrap {
+  position: relative;
+  flex: none;
+  width: 176px;
+  aspect-ratio: 100 / 54;
+}
+.gauge {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+.gaugeTrack {
+  fill: var(--color-primary-soft);
+}
+.gaugeFill {
+  fill: var(--color-primary);
+}
+/* 평균 위치 마커: 파이를 가로지르는 반지름선. 흰 선 + 진한 파랑 테두리로 보이도록,
+   더 두꺼운 파랑 선(테두리 역할) 위에 얇은 흰 선을 겹쳐 그린다. */
+.gaugeAvgLineBorder {
+  stroke: var(--color-primary-dark, var(--color-primary));
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+.gaugeAvgLine {
+  stroke: var(--color-surface);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+/* 평균 라벨: 게이지 안 눈금선 바로 위에 겹쳐서(흰 배경 pill) 값을 바로 보여준다. */
+.gaugeAvgLabel {
+  position: absolute;
+  transform: translate(-50%, -70%);
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-body);
+  background: var(--color-surface);
+  padding: 1px 5px;
+  border-radius: var(--radius-pill);
+  pointer-events: none;
+}
+/* 스케일 최대치(오른쪽 끝) 라벨 — 평균 라벨과 같은 스타일(글자 크기·색 통일).
+   x는 평균 라벨과 동일하게 pointAt로 호의 위치를 따르되(같은 위치 개념 유지),
+   y는 각도상 baseline에 고정돼 반지름을 늘려도 위로 못 뜨므로 JS에서 calc()로
+   px만큼 위로 띄워 호와 겹치지 않게 한다. */
+.gaugeMaxLabel {
+  position: absolute;
+  transform: translate(-100%, 0);
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-body);
+  background: var(--color-surface);
+  padding: 1px 5px;
+  border-radius: var(--radius-pill);
+  pointer-events: none;
 }

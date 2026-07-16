@@ -21,7 +21,7 @@ import PopulationHeatmap from "../components/dashboard/PopulationHeatmap";
 import AgeGenderCard from "../components/dashboard/AgeGenderCard";
 import RentCard from "../components/dashboard/RentCard";
 import type { RentBar } from "../components/dashboard/RentCard";
-import BuzzGapCard from "../components/dashboard/BuzzGapCard";
+import FloorRentCard from "../components/dashboard/FloorRentCard";
 import SalesForecastCard from "../components/dashboard/SalesForecastCard";
 import { DayNightCard, ForeignCard, PerCapitaCard, PopulationRhythmCard, WeekendCard } from "../components/dashboard/StatCards";
 import ExpandModal from "../components/dashboard/ExpandModal";
@@ -67,22 +67,6 @@ interface RentResponse {
   district_id: number;
   year_quarter: string | null;
   rent_stats: RentStat[];
-}
-
-/** 화제성 Gap 응답(전용 서비스 없음). */
-interface BuzzGapItem {
-  district_name: string;
-  gu_name: string | null;
-  buzz_index: number;
-  foot_pctl: number;
-  spend_pctl: number;
-  visit_gap: number;
-  spend_gap: number;
-}
-interface BuzzGapResponse {
-  period: string | null;
-  source: string;
-  items: BuzzGapItem[];
 }
 
 /** 외국인 비중 응답(GET /api/commercial-districts/{id}/foreign-ratio). */
@@ -146,7 +130,6 @@ interface DashboardData {
   tsSales: DistrictTimeSeriesResponse | null;
   forecast: SurvivalForecastResponse | null;
   rent: RentResponse | null;
-  buzz: BuzzGapResponse | null;
   foreign: ForeignRatioResponse | null;
   popRatios: PopulationRatiosResponse | null;
   salesBands: SalesTimeBandsResponse | null;
@@ -168,12 +151,6 @@ function lastBreakdown(ts: DistrictTimeSeriesResponse | null, dim: string): Reco
   return bd?.[dim] ?? null;
 }
 
-/** 백분위(0~100, 높을수록 상위) → 상위 % 표기값(작을수록 상위). */
-function toTopPct(pctl: number | null | undefined): number | null {
-  if (pctl == null) return null;
-  return Math.max(1, 100 - Math.round(pctl));
-}
-
 /** 대시보드 12개 API 병렬 호출. 상권 상세 실패만 페이지 에러, 나머지는 null 로 진행(allSettled). */
 async function fetchDashboard(id: number): Promise<DashboardData> {
   const [
@@ -185,7 +162,6 @@ async function fetchDashboard(id: number): Promise<DashboardData> {
     tsSalesR,
     forecastR,
     rentR,
-    buzzR,
     foreignR,
     popRatiosR,
     salesBandsR,
@@ -200,7 +176,6 @@ async function fetchDashboard(id: number): Promise<DashboardData> {
     commercialApi.timeSeries(id, { metrics: "sales" }),
     mlApi.survivalForecast(id),
     apiClient.get<RentResponse>(`/api/commercial-districts/${id}/rent`),
-    apiClient.get<BuzzGapResponse>("/api/buzz-gap"),
     apiClient.get<ForeignRatioResponse>(`/api/commercial-districts/${id}/foreign-ratio`),
     apiClient.get<PopulationRatiosResponse>(`/api/commercial-districts/${id}/population-ratios`),
     apiClient.get<SalesTimeBandsResponse>(`/api/commercial-districts/${id}/sales-time-bands`),
@@ -220,7 +195,6 @@ async function fetchDashboard(id: number): Promise<DashboardData> {
     tsSales: pick<DistrictTimeSeriesResponse>(tsSalesR),
     forecast: pick<SurvivalForecastResponse>(forecastR),
     rent: pick<RentResponse>(rentR),
-    buzz: pick<BuzzGapResponse>(buzzR),
     foreign: pick<ForeignRatioResponse>(foreignR),
     popRatios: pick<PopulationRatiosResponse>(popRatiosR),
     salesBands: pick<SalesTimeBandsResponse>(salesBandsR),
@@ -449,8 +423,7 @@ export default function DashboardPage() {
       ? Number((forecastNextPct - survivalStartPct).toFixed(1))
       : null;
 
-  // 연령 분포(실데이터, dimension="age"). 성별 marginal 은 {남성:총,여성:총} 총량뿐이라
-  // 연령×성별 세부는 DB 에 없다. 연령 막대는 성별 비율로 스케일해 토글을 표현한다.
+  // 연령 분포(실데이터, dimension="age"). AtmosphereSimulation의 연령 구성비 계산에 쓰인다.
   const ageDist = useMemo(() => lastBreakdown(data?.tsAge ?? null, "age") ?? null, [data]);
 
   // AtmosphereSimulation용 연령 구성비(라벨명 유지 — "60대이상" 색 지원됨).
@@ -520,13 +493,6 @@ export default function DashboardPage() {
     return rows.length > 0 ? rows[0] : null;
   }, [data]);
 
-  // 화제성 Gap: 현재 상권명과 일치하는 항목.
-  const buzzItem = useMemo<BuzzGapItem | null>(() => {
-    const items = data?.buzz?.items ?? [];
-    if (!d) return null;
-    return items.find((it) => it.district_name === d.district_name) ?? null;
-  }, [data, d]);
-
   // AtmosphereSimulation용: 낮/밤 우위, 매출 비중, 시간대별 유동인구.
   const simDayDominant = useMemo<boolean | null>(() => {
     const sb = data?.salesBands;
@@ -552,21 +518,15 @@ export default function DashboardPage() {
     return avg;
   }, [data, simDayDominant, d]);
 
-  // 유출/유입 진행바: 요일 주변분포 주중/주말 합으로 근사(실데이터 없으면 지표없음).
-  const flow = useMemo<{ weekday: number; weekend: number } | null>(() => {
+
+  // 상권 종합 점수의 유동인구 pill: commercial_district.avg_population 컬럼은 인제스천이
+  // 채워주지 않는 값이라(구조적으로 갱신 안 됨) 대신 heatmap by_day 슬롯 합계를 쓴다.
+  // by_day는 population_timeseries dimension='total'과 같은 분기 누적 총량의 요일별
+  // partition이라 합산하면 그 분기 총 유동인구와 같다(히트맵이 쓰는 것과 동일 소스).
+  const totalPopulationFromHeatmap = useMemo<number | null>(() => {
     const byDay = data?.heatmap?.by_day ?? [];
     if (byDay.length === 0) return null;
-    const weekdayKeys = new Set(["월", "화", "수", "목", "금"]);
-    let wk = 0;
-    let we = 0;
-    byDay.forEach((s) => {
-      const v = s.avg_population ?? 0;
-      if (weekdayKeys.has(s.slot)) wk += v;
-      else we += v;
-    });
-    const total = wk + we || 1;
-    const weekday = Math.round((wk / total) * 100);
-    return { weekday, weekend: 100 - weekday };
+    return byDay.reduce((sum, s) => sum + (s.avg_population ?? 0), 0);
   }, [data]);
 
   // 유동인구 피크 시간대: heatmap by_time 중 최댓값 슬롯("17~21" → "17~21시").
@@ -582,6 +542,21 @@ export default function DashboardPage() {
       }
     });
     return bestSlot != null ? `${bestSlot}시` : null;
+  }, [data]);
+
+  // 유동인구 피크 요일: heatmap by_day 중 최댓값 슬롯("금" → "금요일").
+  const peakDayLabel = useMemo<string | null>(() => {
+    const byDay = data?.heatmap?.by_day ?? [];
+    let bestSlot: string | null = null;
+    let bestVal = 0;
+    byDay.forEach((s) => {
+      const v = s.avg_population ?? 0;
+      if (v > bestVal) {
+        bestVal = v;
+        bestSlot = s.slot;
+      }
+    });
+    return bestSlot != null ? `${bestSlot}요일` : null;
   }, [data]);
 
   // 종합점수 순위(백엔드 제공, 상권 고유값 — 업종 선택과 무관). scope에 맞춰 라벨 접두어를 붙인다.
@@ -640,17 +615,6 @@ export default function DashboardPage() {
     );
   }
 
-  // 점수 구성 배지: radar 5축 중 생존율·유동인구·매출 실측 정규화 점수(0~100). 없으면 지표없음.
-  const radarValue = (key: string): number | null => {
-    const ax = data?.radar?.axes?.find((a) => a.key === key);
-    return ax?.value ?? null;
-  };
-  const scoreBadges = [
-    { label: "생존율", value: radarValue("survival") },
-    { label: "유동인구", value: radarValue("population") },
-    { label: "매출", value: radarValue("sales") },
-  ];
-
   return (
     <div className={styles.page}>
       <TopSearchBar
@@ -686,12 +650,9 @@ export default function DashboardPage() {
         <div className={styles.topGridLeft}>
           <ScoreCard
             score={activeStats?.district_score ?? null}
-            badges={scoreBadges}
             survivalRate={activeStats?.survival_rate ?? null}
             closureRate={activeStats?.closure_rate ?? null}
-            avgPopulation={d.avg_population}
-            weekdayPct={flow?.weekday ?? null}
-            weekendPct={flow?.weekend ?? null}
+            avgPopulation={totalPopulationFromHeatmap ?? d.avg_population}
             rankLabel={rankLabel}
           />
           <ScenarioSimBox onScenarioClick={setSim} />
@@ -702,6 +663,19 @@ export default function DashboardPage() {
       <section className={styles.section}>
         <SectionTitle title="유동인구" subtitle="누가, 언제 이 상권에 오는가" />
         <div className={styles.popTopGrid}>
+          <div className={styles.popTopRight}>
+            <PopulationRhythmCard
+              peakLabel={peakLabel}
+              peakDayLabel={peakDayLabel}
+              dayPct={data.popRatios?.daytime_pct ?? null}
+              nightPct={data.popRatios?.nighttime_pct ?? null}
+            />
+            <ForeignCard
+              pct={data.foreign?.foreigner_pct ?? null}
+              count={data.foreign?.foreigner_count ?? null}
+              total={data.foreign?.total_count ?? null}
+            />
+          </div>
           <div className={styles.card}>
             <div className={styles.cardHead}>
               <div>
@@ -725,40 +699,33 @@ export default function DashboardPage() {
               <div className={styles.empty}>이 상권의 유동인구 기록이 아직 없습니다.</div>
             )}
           </div>
-          <PopulationRhythmCard
-            peakLabel={peakLabel}
-            dayPct={data.popRatios?.daytime_pct ?? null}
-            nightPct={data.popRatios?.nighttime_pct ?? null}
-          />
-        </div>
-
-        <div className={styles.trioGrid}>
-          <AgeGenderCard ageFemale={femaleDist} ageMale={maleDist} />
-          <DayNightCard
-            dayPct={data.salesBands?.daytime_pct ?? null}
-            nightPct={data.salesBands?.nighttime_pct ?? null}
-            bands={data.salesBands?.bands ?? null}
-          />
-          <ForeignCard
-            pct={data.foreign?.foreigner_pct ?? null}
-            count={data.foreign?.foreigner_count ?? null}
-            total={data.foreign?.total_count ?? null}
-          />
         </div>
       </section>
 
       {/* 매출·소비 */}
       <section className={styles.section}>
-        <SectionTitle title="매출·소비" subtitle="고객은 얼마나, 어떻게 지갑을 여는가" />
-        <SalesForecastCard
-          history={salesHistory}
-          forecast={salesForecastSeries}
-          categoryLabel={salesCategoryLabel}
-          fallbackNote={salesFallbackNote}
-        />
-        <div className={styles.duoGrid}>
-          <PerCapitaCard wonValue={data.perCapita?.per_capita_sales ?? null} />
-          <WeekendCard pct={data.popRatios?.weekend_pct ?? null} days={data.heatmap?.by_day ?? null} />
+        <SectionTitle title="매출·소비" subtitle="고객은 언제, 얼마나 지갑을 여는가" />
+        <div className={styles.salesMainGrid}>
+          <div className={styles.salesLeftCol}>
+            <SalesForecastCard
+              history={salesHistory}
+              forecast={salesForecastSeries}
+              categoryLabel={salesCategoryLabel}
+              fallbackNote={salesFallbackNote}
+            />
+            <div className={styles.salesLeftBottomRow}>
+              <WeekendCard days={data.heatmap?.by_day ?? null} />
+              <AgeGenderCard ageFemale={femaleDist} ageMale={maleDist} />
+            </div>
+          </div>
+          <div className={styles.salesRightCol}>
+            <PerCapitaCard wonValue={data.perCapita?.per_capita_sales ?? null} />
+            <DayNightCard
+              dayPct={data.salesBands?.daytime_pct ?? null}
+              nightPct={data.salesBands?.nighttime_pct ?? null}
+              bands={data.salesBands?.bands ?? null}
+            />
+          </div>
         </div>
       </section>
 
@@ -768,16 +735,9 @@ export default function DashboardPage() {
         <div className={styles.duoGrid}>
           <RentCard
             perSqm={rentRep?.avg_rent_per_sqm != null ? rentRep.avg_rent_per_sqm * 1000 : null}
-            floorLabel={rentRep?.floor_type ?? null}
-            bars={rentBars}
+            typeLabel={rentRep?.floor_type ?? null}
           />
-          <BuzzGapCard
-            buzzTopPct={buzzItem ? Math.max(1, 100 - buzzItem.buzz_index) : null}
-            footTopPct={toTopPct(buzzItem?.foot_pctl)}
-            spendTopPct={toTopPct(buzzItem?.spend_pctl)}
-            visitGap={buzzItem?.visit_gap ?? null}
-            spendGap={buzzItem?.spend_gap ?? null}
-          />
+          <FloorRentCard bars={rentBars} />
         </div>
       </section>
 
