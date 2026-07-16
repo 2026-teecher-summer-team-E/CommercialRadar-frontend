@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import type { PopularityHistorySeries } from "../../types";
 import styles from "./CategoryRaceChart.module.css";
 
@@ -23,7 +24,40 @@ const SERIES_COLOR_VARS = [
 export default function CategoryRaceChart({ periods, series }: Props) {
   const [frameIdx, setFrameIdx] = useState(0);
   const [playing, setPlaying] = useState(true);
+  const [dragging, setDragging] = useState(false);
+  /** 드래그 중 손잡이가 마우스를 그대로 따라가도록 쓰는 연속값(0~1). 프레임은 정수 스텝이라 별도로 둔다. */
+  const [dragRatio, setDragRatio] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
+
+  /** 트랙 위 클라이언트 x좌표 → 0~1 비율. */
+  const ratioFromClientX = (clientX: number): number => {
+    const track = trackRef.current;
+    if (!track) return 0;
+    const rect = track.getBoundingClientRect();
+    return Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+  };
+
+  const updateFromClientX = (clientX: number) => {
+    const ratio = ratioFromClientX(clientX);
+    setDragRatio(ratio);
+    if (periods.length > 1) setFrameIdx(Math.round(ratio * (periods.length - 1)));
+  };
+
+  const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setPlaying(false);
+    setDragging(true);
+    updateFromClientX(e.clientX);
+  };
+  const handlePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!dragging) return;
+    updateFromClientX(e.clientX);
+  };
+  const stopDragging = () => {
+    setDragging(false);
+    setDragRatio(null);
+  };
 
   useEffect(() => {
     setFrameIdx(0);
@@ -95,12 +129,20 @@ export default function CategoryRaceChart({ periods, series }: Props) {
         })}
       </div>
 
-      <div className={styles.scrubber}>
+      <div
+        ref={trackRef}
+        className={[styles.scrubber, dragging ? styles.scrubberDragging : ""].join(" ")}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={stopDragging}
+        onPointerCancel={stopDragging}
+      >
+        <div className={styles.scrubberTrack} />
         {periods.map((p, i) => (
           <button
             key={p}
             type="button"
-            className={i === frameIdx ? styles.dotActive : styles.dot}
+            className={styles.dot}
             aria-label={p}
             aria-current={i === frameIdx}
             onClick={() => {
@@ -109,6 +151,12 @@ export default function CategoryRaceChart({ periods, series }: Props) {
             }}
           />
         ))}
+        <div
+          className={[styles.thumb, dragging ? styles.thumbDragging : ""].join(" ")}
+          style={{
+            left: `${(periods.length > 1 ? (dragRatio ?? frameIdx / (periods.length - 1)) : 0) * 100}%`,
+          }}
+        />
       </div>
     </div>
   );
