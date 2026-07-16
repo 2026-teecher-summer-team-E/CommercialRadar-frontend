@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { HeatmapSlot } from "../../types";
-import { fmtInt } from "./format";
+import { fmtInt, fmtManUnit } from "./format";
 import styles from "./PopulationHeatmap.module.css";
 
 /**
@@ -18,9 +18,15 @@ function heatColor(t: number): string {
   return HEAT_COLORS[0];
 }
 
-/** 셀 표시용 만 단위 숫자(접미사 없음 — 단위는 카드 하단에 한 번만 표시). */
-function fmtCellMan(value: number): string {
-  return (value / 10000).toFixed(1);
+/**
+ * 셀 표시용 숫자. 인라인은 분기 누적 기준 만 단위(소수점 없이 반올림) — 유동인구가 작은
+ * 상권(예: 분기 총량이 1만 명대)은 셀 하나가 만 단위 미만이라 반올림하면 전부 "0만명"이
+ * 되므로 fmtManUnit처럼 1만 미만은 원래 수치를 그대로 보여준다.
+ * 모달 확대(wide)는 "상세" 화면이니 반올림 없이 정확한 수치를 그대로 보여준다.
+ */
+function fmtCellMan(value: number, wide: boolean): string {
+  if (wide) return `${fmtInt(value)}명`;
+  return `${fmtManUnit(value, 0)}명`;
 }
 
 interface PopulationHeatmapProps {
@@ -67,7 +73,8 @@ export default function PopulationHeatmap({ byTime, byDay, showValues = false, w
       const tw = (timeMap.get(t) ?? 0) / timeSum;
       return DAY_ORDER.map((d) => {
         const dw = (dayMap.get(d) ?? 0) / daySum;
-        // 근사 절대값: 시간대 유동량 × 요일 비율.
+        // 근사 절대값(분기 누적 기준): 시간대 유동량(분기 누적) × 요일 비율 × 7.
+        // 페이지 전체를 분기 누적 단위로 통일하므로 하루 평균 환산 없이 그대로 쓴다.
         const value = (timeMap.get(t) ?? 0) * dw * DAY_ORDER.length;
         return { time: t, day: d, weight: tw * dw, value };
       });
@@ -88,6 +95,7 @@ export default function PopulationHeatmap({ byTime, byDay, showValues = false, w
 
   return (
     <div className={styles.wrap}>
+      <div className={styles.topSpacer} />
       {/* 인라인은 셀 최대폭 제한(와이드 화면에서 긴 막대처럼 늘어지지 않게), 모달(wide)은 꽉 채움. */}
       <div
         className={styles.grid}
@@ -102,16 +110,16 @@ export default function PopulationHeatmap({ byTime, byDay, showValues = false, w
         ))}
         {/* 데이터 행 */}
         {grid.map((row, ri) => (
-          <Row key={TIME_ORDER[ri]} time={TIME_ORDER[ri]} row={row} maxWeight={maxWeight} showValues={showValues} />
+          <Row key={TIME_ORDER[ri]} time={TIME_ORDER[ri]} row={row} maxWeight={maxWeight} showValues={showValues} wide={wide} />
         ))}
       </div>
-      <div className={styles.legend}>
+      <div className={styles.bottomSpacer} />
+      <div className={`${styles.legend} ${wide ? styles.legendWide : ""}`}>
         <span className={styles.legendLabel}>낮음</span>
         {HEAT_COLORS.map((c) => (
           <span key={c} className={styles.legendCell} style={{ backgroundColor: c }} />
         ))}
         <span className={styles.legendLabel}>높음</span>
-        {showValues && <span className={styles.unitNote}>단위: 만 명</span>}
       </div>
     </div>
   );
@@ -122,11 +130,13 @@ function Row({
   row,
   maxWeight,
   showValues,
+  wide,
 }: {
   time: string;
   row: Array<{ time: string; day: string; weight: number; value: number }>;
   maxWeight: number;
   showValues: boolean;
+  wide: boolean;
 }) {
   return (
     <>
@@ -142,7 +152,7 @@ function Row({
           >
             {showValues && (
               <span className={styles.cellVal} style={{ color: t >= 0.65 ? "var(--color-on-primary)" : "var(--color-text-body)" }}>
-                {fmtCellMan(c.value)}
+                {fmtCellMan(c.value, wide)}
               </span>
             )}
           </div>

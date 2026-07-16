@@ -115,12 +115,11 @@ export default function SangkwonPanel({
           )}
         </div>
         <div className={styles.categoryRow}>
-          <span className={styles.categoryLabel}>업종</span>
           <CategoryPicker
             groups={availableGroups}
             value={categoryFilter}
             onChange={onCategoryFilterChange}
-            compact
+            label="업종"
           />
         </div>
       </div>
@@ -172,8 +171,8 @@ export default function SangkwonPanel({
           {/* 지표 2x2 */}
           <div className={styles.metricGrid}>
             <Metric label="생존율" value={fmtPct(survivalRate)} />
-            <Metric label="폐업위험" value={closureRiskLabel(closureRate)} />
-            <Metric label="월평균 매출" value={fmtSales(latestSales)} />
+            <Metric label="폐업 위험" value={closureRiskLabel(closureRate)} />
+            <Metric label="월 평균 매출" value={fmtSales(latestSales)} />
             {/* avg_population은 분기 총합 → 월 평균(÷3)으로 표시. */}
             <Metric label="월 유동인구" value={fmtPopulation(population != null ? population / 3 : null)} />
           </div>
@@ -212,10 +211,12 @@ export default function SangkwonPanel({
               ))}
 
               <div className={styles.heatLegend}>
-                <LegendItem level={3} label="85+" />
-                <LegendItem level={2} label="65+" />
-                <LegendItem level={1} label="40+" />
-                <LegendItem level={0} label="~40" />
+                <span className={styles.legendLabel}>낮음</span>
+                <span className={`${styles.legendSwatch} ${styles.heat_0}`} />
+                <span className={`${styles.legendSwatch} ${styles.heat_1}`} />
+                <span className={`${styles.legendSwatch} ${styles.heat_2}`} />
+                <span className={`${styles.legendSwatch} ${styles.heat_3}`} />
+                <span className={styles.legendLabel}>높음</span>
               </div>
             </div>
           )}
@@ -234,11 +235,3 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function LegendItem({ level, label }: { level: 0 | 1 | 2 | 3; label: string }) {
-  return (
-    <span className={styles.legendItem}>
-      <span className={`${styles.legendSwatch} ${styles[`heat_${level}`]}`} />
-      {label}
-    </span>
-  );
-}

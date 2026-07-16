@@ -5,14 +5,13 @@
   width: 100%;
 }
 
-/* 떠다니는 키워드 영역 */
+/* 떠다니는 키워드 영역 — 카드 배경은 상위 .card 하나로 충분해서 여기선 별도 배경 없이
+   버블만 떠 있게 둔다(카드 안에 카드가 겹치지 않도록). */
 .cloud {
   position: relative;
-  flex: 1 1 55%;
+  flex: 1 1 50%;
   min-width: 0;
   height: 420px;
-  border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, var(--color-chip), var(--color-surface));
   overflow: hidden;
 }
 
@@ -58,20 +57,18 @@
   }
 }
 
-/* 오른쪽 설명 패널 */
+/* 오른쪽 설명 패널 — 배경 박스 대신 세로 구분선 하나로 왼쪽 클라우드 영역과 나눈다. */
 .panel {
-  flex: 1 1 45%;
+  flex: 1 1 50%;
   min-width: 220px;
-  max-width: 560px;
   height: 420px;
+  padding-left: 20px;
+  border-left: 1px solid var(--color-border);
   overflow-y: auto;
 }
 
-/* 상세 정보 카드 */
+/* 상세 정보 — 별도 카드 배경 없이 구분선으로만 섹션을 나눈다. */
 .detailCard {
-  background: var(--color-chip);
-  border-radius: var(--radius);
-  padding: 16px 18px;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -100,11 +97,81 @@
 .detailMetrics {
   display: flex;
   gap: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-line);
 }
-.relatedIntro {
-  margin: 0;
+.sparkSection {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-line);
+}
+.sparkGraphWrap {
+  position: relative;
+  cursor: crosshair;
+}
+.sparkline {
+  display: block;
+  width: 100%;
+  height: 72px;
+  color: var(--color-primary);
+}
+.sparkHoverGuide {
+  stroke: var(--color-border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+  vector-effect: non-scaling-stroke;
+}
+/* SVG 안에서 원(circle)을 그리면 viewBox가 좌우로 비균등하게 늘어나면서 타원처럼
+   눌려 보인다. HTML 요소로 따로 그려서 항상 정원을 유지한다. */
+.sparkHoverDot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 2px solid var(--color-primary);
+  pointer-events: none;
+}
+.sparkTooltip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 10px));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-text);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1;
+}
+.sparkTooltipMonth {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-surface);
+  opacity: 0.75;
+}
+.sparkTooltipValue {
   font-size: 12px;
+  font-weight: 700;
+  color: var(--color-surface);
+  font-family: var(--font-num);
+}
+.sparkTicks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
   color: var(--color-muted);
+  font-family: var(--font-num);
+}
+.sparkEmpty {
+  padding: 8px 0;
+  text-align: center;
+  color: var(--color-muted);
+  font-size: 12px;
 }
 
 .relatedList {
@@ -113,15 +180,17 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 .relatedRow {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 8px 12px;
-  background: var(--color-surface);
-  border-radius: var(--radius);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-line);
+}
+.relatedRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
 }
 .relatedRowTop {
   display: flex;
@@ -188,9 +257,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px 18px;
-  border-radius: var(--radius);
-  background: var(--color-chip);
   text-align: center;
   color: var(--color-muted);
   font-size: 13px;
@@ -214,5 +280,9 @@
     max-width: none;
     height: auto;
     max-height: 420px;
+    padding-left: 0;
+    padding-top: 20px;
+    border-left: none;
+    border-top: 1px solid var(--color-border);
   }
 }

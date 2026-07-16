@@ -81,35 +81,6 @@ a.topPill:hover {
   font-weight: 600;
 }
 
-.constructLabel {
-  font-size: 12px;
-  color: var(--color-muted);
-  margin-bottom: 6px;
-}
-.badgeRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 18px;
-}
-.badge {
-  padding: 5px 12px;
-  border-radius: var(--radius-pill);
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-  font-size: 12px;
-  font-weight: 500;
-}
-.badge strong {
-  font-family: var(--font-num);
-  font-weight: 700;
-}
-
-.badgeEmpty {
-  font-weight: 600;
-  color: var(--color-muted);
-}
-
 .pillRow {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -126,19 +97,12 @@ a.topPill:hover {
   border-radius: var(--radius);
   min-width: 0;
 }
-.pillLabel,
-.pillLabelDot {
+.pillLabel {
   font-size: 11px;
   color: var(--color-muted);
   display: inline-flex;
   align-items: center;
   gap: 4px;
-}
-.dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  display: inline-block;
 }
 .pillValue {
   font-size: 16px;
@@ -146,24 +110,4 @@ a.topPill:hover {
   font-family: var(--font-num);
   color: var(--color-text);
   white-space: nowrap;
-}
-
-.flowLabels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: var(--color-muted);
-  margin-bottom: 6px;
-}
-.flowBar {
-  height: 12px;
-  border-radius: var(--radius-pill);
-  background: var(--color-primary-soft);
-  overflow: hidden;
-}
-.flowFill {
-  display: block;
-  height: 100%;
-  border-radius: var(--radius-pill);
-  background: var(--color-primary);
 }

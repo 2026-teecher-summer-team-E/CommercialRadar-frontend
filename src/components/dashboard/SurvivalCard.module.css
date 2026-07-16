@@ -8,13 +8,7 @@
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  transition: box-shadow 0.22s ease, transform 0.22s ease, border-color 0.22s ease;
   animation: surv-card-in 0.5s ease-out both;
-}
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-card-hover, var(--shadow-pop));
-  border-color: var(--color-primary-soft, var(--color-border));
 }
 
 /* ── 등장 시퀀스 애니메이션 ── */

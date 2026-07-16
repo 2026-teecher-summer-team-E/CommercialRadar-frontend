@@ -12,7 +12,7 @@ import {
 } from "recharts";
 
 import type { TimeseriesPoint } from "../../types";
-import { formatCurrency } from "../../utils/formatters";
+import { fmtEok } from "../dashboard/format";
 import styles from "./GangnamForecastChart.module.css";
 
 /** 툴팁 카드의 대략적인 폭(px) 추정치. 우측 경계 근접 판정에만 쓰이므로 정확할 필요는 없다. */
@@ -84,9 +84,9 @@ function ForecastTooltip({
   for (const p of payload) byKey[p.dataKey] = p.value;
   const order: [string, string, string][] = [
     ["actual", "실적", FORECAST_COLORS.actual],
-    ["mid", "중립 시나리오(p50)", FORECAST_COLORS.mid],
-    ["low", "부정적 시나리오(p10)", FORECAST_COLORS.low],
-    ["high", "긍정적 시나리오(p90)", FORECAST_COLORS.high],
+    ["high", "Best(p90)", FORECAST_COLORS.high],
+    ["mid", "Normal(p50)", FORECAST_COLORS.mid],
+    ["low", "Worst(p10)", FORECAST_COLORS.low],
   ];
   const lines = order
     .map(([key, name, color]) => ({ name, color, value: byKey[key] }))
@@ -212,7 +212,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
     b.band = a != null ? [a, a] : null;
   }
 
-  const formatValue = (v: number) => (unit === "won" ? formatCurrency(v) : formatRatio(v));
+  const formatValue = (v: number) => (unit === "won" ? `${fmtEok(v)}원` : formatRatio(v));
   const formatAxis = (v: number) =>
     unit === "won" ? `${Math.round(v / 1e8)}억` : `${Math.round(v * 100)}%`;
 
@@ -305,7 +305,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
         <Line
           type="monotone"
           dataKey="high"
-          name="긍정적 시나리오(p90)"
+          name="Best(p90)"
           stroke={FORECAST_COLORS.high}
           strokeWidth={clickable ? 2.5 : 1.5}
           strokeDasharray="5 5"
@@ -317,7 +317,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
         <Line
           type="monotone"
           dataKey="mid"
-          name="중립 시나리오(p50)"
+          name="Normal(p50)"
           stroke={FORECAST_COLORS.mid}
           strokeWidth={clickable ? 3 : 2}
           strokeDasharray="5 5"
@@ -329,7 +329,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
         <Line
           type="monotone"
           dataKey="low"
-          name="부정적 시나리오(p10)"
+          name="Worst(p10)"
           stroke={FORECAST_COLORS.low}
           strokeWidth={clickable ? 2.5 : 1.5}
           strokeDasharray="5 5"

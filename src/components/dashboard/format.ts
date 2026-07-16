@@ -14,11 +14,11 @@ export function fmtPct(value: number | null | undefined, digits = 1): string {
   return `${value.toFixed(digits)}%`;
 }
 
-/** 유동인구를 만 단위로 포맷. (예: 125000 → "12.5만") */
+/** 유동인구를 만 단위로 포맷. (예: 125000 → "12.5만") 1만 미만은 정수로 반올림(소수점 노출 방지). */
 export function fmtManUnit(value: number | null | undefined, digits = 1): string {
   if (value == null || Number.isNaN(value)) return DASH;
   if (value >= 10000) return `${(value / 10000).toFixed(digits)}만`;
-  return value.toLocaleString("ko-KR");
+  return Math.round(value).toLocaleString("ko-KR");
 }
 
 /**

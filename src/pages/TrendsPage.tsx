@@ -11,7 +11,7 @@ import TrendValue from "../components/trends/TrendValue";
 import { fmtCountMagnitude, fmtIndex, fmtPctMagnitude } from "../components/trends/trendsFormat";
 import styles from "./TrendsPage.module.css";
 
-const KEYWORD_LIMIT = 6;
+const KEYWORD_LIMIT = 4;
 /** 백엔드가 반환 가능한 업종 전체 수만큼 요청해 rising/sinking을 클라이언트에서 양끝으로 슬라이스한다. */
 const RANKING_FETCH_LIMIT = 100;
 const POPULAR_LIMIT = 9;
@@ -146,7 +146,7 @@ export default function TrendsPage() {
           ) : popularError ? (
             <div className={styles.empty}>키워드 데이터를 불러오지 못했어요.</div>
           ) : (
-            <KeywordCloud items={popularItems} />
+            <KeywordCloud items={popularItems} history={history} />
           )}
         </div>
       </section>
