@@ -120,6 +120,7 @@ export default function ComparePage() {
   const [openSelector, setOpenSelector] = useState<SelectorKind>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [reportSaved, setReportSaved] = useState(false);
 
   useEffect(() => {
     try {
@@ -143,6 +144,12 @@ export default function ComparePage() {
     const timer = window.setTimeout(() => setDebouncedQuery(keyword), 250);
     return () => window.clearTimeout(timer);
   }, [keyword]);
+
+  useEffect(() => {
+    if (!reportSaved) return;
+    const timer = window.setTimeout(() => setReportSaved(false), 2200);
+    return () => window.clearTimeout(timer);
+  }, [reportSaved]);
 
   const search = useDistrictSearch(debouncedQuery, isAdding);
   const searchResults: CommercialDistrictSearchResult[] =
@@ -363,7 +370,7 @@ export default function ComparePage() {
 
   return (
     <div className={styles.page}>
-      <Header />
+      <Header onSaveReport={() => setReportSaved(true)} reportSaved={reportSaved} />
 
       {/* 컨트롤 바 */}
       <div className={styles.controlBar}>
@@ -616,16 +623,23 @@ function formatQuarter(quarter: string) {
   return match ? `${match[1]}년 ${match[2]}분기` : quarter || "기준 분기 없음";
 }
 
-function Header() {
+function Header({ onSaveReport, reportSaved }: { onSaveReport: () => void; reportSaved: boolean }) {
   return (
     <div className={styles.header}>
       <div>
         <h1 className={styles.title}>상권 비교</h1>
         <p className={styles.subtitle}>나란히 놓으면 보이는 것들이 있습니다</p>
       </div>
-      <button type="button" className={styles.saveBtn}>
+      <div className={styles.saveArea}>
+      <button type="button" className={styles.saveBtn} onClick={onSaveReport}>
         리포트로 저장
       </button>
+        {reportSaved && (
+          <div className={styles.saveNotice} role="status" aria-live="polite">
+            리포트가 저장됐습니다.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

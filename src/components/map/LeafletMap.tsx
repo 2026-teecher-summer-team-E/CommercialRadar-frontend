@@ -18,6 +18,48 @@ interface LeafletMapProps {
 }
 
 const SEOUL_CENTER: L.LatLngExpression = [37.5665, 126.978];
+const MAP_VIEW_STORAGE_KEY = "commercialRadar.mapViewState.v2";
+
+interface PersistedMapViewState {
+  center: [number, number];
+  zoom: number;
+}
+
+function readMapViewState(): PersistedMapViewState | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(MAP_VIEW_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<PersistedMapViewState>;
+    const [lat, lng] = parsed.center ?? [];
+    if (
+      typeof lat !== "number" ||
+      typeof lng !== "number" ||
+      typeof parsed.zoom !== "number" ||
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lng) ||
+      !Number.isFinite(parsed.zoom)
+    ) {
+      return null;
+    }
+    return { center: [lat, lng], zoom: parsed.zoom };
+  } catch {
+    return null;
+  }
+}
+
+function saveMapViewState(map: L.Map) {
+  const center = map.getCenter();
+  saveMapViewStateValue([center.lat, center.lng], map.getZoom());
+}
+
+function saveMapViewStateValue(center: [number, number], zoom: number) {
+  const state: PersistedMapViewState = {
+    center,
+    zoom,
+  };
+  window.localStorage.setItem(MAP_VIEW_STORAGE_KEY, JSON.stringify(state));
+}
 
 export default function LeafletMap({
   points,
@@ -33,6 +75,9 @@ export default function LeafletMap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const rendererRef = useRef<L.Canvas | null>(null);
+  const guFilterReadyRef = useRef(false);
+  const pendingProgrammaticViewRef = useRef(false);
+  const programmaticMoveTimerRef = useRef<number | null>(null);
 
   const geoLayerRef = useRef<L.GeoJSON | null>(null);
   const polysRef = useRef<Map<number, L.Path>>(new Map());
@@ -48,6 +93,17 @@ export default function LeafletMap({
   // 카메라를 또 움직이지 않도록 이 ref로 "이미 이동했음"을 구분한다.
   const flownRef = useRef<number | null>(null);
 
+  const markProgrammaticMove = (map: L.Map) => {
+    pendingProgrammaticViewRef.current = true;
+    if (programmaticMoveTimerRef.current != null) {
+      window.clearTimeout(programmaticMoveTimerRef.current);
+    }
+    programmaticMoveTimerRef.current = window.setTimeout(() => {
+      pendingProgrammaticViewRef.current = false;
+      saveMapViewState(map);
+      programmaticMoveTimerRef.current = null;
+    }, 1200);
+  };
   // effect 4는 마운트 시에도 한 번 실행되는데, 그때 guFilter 기본값("전체")이
   // effect 3의 flyToBounds(딥링크로 들어온 selectedId 확대) 직후 카메라를
   // 서울 전체 뷰로 되돌려버려 확대가 무효화된다. 마운트 시 첫 실행은 건너뛰고
@@ -79,13 +135,17 @@ export default function LeafletMap({
   // 1) 지도 1회 생성
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
+    const restoredView = readMapViewState();
     const map = L.map(containerRef.current, {
-      center: SEOUL_CENTER,
-      zoom: 12,
+      center: restoredView?.center ?? SEOUL_CENTER,
+      zoom: restoredView?.zoom ?? 12,
       preferCanvas: true,
       // 좌측 상단에 플로팅 패널이 얹히므로 확대/축소 컨트롤은 우측 하단에 둔다.
       zoomControl: false,
     });
+    if (restoredView) {
+      flownRef.current = selectedId;
+    }
     L.control.zoom({ position: "bottomright" }).addTo(map);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
@@ -93,6 +153,24 @@ export default function LeafletMap({
     }).addTo(map);
     rendererRef.current = L.canvas({ padding: 0.5 });
     mapRef.current = map;
+    const onViewChanged = () => {
+      if (pendingProgrammaticViewRef.current) return;
+      if (programmaticMoveTimerRef.current != null) {
+        window.clearTimeout(programmaticMoveTimerRef.current);
+        programmaticMoveTimerRef.current = null;
+      }
+      saveMapViewState(map);
+    };
+    const onMoveEnded = () => {
+      pendingProgrammaticViewRef.current = false;
+      if (programmaticMoveTimerRef.current != null) {
+        window.clearTimeout(programmaticMoveTimerRef.current);
+        programmaticMoveTimerRef.current = null;
+      }
+      saveMapViewState(map);
+    };
+    map.on("zoomend", onViewChanged);
+    map.on("moveend", onMoveEnded);
     // flownRef/guFilterMountedRef는 "이 map 인스턴스로 이미 카메라를 움직였는지"를
     // 추적하는 값이라 컴포넌트가 아니라 map 인스턴스 생애주기에 묶여야 한다.
     // (React StrictMode dev 모드는 마운트 시 effect를 한 번 더 실행해 이 map을
@@ -108,6 +186,15 @@ export default function LeafletMap({
     resizeObserver.observe(containerRef.current);
 
     return () => {
+      map.off("zoomend", onViewChanged);
+      map.off("moveend", onMoveEnded);
+      if (programmaticMoveTimerRef.current != null) {
+        window.clearTimeout(programmaticMoveTimerRef.current);
+        programmaticMoveTimerRef.current = null;
+      }
+      if (!pendingProgrammaticViewRef.current) {
+        saveMapViewState(map);
+      }
       resizeObserver.disconnect();
       map.remove();
       mapRef.current = null;
@@ -164,7 +251,9 @@ export default function LeafletMap({
       const wasOpen = sel.isPopupOpen();
       if (isNewSelection) {
         flownRef.current = selectedId;
-        map.flyToBounds(sel.getBounds(), { padding: [80, 80], maxZoom: 17, duration: 0.8 });
+        const bounds = sel.getBounds();
+        markProgrammaticMove(map);
+        map.flyToBounds(bounds, { padding: [80, 80], maxZoom: 17, duration: 0.8 });
       }
       sel.bindPopup(buildPopup(), { closeButton: true, minWidth: 170 });
       if (isNewSelection || wasOpen) sel.openPopup();
@@ -180,12 +269,18 @@ export default function LeafletMap({
     }
     const map = mapRef.current;
     if (!map) return;
+    if (!guFilterReadyRef.current) {
+      guFilterReadyRef.current = true;
+      return;
+    }
     if (guFilter === "전체") {
+      markProgrammaticMove(map);
       map.flyTo(SEOUL_CENTER, 12, { duration: 0.8 });
       return;
     }
     if (points.length === 0) return;
     const bounds = L.latLngBounds(points.map((p) => [p.lat, p.lng] as [number, number]));
+    markProgrammaticMove(map);
     map.flyToBounds(bounds, { padding: [64, 64], maxZoom: 16, duration: 0.8 });
   }, [guFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
