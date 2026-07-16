@@ -60,7 +60,10 @@
   position: absolute;
   top: 16px;
   left: 16px;
-  bottom: 16px;
+  /* bottom을 고정하지 않고 내용 높이에 맞춰 카드가 줄어들게 한다(내용이 짧을 때 카드 하단에 흰 여백이 남는 문제 방지).
+     내용이 길어지는 경우를 대비해 max-height + overflow-y:auto로 상한만 둔다. */
+  bottom: auto;
+  max-height: calc(100% - 32px);
   width: 300px;
   z-index: 10;
   display: flex;
@@ -68,11 +71,17 @@
   gap: 12px;
   padding: 16px;
   overflow-y: auto;
-  scrollbar-gutter: stable;
+  overflow-x: hidden;
+  /* 스크롤은 그대로 동작하되 스크롤바 자체는 시각적으로 숨긴다(우측 여백이 좌측과 비대칭으로 보이는 것 방지). */
+  -ms-overflow-style: none; /* IE, Edge */
+  scrollbar-width: none; /* Firefox */
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-pop);
+}
+.panel::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 /* 현재 위치(제목+구·동)와 업종 필터를 아예 다른 줄로 분리 — 폭을 다투지 않으니 지역명이 잘릴 일이 없다. */
@@ -140,13 +149,6 @@
   gap: 8px;
   padding-top: 8px;
   border-top: 1px solid var(--color-border);
-}
-.categoryLabel {
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-muted);
-  flex: none;
 }
 
 .panelState {
@@ -314,18 +316,17 @@
 
 .heatLegend {
   display: flex;
-  gap: 12px;
+  align-items: center;
+  gap: 4px;
   margin-top: 6px;
 }
-.legendItem {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+.legendLabel {
   font-size: 11px;
   color: var(--color-muted);
+  margin: 0 4px;
 }
 .legendSwatch {
-  width: 12px;
+  width: 26px;
   height: 12px;
   border-radius: 3px;
 }

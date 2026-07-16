@@ -44,6 +44,7 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  min-width: 0;
 }
 .pill:hover {
   background: var(--color-chip);
@@ -59,6 +60,7 @@
 }
 
 .pillCaret {
+  flex: none;
   font-size: 10px;
   color: var(--color-faint);
 }
@@ -67,12 +69,104 @@
   color: var(--color-primary);
 }
 
-.pillCompact {
-  padding: 4px 10px;
-  font-size: 12px;
+/* CategoryPicker: "업종" 라벨 + 구분선은 버튼 바깥 고정 영역, 선택값 버튼만 드롭다운 트리거로 분리. */
+.categoryPicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
 }
-.pillCompact .pillCaret {
-  font-size: 9px;
+.categoryPickerLabel {
+  flex: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+.categoryPickerDivider {
+  flex: none;
+  display: inline-block;
+  width: 1px;
+  height: 14px;
+  background: var(--color-border-strong);
+}
+.categoryTriggerWrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.categoryTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.categoryTrigger:hover {
+  background: var(--color-chip);
+}
+/* 선택값이 '전체'가 아닐 때만 트리거 버튼에 브랜드 컬러 강조(라벨 영역은 절대 물들지 않음). */
+.categoryTriggerActive {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+.categoryTriggerOpen {
+  background: var(--color-chip);
+}
+.categoryValue {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+/* 공간이 부족해지면 대분류가 먼저 줄어들고(shrink), 구분선과 소분류는 끝까지 형태를 지킨다(shrink-0).
+   flex-grow는 0으로 둬서 평소엔 글자 크기만큼만 차지하고(자석처럼 붙어 보임), 부족할 때만 줄어든다. */
+.categoryValueParent {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-faint);
+  font-weight: 600;
+}
+.categoryValueSep {
+  flex: none;
+  color: var(--color-faint);
+  font-weight: 600;
+}
+.categoryValueMain {
+  flex: none;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.categoryTriggerActive .categoryValueMain {
+  color: var(--color-primary);
+}
+.categoryCaret {
+  flex: none;
+  font-size: 11px;
+  color: var(--color-faint);
+}
+.categoryTriggerActive .categoryCaret {
+  color: var(--color-primary);
 }
 
 .dropdown {
