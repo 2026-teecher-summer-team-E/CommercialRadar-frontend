@@ -1,5 +1,7 @@
 /* 옆 카드(종합점수/생존율예측)와 동일한 흰 카드 컨테이너 톤(테두리+그림자 포함) —
-   안쪽 회색 pill이 아니라 카드 자체의 배경(흰색)에 맞춘다. */
+   안쪽 회색 pill이 아니라 카드 자체의 배경(흰색)에 맞춘다.
+   topGridLeft의 남는 세로 공간을 종합점수 카드(flex:1)와 나눠 갖는다(flex:0.7) —
+   내용 높이만큼만 차지하던 것을 키워서 종합점수 카드 높이를 상대적으로 줄인다. */
 .scenarioBar {
   display: flex;
   flex-direction: column;
@@ -10,14 +12,19 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
+  flex: 0.7;
 }
-/* 위 카드(상권 종합 점수/생존율 예측)의 타이틀과 동일한 위치·정렬·크기·패딩:
-   카드 맨 위, 좌측 정렬. */
-.scenarioHint {
-  font-size: 14px;
-  font-weight: 600;
+/* 다른 카드(인당 소비 등)의 title/sub와 동일한 크기·색 — 제목 + 연한 색 부제. */
+.title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
   color: var(--color-text);
-  text-align: left;
+}
+.sub {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: var(--color-muted);
 }
 .scenarioBtns {
   /* align-items:stretch(부모 기본값)로 인해 이 행이 카드 전체 너비로 늘어나면
@@ -29,32 +36,33 @@
   margin-top: 12px;
   flex-wrap: wrap;
 }
+/* 평상시에도 테두리+옅은 그림자로 "눌러지는 버튼"임을 드러낸다(기존엔 배경색만
+   있고 테두리가 투명이라 pill 라벨처럼 보였다). hover 시 배경이 진해지면서 살짝 뜬다. */
 .scenarioBtn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 14px;
+  padding: 8px 18px;
   border-radius: var(--radius-pill);
-  border: 1px solid transparent;
+  border-width: 1.5px;
+  border-style: solid;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 .scenarioBtn:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-card);
 }
-.scenarioDot {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  border: 1.5px solid var(--color-surface);
-  flex: none;
+.scenarioBtn:active {
+  transform: translateY(0);
+  box-shadow: none;
 }
 .scenarioBtnHigh {
   background: var(--color-green-bg);
+  border-color: var(--color-green);
   color: var(--color-green);
 }
 .scenarioBtnHigh:hover {
@@ -63,6 +71,7 @@
 }
 .scenarioBtnMid {
   background: var(--series-1-bg);
+  border-color: var(--color-primary-dark);
   color: var(--color-primary-dark);
 }
 .scenarioBtnMid:hover {
@@ -71,6 +80,7 @@
 }
 .scenarioBtnLow {
   background: var(--series-7-bg);
+  border-color: var(--color-red);
   color: var(--color-red);
 }
 .scenarioBtnLow:hover {

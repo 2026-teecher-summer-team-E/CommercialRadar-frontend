@@ -278,9 +278,10 @@ export function PerCapitaCard({ wonValue = null, onExpand }: { wonValue?: number
   const avgP0 = pointAt(avgFrac, 4);
   const avgP1 = pointAt(avgFrac, r);
   const avgLabelPoint = pointAt(avgFrac, r + 10);
-  // 스케일 최대치(오른쪽 끝, frac=1) 라벨. 각도상 y가 고정(항상 baseline)이라 반지름을
-  // 늘려도 위로는 못 뜨므로, 같은 x축 지점에서 px 단위로 위쪽에 띄워 호와 겹치지 않게 한다.
-  const maxLabelPoint = pointAt(1, r + 8);
+  // 스케일 최대치 라벨. 그래프 우측 아래(frac=1, 오른쪽 끝) 근처에 둔다. 각도상 y가
+  // 고정(항상 baseline)이라 반지름을 늘려도 아래로는 못 뜨므로, 같은 x축 지점에서
+  // px 단위로 살짝 아래에 띄워 호와 겹치지 않으면서도 그래프에 바짝 붙게 한다.
+  const maxLabelPoint = pointAt(1, r);
 
   return (
     <div className={styles.card}>
@@ -303,7 +304,7 @@ export function PerCapitaCard({ wonValue = null, onExpand }: { wonValue?: number
         </div>
       </div>
       <div className={styles.perCapitaRow}>
-        <div>
+        <div className={styles.perCapitaBigWrap}>
           <div className={styles.big}>
             <span className={styles.bigNum}>{manText}</span>
           </div>
@@ -324,7 +325,7 @@ export function PerCapitaCard({ wonValue = null, onExpand }: { wonValue?: number
           </span>
           <span
             className={styles.gaugeMaxLabel}
-            style={{ left: `${maxLabelPoint.x}%`, top: `calc(${(maxLabelPoint.y / 54) * 100}% - 70px)` }}
+            style={{ left: `${maxLabelPoint.x}%`, top: `calc(${(maxLabelPoint.y / 54) * 100}% + 4px)` }}
           >
             최대 ₩{Math.round(scaleMax).toLocaleString("ko-KR")}
           </span>

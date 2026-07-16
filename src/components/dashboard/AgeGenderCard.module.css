@@ -83,40 +83,6 @@
   text-align: right;
 }
 
-.toggle {
-  display: flex;
-  gap: 16px;
-  margin-top: auto;
-}
-.toggleBtn,
-.toggleActive {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-size: 12px;
-  color: var(--color-muted);
-  padding: 0;
-}
-.toggleActive {
-  color: var(--color-text);
-  font-weight: 700;
-}
-/* 성별이 아니라 "선택 여부"에 따라 색이 정해진다 — 여성/남성 어느 쪽을 눌러도
-   그 버튼의 점이 진한 파랑, 반대쪽은 연한 파랑이 되도록 부모(toggleActive/toggleBtn)
-   기준으로 스타일링한다. */
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-primary-soft);
-}
-.toggleActive .dot {
-  background: var(--color-primary);
-}
-
 .empty {
   padding: 24px 12px;
   text-align: center;
