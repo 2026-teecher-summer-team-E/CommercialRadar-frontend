@@ -121,6 +121,22 @@ interface PerCapitaSalesResponse {
   per_capita_sales: number | null;
 }
 
+/**
+ * 연령·성별 매출(GET /api/commercial-districts/{id}/sales-by-demographics).
+ * 백엔드 신설 예정(docs/backend-request-sales-by-demographics-2026-07-16.md).
+ * 미배포 시 이 호출은 null → 연령·성별 카드는 유동인구 폴백으로 동작.
+ */
+interface SalesByDemographicsResponse {
+  district_id: number;
+  year_quarter: string | null;
+  /** 연령대별 매출액(원). 키: "10대"~"60대이상". */
+  age: Record<string, number> | null;
+  /** 성별 매출액(원). 키: "남성"|"여성". */
+  gender: Record<string, number> | null;
+  /** (선택) 연령×성별 교차 매출. 있으면 성별 토글이 실데이터가 됨. */
+  age_by_gender?: Record<string, Record<string, number>> | null;
+}
+
 interface DashboardData {
   district: DistrictDetail | null;
   radar: RadarResponse | null;
@@ -135,6 +151,7 @@ interface DashboardData {
   popRatios: PopulationRatiosResponse | null;
   salesBands: SalesTimeBandsResponse | null;
   perCapita: PerCapitaSalesResponse | null;
+  salesByDemo: SalesByDemographicsResponse | null;
 }
 
 /** allSettled 결과에서 값만 안전 추출. */
@@ -173,6 +190,7 @@ async function fetchDashboard(id: number): Promise<DashboardData> {
     popRatiosR,
     salesBandsR,
     perCapitaR,
+    salesByDemoR,
   ] = await Promise.allSettled([
     commercialApi.getDistrict(id),
     commercialApi.radar(id),
@@ -187,6 +205,7 @@ async function fetchDashboard(id: number): Promise<DashboardData> {
     apiClient.get<PopulationRatiosResponse>(`/api/commercial-districts/${id}/population-ratios`),
     apiClient.get<SalesTimeBandsResponse>(`/api/commercial-districts/${id}/sales-time-bands`),
     apiClient.get<PerCapitaSalesResponse>(`/api/commercial-districts/${id}/per-capita-sales`),
+    apiClient.get<SalesByDemographicsResponse>(`/api/commercial-districts/${id}/sales-by-demographics`),
   ]);
 
   const district = pick<DistrictDetail>(districtR);
@@ -206,6 +225,7 @@ async function fetchDashboard(id: number): Promise<DashboardData> {
     popRatios: pick<PopulationRatiosResponse>(popRatiosR),
     salesBands: pick<SalesTimeBandsResponse>(salesBandsR),
     perCapita: pick<PerCapitaSalesResponse>(perCapitaR),
+    salesByDemo: pick<SalesByDemographicsResponse>(salesByDemoR),
   };
 }
 
@@ -452,15 +472,39 @@ export default function DashboardPage() {
     };
   }, [survivalForecast]);
   const genderDist = useMemo(() => lastBreakdown(data?.tsGender ?? null, "gender") ?? null, [data]);
+  // 연령·성별 "매출" 카드 데이터. 우선순위:
+  //  1) sales-by-demographics age_by_gender(교차 매출) → 성별 토글이 실데이터
+  //  2) sales-by-demographics age + gender(marginal 매출) → 연령매출을 성별 매출비율로 스케일
+  //  3) 폴백: 유동인구(연령 population)를 성별 population 비율로 스케일 (백엔드 미배포 시)
+  // 백엔드 sales-by-demographics 배포 시 자동으로 1)/2)로 전환됨.
   const { femaleDist, maleDist } = useMemo(() => {
+    const nonEmpty = (o?: Record<string, number> | null) => (o && Object.keys(o).length > 0 ? o : null);
+    // 성별 비율(fr = 여성 비중)로 연령 분포를 나눠 여/남 두 벌 생성.
+    const splitByGenderRatio = (age: Record<string, number>, fr: number) => ({
+      femaleDist: Object.fromEntries(Object.entries(age).map(([k, v]) => [k, v * fr])),
+      maleDist: Object.fromEntries(Object.entries(age).map(([k, v]) => [k, v * (1 - fr)])),
+    });
+    const genderRatio = (g: Record<string, number> | null) => {
+      const f = g?.["여성"] ?? 0;
+      const m = g?.["남성"] ?? 0;
+      const tot = f + m;
+      return tot > 0 ? f / tot : 0.5;
+    };
+
+    const demo = data?.salesByDemo;
+    // 1) 교차 매출(연령×성별)이 있으면 그대로 사용.
+    const female = nonEmpty(demo?.age_by_gender?.["여성"]);
+    const male = nonEmpty(demo?.age_by_gender?.["남성"]);
+    if (female || male) return { femaleDist: female, maleDist: male };
+
+    // 2) 연령 매출 marginal + 성별 매출 marginal → 성별 매출비율로 스케일.
+    const salesAge = nonEmpty(demo?.age);
+    if (salesAge) return splitByGenderRatio(salesAge, genderRatio(nonEmpty(demo?.gender)));
+
+    // 3) 폴백: 유동인구 기반(현행). 매출 소스 미배포 시.
     if (!ageDist) return { femaleDist: null, maleDist: null };
-    const f = genderDist?.["여성"] ?? 0;
-    const m = genderDist?.["남성"] ?? 0;
-    const tot = f + m;
-    const fr = tot > 0 ? f / tot : 0.5;
-    const scale = (r: number) => Object.fromEntries(Object.entries(ageDist).map(([k, v]) => [k, v * r]));
-    return { femaleDist: scale(fr), maleDist: scale(1 - fr) };
-  }, [ageDist, genderDist]);
+    return splitByGenderRatio(ageDist, genderRatio(genderDist));
+  }, [data?.salesByDemo, ageDist, genderDist]);
 
   // 임대료 대표값 + 층별 막대.
   // avg_rent_per_sqm은 천원/㎡ 단위(R-ONE 원본). RentCard는 원/㎡를 기대하므로 ×1000.
