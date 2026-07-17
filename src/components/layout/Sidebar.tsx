@@ -66,6 +66,16 @@ function SimulatorIcon() {
     </svg>
   );
 }
+function BeltIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none">
+      <circle cx="6" cy="7" r="2.2" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="18" cy="9" r="2.2" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="10" cy="17" r="2.2" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M8 7.6l7.9 1M16.6 11l-5.2 4.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
 function GearIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none">
@@ -92,6 +102,7 @@ const NAV = [
   },
   { to: "/compare", label: "상권 비교", Icon: CompareIcon },
   { to: "/ranking", label: "랭킹", Icon: RankIcon },
+  { to: "/belts", label: "상권 벨트", Icon: BeltIcon },
   { to: "/simulator", label: "창업 시뮬레이터", Icon: SimulatorIcon },
   { to: "/trends", label: "트렌드", Icon: TrendIcon },
   { to: "/admin", label: "관리", Icon: GearIcon, adminOnly: true },

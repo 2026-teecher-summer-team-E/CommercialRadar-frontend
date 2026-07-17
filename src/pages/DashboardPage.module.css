@@ -247,8 +247,8 @@
 /* 2열 그리드(매출/비용) */
 .duoGrid {
   display: grid;
-  /* 임대료 카드는 게이지+숫자만 있어 FloorRentCard(막대 여러 개)보다 넓을 필요가 없다. */
-  grid-template-columns: 0.8fr 1.2fr;
+  /* 임대료 카드는 게이지+숫자만 있어 임대료 예측 카드(라인차트)보다 훨씬 좁아도 된다. */
+  grid-template-columns: 0.55fr 1.45fr;
   gap: 22px;
 }
 @media (max-width: 980px) {

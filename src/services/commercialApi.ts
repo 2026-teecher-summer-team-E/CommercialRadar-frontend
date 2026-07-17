@@ -12,6 +12,9 @@ import type {
   DistrictCategoryStatsResponse,
   RadarResponse,
   PopulationHeatmapResponse,
+  SalesTimeBandsResponse,
+  BeltSummary,
+  BeltMomentum,
   DistrictGeo,
   CommercialDistrictSearchResult,
   AffordableResponse,
@@ -88,6 +91,17 @@ export const commercialApi = {
   /** [신규] 유동인구 히트맵(시간/요일 주변분포) */
   heatmap: (id: number | string, params?: QP) =>
     apiClient.get<PopulationHeatmapResponse>(`/api/commercial-districts/${id}/population-heatmap`, { params }),
+
+  /** [신규] 시간대별 매출 낮/밤 비중(낮=06~17, 밤=17~06). 낮상권/밤상권 판정용. */
+  salesTimeBands: (id: number | string, params?: QP) =>
+    apiClient.get<SalesTimeBandsResponse>(`/api/commercial-districts/${id}/sales-time-bands`, { params }),
+
+  /** [신규] 유명 상권 벨트(축) 목록 + 요약 성장률. 벨트 간 생애주기 비교용. */
+  listBelts: () => apiClient.get<BeltSummary[]>("/api/belts"),
+
+  /** [신규] 벨트 성장 모멘텀(멤버별 성장 랭킹 + 뜨는/지는 + 인사이트). slug 없으면 404. */
+  beltMomentum: (slug: string) =>
+    apiClient.get<BeltMomentum>(`/api/belts/${encodeURIComponent(slug)}/momentum`),
 
   /** [신규] 전 상권 중심좌표(Leaflet 마커용). gu_name 으로 자치구 필터. */
   geo: (params?: { gu_name?: string }) =>

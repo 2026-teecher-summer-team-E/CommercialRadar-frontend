@@ -22,6 +22,10 @@ export const queryKeys = {
   comparePage: (ids: number[], quarter: string, category: string, rankingDistrictId?: number | null) =>
     ["compare-page", ids, quarter, category, rankingDistrictId ?? null] as const,
   timeSeries: (id: number | string, params?: QP) => ["time-series", id, params ?? null] as const,
+  simDayNight: (ids: Array<number | null>) => ["compare-sim-daynight", ids] as const,
+  belts: ["belts"] as const,
+  beltMomentum: (slug: string) => ["belt-momentum", slug] as const,
+  beltGeojson: (guNames: string[]) => ["belt-geojson", guNames] as const,
   categoryRanking: (id: number | string, params?: QP) =>
     ["category-ranking", id, params ?? null] as const,
   districtSearch: (keyword: string) => ["district-search", keyword] as const,
@@ -99,6 +103,25 @@ export function useTimeSeries(id: number | string, params?: QP) {
   return useQuery({
     queryKey: queryKeys.timeSeries(id, params),
     queryFn: async () => (await commercialApi.timeSeries(id, params)).data,
+  });
+}
+
+/** 유명 상권 벨트(축) 목록. 벨트 카드 리스트 / 벨트 간 비교용. */
+export function useBelts() {
+  return useQuery({
+    queryKey: queryKeys.belts,
+    queryFn: async () => (await commercialApi.listBelts()).data,
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+/** 벨트 성장 모멘텀(멤버 랭킹 + 뜨는/지는 + 인사이트). slug 가 비면 요청하지 않는다. */
+export function useBeltMomentum(slug: string | null) {
+  return useQuery({
+    queryKey: queryKeys.beltMomentum(slug ?? ""),
+    enabled: !!slug,
+    queryFn: async () => (await commercialApi.beltMomentum(slug as string)).data,
+    staleTime: 10 * 60 * 1000,
   });
 }
 
