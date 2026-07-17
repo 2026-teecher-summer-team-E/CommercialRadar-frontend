@@ -17,6 +17,7 @@ import type {
   BeltMomentum,
   DistrictGeo,
   CommercialDistrictSearchResult,
+  AffordableResponse,
 } from "../types";
 
 type QP = Record<string, string | number | undefined>;
@@ -109,4 +110,12 @@ export const commercialApi = {
   /** [신규] 상권 경계 폴리곤 GeoJSON(Leaflet 구역 표시용). */
   geojson: (params?: { gu_name?: string }) =>
     apiClient.get<GeoJSON.FeatureCollection>("/api/commercial-districts/geojson", { params }),
+
+  /** [신규] 월 임대료 예산으로 창업 가능한 상권 리스트(추정 월 임대료 오름차순). 임대료 보유 상권(~14%)만. */
+  affordableDistricts: (params: {
+    monthly_budget: number;
+    area_sqm?: number;
+    floor_type?: string;
+    limit?: number;
+  }) => apiClient.get<AffordableResponse>("/api/simulate/affordable", { params: params as QP }),
 };

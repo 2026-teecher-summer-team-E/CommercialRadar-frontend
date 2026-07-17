@@ -29,6 +29,8 @@ export const queryKeys = {
   categoryRanking: (id: number | string, params?: QP) =>
     ["category-ranking", id, params ?? null] as const,
   districtSearch: (keyword: string) => ["district-search", keyword] as const,
+  affordable: (budget: number, area: number, floor: string) =>
+    ["affordable", budget, area, floor] as const,
   me: ["me"] as const,
   myStats: ["me", "stats"] as const,
   myReports: (params: { page: number; limit: number }) => ["me", "reports", params] as const,
@@ -137,6 +139,19 @@ export function useDistrictSearch(keyword: string, enabled = true) {
     queryKey: queryKeys.districtSearch(keyword),
     enabled: enabled && keyword.length > 0,
     queryFn: async () => (await commercialApi.searchDistricts(keyword)).data,
+  });
+}
+
+/** 월 임대료 예산으로 창업 가능한 상권 리스트. budget 이 유효할 때만 요청. */
+export function useAffordableDistricts(
+  params: { monthly_budget: number; area_sqm: number; floor_type: string; limit?: number },
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: queryKeys.affordable(params.monthly_budget, params.area_sqm, params.floor_type),
+    enabled: enabled && params.monthly_budget > 0 && params.area_sqm > 0,
+    staleTime: 10 * 60 * 1000,
+    queryFn: async () => (await commercialApi.affordableDistricts(params)).data,
   });
 }
 
