@@ -1,0 +1,76 @@
+.wrap {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.trigger {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-muted);
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-num);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  padding: 0;
+}
+.trigger:hover,
+.trigger:focus-visible {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.bubble {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  width: 268px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md, 10px);
+  background: var(--color-text);
+  color: var(--color-surface);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.55;
+  text-align: left;
+  white-space: normal;
+  box-shadow: var(--shadow-modal);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+  pointer-events: none;
+}
+.right {
+  left: auto;
+  right: 0;
+}
+
+/* 말풍선 꼬리 */
+.bubble::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 10px;
+  border: 6px solid transparent;
+  border-bottom-color: var(--color-text);
+}
+.right::before {
+  left: auto;
+  right: 10px;
+}
+
+.wrap:hover .bubble,
+.wrap:focus-within .bubble {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}

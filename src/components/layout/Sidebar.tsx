@@ -56,6 +56,16 @@ function TrendIcon() {
     </svg>
   );
 }
+function SimulatorIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="M4 19h16" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <rect x="5.5" y="11" width="3.2" height="6" rx="1" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="10.4" y="7" width="3.2" height="10" rx="1" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="15.3" y="4" width="3.2" height="13" rx="1" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
 function GearIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none">
@@ -82,6 +92,7 @@ const NAV = [
   },
   { to: "/compare", label: "상권 비교", Icon: CompareIcon },
   { to: "/ranking", label: "랭킹", Icon: RankIcon },
+  { to: "/simulator", label: "창업 시뮬레이터", Icon: SimulatorIcon },
   { to: "/trends", label: "트렌드", Icon: TrendIcon },
   { to: "/admin", label: "관리", Icon: GearIcon, adminOnly: true },
 ];

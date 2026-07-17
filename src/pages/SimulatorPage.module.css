@@ -1,0 +1,23 @@
+.page {
+  padding: 26px 32px 44px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-muted);
+}

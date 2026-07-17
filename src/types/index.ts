@@ -364,3 +364,25 @@ export interface AgeSlice {
   name: string;
   pct: number;
 }
+
+// ── 예산으로 창업 가능 상권 (GET /api/simulate/affordable) ──
+export interface AffordableDistrict {
+  district_id: number;
+  district_name: string;
+  gu_name: string | null;
+  type_name: string | null;
+  floor_type: string; // 소규모 | 중대형 | 집합
+  year_quarter: string; // 임대료 기준 분기
+  rent_per_sqm: number; // ㎡당 임대료(천원/㎡)
+  est_monthly_rent: number; // 추정 월 임대료(원)
+  avg_population: number | null;
+  district_score: number | null;
+}
+
+export interface AffordableResponse {
+  monthly_budget: number; // 원
+  area_sqm: number;
+  floor_type: string;
+  count: number; // 예산 이하 상권 총 개수(limit 적용 전)
+  districts: AffordableDistrict[]; // 추정 월 임대료 오름차순
+}

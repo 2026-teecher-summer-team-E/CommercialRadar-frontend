@@ -13,6 +13,7 @@ const ComparePage = lazy(() => import("./pages/ComparePage"));
 const MyPage = lazy(() => import("./pages/MyPage"));
 const RankingPage = lazy(() => import("./pages/RankingPage"));
 const TrendsPage = lazy(() => import("./pages/TrendsPage"));
+const SimulatorPage = lazy(() => import("./pages/SimulatorPage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const SignInPage = lazy(() => import("./pages/SignInPage"));
 const SignUpPage = lazy(() => import("./pages/SignUpPage"));
@@ -61,6 +62,7 @@ function App() {
             <Route path="/dashboard/:districtCode" element={appRoute(<DashboardPage />)} />
             <Route path="/compare" element={appRoute(<ComparePage />)} />
             <Route path="/ranking" element={appRoute(<RankingPage />)} />
+            <Route path="/simulator" element={appRoute(<SimulatorPage />)} />
             <Route path="/trends" element={appRoute(<TrendsPage />)} />
             <Route path="/admin" element={adminRoute(<AdminPage />)} />
             <Route path="/mypage" element={appRoute(<MyPage />)} />
