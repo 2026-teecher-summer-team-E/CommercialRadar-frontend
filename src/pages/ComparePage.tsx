@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { commercialApi } from "../services/commercialApi";
+import { apiClient } from "../lib/apiClient";
 import { queryKeys, useDistrictSearch } from "../hooks/queries";
 import type {
   DistrictCompareResponse,
@@ -8,6 +9,7 @@ import type {
   DistrictTimeSeriesResponse,
   CategoryRankingResponse,
   CommercialDistrictSearchResult,
+  PopulationHeatmapResponse,
 } from "../types";
 import RadarChartSvg from "../components/compare/RadarChartSvg";
 import type { RadarSeries } from "../components/compare/RadarChartSvg";
@@ -40,6 +42,21 @@ interface CompareData {
   radars: RadarResponse[];
   timeSeries: DistrictTimeSeriesResponse[];
   ranking: CategoryRankingResponse | null;
+}
+
+interface SalesTimeBandsResponse {
+  district_id: number;
+  year_quarter: string | null;
+  daytime_sales: number | null;
+  nighttime_sales: number | null;
+  daytime_pct: number | null;
+  nighttime_pct: number | null;
+  bands: Record<string, number> | null;
+}
+
+interface SimulationAtmosphereData {
+  heatmap: PopulationHeatmapResponse | null;
+  salesBands: SalesTimeBandsResponse | null;
 }
 
 const EXPAND_ICON = "⤢";
@@ -339,6 +356,30 @@ export default function ComparePage() {
       }),
     );
   }, [simulationDistricts]);
+
+  const simulationAtmosphereQuery = useQuery({
+    queryKey: ["compareSimulationAtmosphere", simulationPairIds[0], simulationPairIds[1], selectedQuarter],
+    enabled: compareSim != null && simulationDistricts.length >= MIN_DISTRICTS,
+    queryFn: async () => {
+      const params = { year_quarter: selectedQuarter || undefined };
+      const entries = await Promise.all(
+        simulationDistricts.slice(0, 2).map(async (district) => {
+          const [heatmapRes, salesBandsRes] = await Promise.all([
+            commercialApi.heatmap(district.id, params).then((res) => res.data).catch(() => null),
+            apiClient
+              .get<SalesTimeBandsResponse>(`/api/commercial-districts/${district.id}/sales-time-bands`, { params })
+              .then((res) => res.data)
+              .catch(() => null),
+          ]);
+
+          return [district.id, { heatmap: heatmapRes, salesBands: salesBandsRes }] as const;
+        }),
+      );
+
+      return new Map<number, SimulationAtmosphereData>(entries);
+    },
+  });
+  const simulationAtmosphere = simulationAtmosphereQuery.data ?? new Map<number, SimulationAtmosphereData>();
 
   useEffect(() => {
     if (districts.length < MIN_DISTRICTS) {
@@ -784,20 +825,33 @@ export default function ComparePage() {
             {simulationDistricts.length >= MIN_DISTRICTS ? (
               <div className={styles.compareSimulationGrid}>
                 <Suspense fallback={<PageLoader fullScreen={false} />}>
-                  {simulationDistricts.slice(0, 2).map((district) => (
-                    <AtmosphereSimulation
-                      key={district.id}
-                      scenario={compareSim}
-                      survivalPct={district.survival_rate}
-                      footTraffic={district.avg_population}
-                      crowdBaseCount={simulationCrowdCounts.get(district.id) ?? null}
-                      startQuarter={activeQuarter || null}
-                      panelLabel={district.district_name}
-                      embedded
-                      hideClose
-                      onClose={() => setCompareSim(null)}
-                    />
-                  ))}
+                  {simulationDistricts.slice(0, 2).map((district) => {
+                    const atmosphere = simulationAtmosphere.get(district.id);
+                    const dayDominant = getSimulationDayDominant(atmosphere?.salesBands);
+                    const daySalesPct = getSimulationDaySalesPct(atmosphere?.salesBands, dayDominant);
+                    const simulationFootTraffic = getSimulationFootTraffic(
+                      atmosphere?.heatmap,
+                      dayDominant,
+                      district.avg_population,
+                    );
+
+                    return (
+                      <AtmosphereSimulation
+                        key={district.id}
+                        scenario={compareSim}
+                        survivalPct={district.survival_rate}
+                        footTraffic={simulationFootTraffic}
+                        crowdBaseCount={simulationCrowdCounts.get(district.id) ?? null}
+                        dayDominant={dayDominant}
+                        daySalesPct={daySalesPct}
+                        startQuarter={activeQuarter || null}
+                        panelLabel={district.district_name}
+                        embedded
+                        hideClose
+                        onClose={() => setCompareSim(null)}
+                      />
+                    );
+                  })}
                 </Suspense>
               </div>
             ) : (
@@ -815,6 +869,36 @@ export default function ComparePage() {
 function formatQuarter(quarter: string) {
   const match = /^(\d{4})-Q([1-4])$/.exec(quarter);
   return match ? `${match[1]}년 ${match[2]}분기` : quarter || "기준 분기 없음";
+}
+
+function getSimulationDayDominant(salesBands: SalesTimeBandsResponse | null | undefined): boolean | null {
+  if (salesBands?.daytime_pct == null || salesBands.nighttime_pct == null) return null;
+  return salesBands.daytime_pct >= salesBands.nighttime_pct;
+}
+
+function getSimulationDaySalesPct(
+  salesBands: SalesTimeBandsResponse | null | undefined,
+  dayDominant: boolean | null,
+): number | null {
+  if (salesBands == null || dayDominant == null) return null;
+  return dayDominant ? (salesBands.daytime_pct ?? null) : (salesBands.nighttime_pct ?? null);
+}
+
+function getSimulationFootTraffic(
+  heatmap: PopulationHeatmapResponse | null | undefined,
+  dayDominant: boolean | null,
+  fallback: number | null,
+): number | null {
+  const byTime = heatmap?.by_time ?? [];
+  if (dayDominant == null || byTime.length === 0) return fallback;
+
+  const daySlots = new Set(["06~11", "11~14", "14~17"]);
+  const nightSlots = new Set(["17~21", "21~24", "00~06"]);
+  const targetSlots = dayDominant ? daySlots : nightSlots;
+  const matched = byTime.filter((slot) => targetSlots.has(slot.slot) && slot.avg_population != null);
+
+  if (matched.length === 0) return fallback;
+  return matched.reduce((sum, slot) => sum + (slot.avg_population ?? 0), 0) / matched.length;
 }
 
 function Header() {
