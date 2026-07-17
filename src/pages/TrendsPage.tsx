@@ -17,6 +17,25 @@ const RANKING_FETCH_LIMIT = 100;
 const POPULAR_LIMIT = 9;
 /** --series-1~7(앱 전역 차트 팔레트) 크기만큼만 — 바 차트 레이스는 색상으로 업종을 구분한다. */
 const RACE_LIMIT = 7;
+/** 키워드 클라우드 스파크라인이 보여줄 "지금 기준" 개월 수. */
+const SPARK_TRAILING_MONTHS = 12;
+
+/** /categories/popular/history는 연도 단위로만 응답하므로, 최신 연도 데이터가 SPARK_TRAILING_MONTHS
+ * 개월에 못 미치면 전년도 말 몇 개월을 앞에 이어붙여 "지금 기준 최근 N개월" 트레일링 윈도우를 만든다. */
+function mergeTrailingHistory(
+  latest: PopularityHistoryResponse,
+  previous: PopularityHistoryResponse,
+  needed: number,
+): PopularityHistoryResponse {
+  const prevPeriods = previous.periods.slice(-needed);
+  const periods = [...prevPeriods, ...latest.periods];
+  const series = latest.series.map((s) => {
+    const prevSeries = previous.series.find((p) => p.category_name === s.category_name);
+    const prevValues = prevSeries?.values.filter((v) => prevPeriods.includes(v.period)) ?? [];
+    return { category_name: s.category_name, values: [...prevValues, ...s.values] };
+  });
+  return { ...latest, periods, series };
+}
 
 export default function TrendsPage() {
   const [ranking, setRanking] = useState<CategorySearchTrendRankingResponse | null>(null);
@@ -32,6 +51,10 @@ export default function TrendsPage() {
   const [historyError, setHistoryError] = useState(false);
   /** null이면 "아직 안 골랐음" — 백엔드가 골라준 최신 연도를 응답에서 받아 채운다. */
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
+
+  /** 키워드 클라우드 스파크라인 전용 — 연도 탭(selectedYear)과 무관하게 항상 "지금 기준 최근
+   * SPARK_TRAILING_MONTHS개월"을 보여준다. 바 차트 레이스용 history와는 별개 상태다. */
+  const [sparklineHistory, setSparklineHistory] = useState<PopularityHistoryResponse | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -104,6 +127,38 @@ export default function TrendsPage() {
     };
   }, [selectedYear]);
 
+  useEffect(() => {
+    let alive = true;
+
+    commercialApi
+      .popularityHistory({ limit: RACE_LIMIT })
+      .then(async (latestRes) => {
+        if (!alive) return;
+        const latest = latestRes.data;
+        const needed = SPARK_TRAILING_MONTHS - latest.periods.length;
+        if (needed <= 0 || !latest.year) {
+          setSparklineHistory(latest);
+          return;
+        }
+        const prevYear = String(Number(latest.year) - 1);
+        try {
+          const prevRes = await commercialApi.popularityHistory({ limit: RACE_LIMIT, year: prevYear });
+          if (!alive) return;
+          setSparklineHistory(mergeTrailingHistory(latest, prevRes.data, needed));
+        } catch {
+          // 전년도 데이터가 없으면(서비스 첫 해 등) 있는 만큼만 보여준다.
+          if (alive) setSparklineHistory(latest);
+        }
+      })
+      .catch(() => {
+        // 스파크라인은 보조 정보라 실패해도 KeywordCloud가 "추이 데이터 부족" 상태로 조용히 대체한다.
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   // 백엔드가 이미 검색 관심도 변화율(trend_pct) 내림차순으로 정렬해 주므로,
   // 앞쪽은 뜨는 업종, 뒤쪽은 지는 업종이다.
   const allItems = ranking?.ranking ?? [];
@@ -146,7 +201,7 @@ export default function TrendsPage() {
           ) : popularError ? (
             <div className={styles.empty}>키워드 데이터를 불러오지 못했어요.</div>
           ) : (
-            <KeywordCloud items={popularItems} history={history} />
+            <KeywordCloud items={popularItems} history={sparklineHistory} />
           )}
         </div>
       </section>
