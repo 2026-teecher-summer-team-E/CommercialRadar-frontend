@@ -66,9 +66,9 @@ const DEFAULT_COMPARE_PAGE_STATE: PersistedComparePageState = {
 };
 
 const SIMULATION_SCENARIO_OPTIONS: SelectorOption[] = [
-  { value: "mid", label: "중립 시나리오" },
-  { value: "high", label: "긍정적 시나리오" },
-  { value: "low", label: "부정적 시나리오" },
+  { value: "high", label: "Best" },
+  { value: "mid", label: "Normal" },
+  { value: "low", label: "Worst" },
 ];
 
 function readComparePageState(): PersistedComparePageState {
