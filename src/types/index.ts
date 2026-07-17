@@ -215,6 +215,17 @@ export interface PopulationHeatmapResponse {
   by_day: HeatmapSlot[];
 }
 
+// ── 시간대별 매출 낮/밤 (GET /api/commercial-districts/{id}/sales-time-bands) ──
+export interface SalesTimeBandsResponse {
+  district_id: number;
+  year_quarter: string | null;
+  daytime_sales: number | null;
+  nighttime_sales: number | null;
+  daytime_pct: number | null; // 낮(06~17) 매출 비중(%)
+  nighttime_pct: number | null; // 밤(17~06) 매출 비중(%)
+  bands: Record<string, number> | null;
+}
+
 // ── 상권 좌표 (GET /api/commercial-districts/geo) [Leaflet 지도용] ──
 export interface DistrictGeo {
   id: number;
@@ -363,4 +374,51 @@ export interface TimeseriesResponse {
 export interface AgeSlice {
   name: string;
   pct: number;
+}
+
+// ── 상권 벨트(축) (GET /api/belts, GET /api/belts/{slug}/momentum) ──
+/** 벨트 목록 카드 1건. 벨트 간 생애주기 비교(성수=성장기 … 강남=성숙기)용. */
+export interface BeltSummary {
+  slug: string;
+  name: string;
+  description: string | null;
+  anchor_gu: string | null;
+  member_count: number;
+  base_quarter: string | null; // "2021-Q4"
+  latest_quarter: string | null; // "2025-Q4"
+  belt_sales_base: number | null; // 벨트 총매출(기준분기, 원)
+  belt_sales_latest: number | null; // 벨트 총매출(최신분기, 원)
+  belt_growth_pct: number | null; // 벨트 전체 성장률(%)
+}
+
+/** 벨트 멤버 상권 1건 + 성장 지표. 지도 색칠(growth_pct)·랭킹용. */
+export interface BeltMember {
+  district_id: number;
+  district_name: string;
+  type_name: string | null; // 골목상권 | 발달상권 | 전통시장 | 관광특구
+  gu_name: string | null;
+  is_anchor: boolean; // true=시드 키워드 직접매칭, false=인접 편입
+  lat: number | null;
+  lng: number | null;
+  sales_base: number | null; // 기준분기 매출(원)
+  sales_latest: number | null; // 최신분기 매출(원)
+  growth_pct: number | null; // 성장률(%). 기저 매출 없으면 null
+  rank: number | null; // 벨트 내 성장 순위. null=랭킹 제외(기준분기 10억 미만 미니 상권)
+}
+
+/** 벨트 성장 모멘텀(히어로): 멤버 성장 랭킹 + 뜨는/지는 + 자동 인사이트 문장. */
+export interface BeltMomentum {
+  slug: string;
+  name: string;
+  description: string | null;
+  anchor_gu: string | null;
+  base_quarter: string | null;
+  latest_quarter: string | null;
+  belt_sales_base: number | null;
+  belt_sales_latest: number | null;
+  belt_growth_pct: number | null;
+  insight: string; // 자동 생성 인사이트 한 줄
+  members: BeltMember[]; // 성장률 내림차순 정렬. 지도용 전체 멤버
+  rising: BeltMember[]; // 뜨는 곳 Top 3(rank 있는 것만)
+  falling: BeltMember[]; // 지는 곳 Bottom 3
 }

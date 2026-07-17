@@ -1,0 +1,308 @@
+.page {
+  padding: 26px 32px 44px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* 헤더 */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-muted);
+}
+
+.errorBox {
+  padding: 40px;
+  text-align: center;
+  color: var(--color-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+/* 좌(목록) + 우(상세) 2열 */
+.layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* 벨트 목록 */
+.listPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.beltCard {
+  text-align: left;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 14px 16px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.15s, transform 0.1s;
+}
+.beltCard:hover {
+  border-color: var(--color-primary);
+}
+.beltCardActive {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary) inset, var(--shadow-card);
+}
+.beltCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.beltCardName {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.beltCardMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--color-muted);
+}
+.dot {
+  color: var(--color-faint);
+}
+
+/* 성장률 뱃지 */
+.badge {
+  font-family: var(--font-num);
+  font-weight: 700;
+  font-size: 12.5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.badgeUp {
+  color: #c1333f;
+  background: color-mix(in srgb, #dc3545 14%, transparent);
+}
+.badgeDown {
+  color: #1f5bc4;
+  background: color-mix(in srgb, #2d6cdf 14%, transparent);
+}
+.badgeFlat {
+  color: var(--color-muted);
+  background: color-mix(in srgb, var(--color-muted) 12%, transparent);
+}
+
+/* 상세 */
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.insightBanner {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.insightHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.detailName {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.quarterRange {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--color-faint);
+  font-family: var(--font-num);
+}
+.bigGrowth {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.bigGrowthNum {
+  font-family: var(--font-num);
+  font-weight: 800;
+  font-size: 30px;
+  line-height: 1;
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+.bigGrowthLabel {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.insightText {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-text);
+}
+.salesRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-num);
+  font-size: 13.5px;
+  color: var(--color-muted);
+}
+.arrow {
+  color: var(--color-faint);
+}
+
+/* 지도 */
+.mapWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mapLegend {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-muted);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.legendDotUp,
+.legendDotDown,
+.legendDotFlat {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: -1px;
+}
+.legendDotUp {
+  background: #dc3545;
+}
+.legendDotDown {
+  background: #2d6cdf;
+}
+.legendDotFlat {
+  background: #c7ccd6;
+}
+
+/* 뜨는/지는 랭킹 */
+.rankGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.rankPanel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 16px 18px;
+}
+.rankTitle {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rankList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  counter-reset: rank;
+}
+.rankItem {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.rankItem:hover {
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+}
+.rankName {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.anchorTag {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+.rankRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rankSales {
+  font-family: var(--font-num);
+  font-size: 12.5px;
+  color: var(--color-muted);
+  min-width: 54px;
+  text-align: right;
+}
+.empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-faint);
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .rankGrid {
+    grid-template-columns: 1fr;
+  }
+}

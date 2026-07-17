@@ -340,6 +340,61 @@ export default function ComparePage() {
     );
   }, [simulationDistricts]);
 
+  // 1:1 시뮬레이션 패널이 열렸을 때 두 상권의 낮/밤 매출·시간대 유동인구를 조회한다.
+  // (compare API 는 낮/밤 정보를 주지 않아 sales-time-bands + heatmap 을 별도 조회해야 배경이 낮/밤으로 갈린다.)
+  const simulationDayNightIds = simulationPairIds.filter((id): id is number => id != null);
+  const simulationDayNightQuery = useQuery({
+    queryKey: queryKeys.simDayNight(simulationPairIds),
+    enabled: compareSim !== null && simulationDayNightIds.length >= MIN_DISTRICTS,
+    queryFn: async () => {
+      const results = await Promise.all(
+        simulationDayNightIds.map(async (id) => {
+          const [bands, heatmap] = await Promise.all([
+            commercialApi.salesTimeBands(id),
+            commercialApi.heatmap(id),
+          ]);
+          return [id, { bands: bands.data, heatmap: heatmap.data }] as const;
+        }),
+      );
+      return new Map(results);
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const simulationDayNight = useMemo(() => {
+    const map = new Map<number, { dayDominant: boolean | null; daySalesPct: number | null; footTraffic: number | null }>();
+    const source = simulationDayNightQuery.data;
+    if (!source) return map;
+
+    const daySlots = new Set(["06~11", "11~14", "14~17"]);
+    const nightSlots = new Set(["17~21", "21~24", "00~06"]);
+
+    for (const district of simulationDistricts) {
+      const entry = source.get(district.id);
+      const sb = entry?.bands;
+      const fallbackTraffic = district.avg_population ?? null;
+
+      if (sb == null || sb.daytime_pct == null || sb.nighttime_pct == null) {
+        map.set(district.id, { dayDominant: null, daySalesPct: null, footTraffic: fallbackTraffic });
+        continue;
+      }
+
+      const dayDominant = sb.daytime_pct >= sb.nighttime_pct;
+      const daySalesPct = dayDominant ? sb.daytime_pct : sb.nighttime_pct;
+
+      const byTime = entry?.heatmap?.by_time ?? [];
+      const targetSlots = dayDominant ? daySlots : nightSlots;
+      const matched = byTime.filter((s) => targetSlots.has(s.slot) && s.avg_population != null);
+      const footTraffic =
+        matched.length > 0
+          ? matched.reduce((sum, s) => sum + (s.avg_population ?? 0), 0) / matched.length
+          : fallbackTraffic;
+
+      map.set(district.id, { dayDominant, daySalesPct, footTraffic });
+    }
+    return map;
+  }, [simulationDayNightQuery.data, simulationDistricts]);
+
   useEffect(() => {
     if (districts.length < MIN_DISTRICTS) {
       setSimulationPairIds([null, null]);
@@ -784,20 +839,25 @@ export default function ComparePage() {
             {simulationDistricts.length >= MIN_DISTRICTS ? (
               <div className={styles.compareSimulationGrid}>
                 <Suspense fallback={<PageLoader fullScreen={false} />}>
-                  {simulationDistricts.slice(0, 2).map((district) => (
-                    <AtmosphereSimulation
-                      key={district.id}
-                      scenario={compareSim}
-                      survivalPct={district.survival_rate}
-                      footTraffic={district.avg_population}
-                      crowdBaseCount={simulationCrowdCounts.get(district.id) ?? null}
-                      startQuarter={activeQuarter || null}
-                      panelLabel={district.district_name}
-                      embedded
-                      hideClose
-                      onClose={() => setCompareSim(null)}
-                    />
-                  ))}
+                  {simulationDistricts.slice(0, 2).map((district) => {
+                    const dayNight = simulationDayNight.get(district.id);
+                    return (
+                      <AtmosphereSimulation
+                        key={district.id}
+                        scenario={compareSim}
+                        survivalPct={district.survival_rate}
+                        footTraffic={dayNight?.footTraffic ?? district.avg_population}
+                        crowdBaseCount={simulationCrowdCounts.get(district.id) ?? null}
+                        dayDominant={dayNight?.dayDominant ?? null}
+                        daySalesPct={dayNight?.daySalesPct ?? null}
+                        startQuarter={activeQuarter || null}
+                        panelLabel={district.district_name}
+                        embedded
+                        hideClose
+                        onClose={() => setCompareSim(null)}
+                      />
+                    );
+                  })}
                 </Suspense>
               </div>
             ) : (
