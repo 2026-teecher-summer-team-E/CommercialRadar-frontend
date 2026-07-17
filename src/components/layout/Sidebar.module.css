@@ -66,9 +66,9 @@
 /* display:none 대신 opacity+max-width로 폭 트랜지션과 같은 타이밍에 서서히 사라지게 한다.
    (display:none은 애니메이션이 안 돼 폭이 줄어들기도 전에 순간 사라져 "튐"으로 보였다) */
 .logoText {
-  font-weight: 700;
-  font-size: 18px;
-  letter-spacing: -0.3px;
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: 1.5px;
   color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;

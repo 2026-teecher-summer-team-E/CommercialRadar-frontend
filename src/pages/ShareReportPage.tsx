@@ -52,7 +52,7 @@ export default function ShareReportPage() {
           <p>공유된 리포트를 찾을 수 없어요.</p>
           <p className={styles.stateSub}>링크가 만료되었거나 삭제된 리포트일 수 있어요.</p>
           <Link to="/landing" className={styles.homeLink}>
-            상권레이더 홈으로
+            FOV 홈으로
           </Link>
         </div>
       </div>
@@ -65,7 +65,7 @@ export default function ShareReportPage() {
         <span className={styles.badge}>공유 리포트</span>
         <ReportView report={report} />
         <div className={styles.footer}>
-          <span className={styles.footNote}>상권레이더에서 공유된 상권 분석 리포트입니다.</span>
+          <span className={styles.footNote}>FOV에서 공유된 상권 분석 리포트입니다.</span>
           <Link to="/landing" className={styles.homeLink}>
             직접 분석해보기
           </Link>
