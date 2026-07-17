@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import type { PopularCategoryItem, PopularityHistoryResponse, RelatedCategoryItem } from "../../types";
 import { commercialApi } from "../../services/commercialApi";
@@ -92,47 +92,125 @@ function buildSmoothPath(points: SparkPoint[]): string {
   return d;
 }
 
-/** 인덱스 기반 결정론적 의사난수. Math.random 대신 사용해 리렌더에도 위치가 흔들리지 않는다. */
-function pseudoRandom(seed: number): number {
-  return ((seed * 90001 + 49297) % 233280) / 233280;
+interface TagStyle {
+  fontSize: number;
+  fontWeight: number;
+  paddingBlock: number;
+  paddingInline: number;
+}
+
+/** popularity_index를 0~1로 정규화해 태그의 시각적 중요도(글자 크기·굵기·여백)를 정한다. */
+function tagStyle(t: number): TagStyle {
+  const clamped = Math.max(0, Math.min(1, t));
+  return {
+    fontSize: 16 + clamped * 16, // 16px(최하위) ~ 32px(1위)
+    // Noto Sans KR은 400/500/700/900만 로드돼 있어(index.html) 그 안에서만 단계를 둔다 —
+    // 로드 안 된 굵기를 쓰면 브라우저가 조용히 가장 가까운 값으로 대체해 의도한 단계가 사라진다.
+    fontWeight: clamped < 0.4 ? 500 : clamped < 0.75 ? 700 : 900,
+    paddingBlock: 10 + clamped * 4, // 10~14px
+    paddingInline: 18 + clamped * 10, // 18~28px
+  };
+}
+
+interface TagBox {
+  width: number;
+  height: number;
 }
 
 interface Placement {
   left: number;
   top: number;
-  duration: number;
-  delay: number;
-  scale: number;
 }
 
-function layoutKeywords(items: PopularCategoryItem[]): Placement[] {
-  const count = items.length;
-  const columns = Math.min(4, Math.max(1, Math.ceil(Math.sqrt(count))));
-  const rows = Math.max(1, Math.ceil(count / columns));
-  const cellW = 100 / columns;
-  const cellH = 100 / rows;
-  const maxIndex = Math.max(...items.map((item) => item.popularity_index), 1);
-  const minIndex = Math.min(...items.map((item) => item.popularity_index), 0);
-  const spread = maxIndex - minIndex || 1;
-  // 최하위(9위)는 기존 크기 그대로 두고, 1위는 기존 최대 크기 그대로 두되, 그 사이
-  // 순위들만 커 보이게 만든다 — 1위(앵커)가 나머지보다 압도적으로 커서 선형 비례로는
-  // 2~8위가 전부 최소 크기 근처로 뭉쳐 보였다. sqrt 곡선으로 중간 순위를 부풀린다.
-  const floorScale = 0.85 + Math.max(0, Math.min(1, minIndex / maxIndex)) * 0.6;
-  const ceilScale = 1.85;
+/** 태그 텍스트의 렌더링 크기를 실제 DOM 측정 없이 대략 추정한다(배치를 렌더 전에
+ * 미리 계산해야 해서). 한글은 폭이 정사각형에 가까워 글자수 * 폰트크기 근사가 잘 맞는다. */
+function estimateTagBox(text: string, tag: TagStyle): TagBox {
+  return {
+    width: text.length * tag.fontSize * 1.05 + tag.paddingInline * 2,
+    height: tag.fontSize * 1.3 + tag.paddingBlock * 2,
+  };
+}
 
-  return items.map((item, i) => {
-    const col = i % columns;
-    const row = Math.floor(i / columns);
-    const jitterX = (pseudoRandom(i * 3 + 1) - 0.5) * cellW * 0.6;
-    const jitterY = (pseudoRandom(i * 7 + 2) - 0.5) * cellH * 0.6;
-    const t = Math.max(0, Math.min(1, (item.popularity_index - minIndex) / spread));
-    return {
-      left: Math.min(94, Math.max(6, col * cellW + cellW / 2 + jitterX)),
-      top: Math.min(88, Math.max(10, row * cellH + cellH / 2 + jitterY)),
-      duration: 4 + pseudoRandom(i * 11 + 3) * 3,
-      delay: pseudoRandom(i * 13 + 5) * -6,
-      scale: floorScale + Math.sqrt(t) * (ceilScale - floorScale),
-    };
+function rectsOverlap(a: Placement & TagBox, b: Placement & TagBox, gap: number): boolean {
+  return !(
+    a.left + a.width + gap < b.left ||
+    b.left + b.width + gap < a.left ||
+    a.top + a.height + gap < b.top ||
+    b.top + b.height + gap < a.top
+  );
+}
+
+const PACK_MARGIN = 12;
+const PACK_GAP = 40;
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+const GOLDEN_ANGLE = 2.399963;
+/** 가로로 넓은 카드 비율에 맞춰 세로 반지름을 눌러주는 배율. */
+const RADIUS_SQUASH = 0.72;
+
+/** 태그마다 목표 반지름을 sqrt(순서 비율)로 정해 중심부터 바깥까지 "단위 면적당 밀도"가
+ * 균등하도록 펼친다(해바라기씨 배열의 원리 — 반지름을 그냥 선형으로 늘리면 안쪽 원일수록
+ * 둘레가 짧아서 점들이 중심에 몰려 보인다). 중요도가 큰(=먼저 처리되는) 태그일수록 안쪽
+ * 링에 배정되지만, 전체적으로는 컨테이너 전체 면적에 고루 퍼진다 — 중심에 뭉치지 않는다.
+ * 각 태그는 자기 목표 반지름 근처에서만 국소적으로 나선 탐색해 겹침을 피한다(탐색이 다시
+ * 중심으로 끌려가면 균등 분포가 깨지므로, 중심이 아니라 목표 지점 기준으로 탐색한다).
+ *
+ * 어떤 경우에도 컨테이너 경계 안으로 clamp한다 — 이 앱은 모바일에서 사이드바가 접히지 않아
+ * 카드 폭이 태그 하나보다 좁아지는 극단적인 경우가 실제로 있고(실측 142px), 그럴 때 탐색이
+ * 다 실패하면 안 잡힌 좌표를 그대로 쓰면 태그가 화면 밖으로 날아가 버린다. clamp하면 그런
+ * 극단적인 경우 태그끼리 살짝 겹칠 순 있지만, 최소한 항상 보인다. */
+function packCentered(boxes: TagBox[], containerW: number, containerH: number): Placement[] {
+  const cx = containerW / 2;
+  const cy = containerH / 2;
+  const maxRadius = Math.max(
+    0,
+    Math.min(containerW / 2 - PACK_MARGIN, (containerH / 2 - PACK_MARGIN) / RADIUS_SQUASH),
+  );
+  const placed: (Placement & TagBox)[] = [];
+
+  const clampToBounds = (left: number, top: number, box: TagBox): Placement => ({
+    left: clamp(left, PACK_MARGIN, Math.max(PACK_MARGIN, containerW - box.width - PACK_MARGIN)),
+    top: clamp(top, PACK_MARGIN, Math.max(PACK_MARGIN, containerH - box.height - PACK_MARGIN)),
+  });
+
+  return boxes.map((box, i) => {
+    const t = boxes.length <= 1 ? 0 : i / (boxes.length - 1);
+    const targetRadius = Math.sqrt(t) * maxRadius;
+    const baseAngle = i * GOLDEN_ANGLE;
+
+    let angle = baseAngle;
+    let radius = targetRadius;
+    let result: Placement = clampToBounds(
+      cx + radius * Math.cos(angle) - box.width / 2,
+      cy + radius * Math.sin(angle) * RADIUS_SQUASH - box.height / 2,
+      box,
+    );
+
+    for (let step = 0; step < 800; step++) {
+      const left = cx + radius * Math.cos(angle) - box.width / 2;
+      const top = cy + radius * Math.sin(angle) * RADIUS_SQUASH - box.height / 2;
+      const candidate = { left, top, width: box.width, height: box.height };
+      const inBounds =
+        left >= PACK_MARGIN &&
+        top >= PACK_MARGIN &&
+        left + box.width <= containerW - PACK_MARGIN &&
+        top + box.height <= containerH - PACK_MARGIN;
+      const collides = placed.some((p) => rectsOverlap(candidate, p, PACK_GAP));
+      result = clampToBounds(left, top, box);
+      if (inBounds && !collides) {
+        placed.push(candidate);
+        return result;
+      }
+      // 목표 반지름 근처를 나선형으로 살짝만 넓혀가며 탐색한다 — 시작점 자체가 이미
+      // 자기 링 위치라, 겹칠 때만 거기서부터 조금씩 더 바깥으로 밀려난다.
+      angle += 0.42;
+      radius = targetRadius + (step + 1) * 1.6;
+    }
+    placed.push({ ...result, width: box.width, height: box.height });
+    return result;
   });
 }
 
@@ -142,7 +220,59 @@ export default function KeywordCloud({ items, history }: Props) {
   const [loadingRelated, setLoadingRelated] = useState(false);
   const [relatedError, setRelatedError] = useState(false);
 
-  const layout = useMemo(() => layoutKeywords(items), [items]);
+  // 태그 크기/굵기 계산용 정규화 범위. 1위(앵커)는 popularity_index가 항상 100 근처로
+  // 압도적으로 커서, 나머지가 전부 최소 크기 근처로 뭉쳐 보이지 않도록 나머지 항목들의
+  // 범위만으로 정규화한다(1위 자체는 별도로 최대 크기를 고정 적용).
+  const importanceRange = useMemo(() => {
+    const rest = items.filter((item) => item.rank !== 1);
+    const values = (rest.length > 0 ? rest : items).map((item) => item.popularity_index);
+    const maxIndex = Math.max(...values, 1);
+    const minIndex = Math.min(...values, 0);
+    return { minIndex, spread: maxIndex - minIndex || 1 };
+  }, [items]);
+
+  const tags = useMemo(
+    () =>
+      items.map((item) => {
+        const t = (item.popularity_index - importanceRange.minIndex) / importanceRange.spread;
+        const style = tagStyle(t);
+        return { item, style, box: estimateTagBox(item.category_name, style) };
+      }),
+    [items, importanceRange],
+  );
+
+  // 배치 계산엔 컨테이너의 실제 픽셀 크기가 필요하다(반응형이라 고정값을 쓸 수 없음).
+  // useLayoutEffect로 첫 페인트 전에 동기 측정해서, "가운데 뭉쳐있다가 흩어지는" 첫 프레임
+  // 깜빡임 없이 바로 최종 위치로 그려지게 한다. 이후 리사이즈는 ResizeObserver가 갱신한다.
+  const cloudRef = useRef<HTMLDivElement | null>(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
+  useLayoutEffect(() => {
+    const el = cloudRef.current;
+    if (!el) return;
+    setContainerSize({ width: el.clientWidth, height: el.clientHeight });
+  }, []);
+
+  useEffect(() => {
+    const el = cloudRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const box = entries[0]?.contentRect;
+      if (box) setContainerSize({ width: box.width, height: box.height });
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const placements = useMemo(() => {
+    if (containerSize.width === 0 || containerSize.height === 0) return [];
+    return packCentered(
+      tags.map((t) => t.box),
+      containerSize.width,
+      containerSize.height,
+    );
+  }, [tags, containerSize]);
+
   const selected = selectedIdx != null ? items[selectedIdx] : null;
 
   const selectedSeries = useMemo(
@@ -216,29 +346,38 @@ export default function KeywordCloud({ items, history }: Props) {
 
   return (
     <div className={styles.wrap}>
-      <div className={styles.cloud}>
-        {items.map((item, i) => {
-          const pos = layout[i];
-          const isSelected = selectedIdx === i;
-          return (
-            <button
-              key={item.category_name}
-              type="button"
-              className={[styles.keyword, isSelected ? styles.selected : ""].join(" ")}
-              style={{
-                left: `${pos.left}%`,
-                top: `${pos.top}%`,
-                animationDuration: `${pos.duration}s`,
-                animationDelay: `${pos.delay}s`,
-                ["--kw-scale" as string]: pos.scale,
-              }}
-              aria-pressed={isSelected}
-              onClick={() => setSelectedIdx(isSelected ? null : i)}
-            >
-              {item.category_name}
-            </button>
-          );
-        })}
+      <div className={styles.cloudOuter}>
+        <div className={styles.cloud} ref={cloudRef}>
+          {tags.map(({ item, style }, i) => {
+            const isSelected = selectedIdx === i;
+            const placement = placements[i];
+            return (
+              <button
+                key={item.category_name}
+                type="button"
+                className={[styles.keyword, isSelected ? styles.selected : ""].join(" ")}
+                style={{
+                  // 측정 전(첫 프레임)엔 placement가 없다 — 보이지 않게 숨겨서 중앙에
+                  // 뭉쳐있는 잘못된 위치가 잠깐 노출되는 걸 막는다.
+                  visibility: placement ? "visible" : "hidden",
+                  left: `${placement?.left ?? 0}px`,
+                  top: `${placement?.top ?? 0}px`,
+                  fontSize: `${style.fontSize}px`,
+                  fontWeight: style.fontWeight,
+                  paddingBlock: `${style.paddingBlock}px`,
+                  paddingInline: `${style.paddingInline}px`,
+                  // 진입 애니메이션을 순서대로 살짝 엇갈리게 — 무작위가 아니라 인덱스 기반이라
+                  // 리렌더돼도 항상 같은 순서로 나타난다.
+                  animationDelay: `${i * 40}ms`,
+                }}
+                aria-pressed={isSelected}
+                onClick={() => setSelectedIdx(isSelected ? null : i)}
+              >
+                {item.category_name}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className={styles.panel}>
