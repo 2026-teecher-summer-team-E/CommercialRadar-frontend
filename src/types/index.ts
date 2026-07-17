@@ -191,6 +191,21 @@ export interface SalesForecastResponse {
   forecast: SalesForecastPoint[];
 }
 
+// ── 임대료 예측 (GET /api/commercial-districts/{id}/rent-forecast) ──
+export interface RentForecastPoint {
+  year_quarter: string;
+  avg_rent_per_sqm: number | null; // 대표값 = 추세 중앙값. 단위 천원/㎡
+  low: number | null; // 비관 P10 (없으면 대표값)
+  high: number | null; // 낙관 P90 (없으면 대표값)
+  confidence: number | null;
+}
+export interface RentForecastResponse {
+  district_id: number;
+  model: string;
+  floor_type: string; // 소규모 / 중대형 / 집합
+  forecast: RentForecastPoint[];
+}
+
 // ── 레이더 (GET /api/commercial-districts/{id}/radar) [신규] ──
 export interface RadarAxis {
   key: string;

@@ -31,7 +31,8 @@ const FORECAST_COLORS = {
 interface Props {
   history: TimeseriesPoint[];
   forecast: TimeseriesPoint[];
-  unit: "won" | "ratio";
+  /** "won"=매출(억/조 단위), "won_sqm"=㎡당 임대료(원, 만원 단위 축약), "ratio"=생존율(%). */
+  unit: "won" | "won_sqm" | "ratio";
   onScenarioClick?: (scenario: "low" | "mid" | "high") => void;
   /** 차트 높이(px). 기본 380. */
   height?: number;
@@ -212,9 +213,14 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
     b.band = a != null ? [a, a] : null;
   }
 
-  const formatValue = (v: number) => (unit === "won" ? `${fmtEok(v)}원` : formatRatio(v));
+  const formatValue = (v: number) =>
+    unit === "won" ? `${fmtEok(v)}원`
+    : unit === "won_sqm" ? `₩${Math.round(v).toLocaleString("ko-KR")}/㎡`
+    : formatRatio(v);
   const formatAxis = (v: number) =>
-    unit === "won" ? `${Math.round(v / 1e8)}억` : `${Math.round(v * 100)}%`;
+    unit === "won" ? `${Math.round(v / 1e8)}억`
+    : unit === "won_sqm" ? `${(v / 10000).toFixed(1)}만`
+    : `${Math.round(v * 100)}%`;
   // 분기 코드(2026-Q1)를 X축 라벨용 "26 1분기"로. 형식이 다르면 원본 그대로.
   const formatQuarter = (q: string) => {
     const m = /^(\d{4})-Q([1-4])$/.exec(q);
