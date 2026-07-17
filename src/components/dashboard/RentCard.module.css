@@ -6,6 +6,9 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
+  /* 옆 임대료 예측 카드(그래프)에 맞춰 grid stretch로 세로가 늘어나므로, 늘어난 여백을
+     항목 사이에 분산한다. 제목(head)은 다른 카드처럼 맨 위, 하단 노트는 맨 아래 고정. */
+  justify-content: space-between;
 }
 .head {
   display: flex;

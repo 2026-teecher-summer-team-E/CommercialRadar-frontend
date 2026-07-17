@@ -21,7 +21,7 @@ import PopulationHeatmap from "../components/dashboard/PopulationHeatmap";
 import AgeGenderCard from "../components/dashboard/AgeGenderCard";
 import RentCard from "../components/dashboard/RentCard";
 import type { RentBar } from "../components/dashboard/RentCard";
-import FloorRentCard from "../components/dashboard/FloorRentCard";
+import RentForecastCard from "../components/dashboard/RentForecastCard";
 import SalesForecastCard from "../components/dashboard/SalesForecastCard";
 import { DayNightCard, ForeignCard, PerCapitaCard, PopulationRhythmCard, WeekendCard } from "../components/dashboard/StatCards";
 import ExpandModal from "../components/dashboard/ExpandModal";
@@ -34,6 +34,10 @@ import styles from "./DashboardPage.module.css";
 
 // recharts + lottie가 들어있어 무거움 — 시나리오 클릭(모달) 시점에만 로드.
 const AtmosphereSimulation = lazy(() => import("../components/charts/AtmosphereSimulation"));
+
+// 임대료 예측은 상가유형별 독립 시계열이라 대표 유형 하나만 보여준다. 백엔드 기본값과 동일하게
+// 표본이 가장 많은 중대형을 쓴다(app/routers/ml.py DEFAULT_RENT_FLOOR_TYPE).
+const RENT_FORECAST_FLOOR_TYPE = "중대형";
 
 /** getDistrict 응답(서비스가 제네릭 없이 any 반환) — 페이지 내부 로컬 타입. */
 interface DistrictLatestStats {
@@ -283,6 +287,13 @@ export default function DashboardPage() {
     enabled: id != null,
   });
 
+  // 임대료 예측(대표 유형 = 중대형). 매출 예측과 같은 대상 단위(상권 하나)의 단일 시계열.
+  const rentForecastQuery = useQuery({
+    queryKey: ["rent-forecast", id ?? -1] as const,
+    queryFn: () => mlApi.rentForecast(id as number, { floor_type: RENT_FORECAST_FLOOR_TYPE }).then((r) => r.data),
+    enabled: id != null,
+  });
+
   // ── 파생 값 ─────────────────────────────────────────────
   const d = data?.district ?? null;
   const stats = d?.latest_stats ?? null;
@@ -452,6 +463,26 @@ export default function DashboardPage() {
     if (vals.length === 0) return null;
     return vals.reduce((a, b) => a + b, 0) / vals.length;
   }, [data]);
+
+  // 임대료 예측 차트 데이터. history는 rentBars의 최신 분기 실적 1점(대표 유형=중대형 기준 앵커),
+  // forecast는 rent-forecast 응답(천원/㎡ → ×1000 원/㎡, rentBars와 동일 변환).
+  const rentForecastHistory = useMemo<TimeseriesPoint[]>(() => {
+    const anchorQuarter = data?.rent?.year_quarter ?? null;
+    const bar = rentBars.find((b) => b.label === RENT_FORECAST_FLOOR_TYPE);
+    return anchorQuarter != null && bar?.value != null ? [{ year_quarter: anchorQuarter, value: bar.value }] : [];
+  }, [rentBars, data?.rent?.year_quarter]);
+  const rentForecastSeries = useMemo<TimeseriesPoint[]>(() => {
+    const fc = rentForecastQuery.data?.forecast ?? [];
+    return fc.map((p) => ({
+      year_quarter: p.year_quarter,
+      value: p.avg_rent_per_sqm == null ? null : p.avg_rent_per_sqm * 1000,
+      low: p.low == null ? null : p.low * 1000,
+      high: p.high == null ? null : p.high * 1000,
+      confidence: p.confidence,
+    }));
+  }, [rentForecastQuery.data]);
+  const rentForecastFallbackNote =
+    !rentForecastQuery.isPending && rentForecastSeries.length === 0 ? "임대료 예측 데이터가 아직 없습니다." : null;
 
   // AtmosphereSimulation용: 낮/밤 우위, 매출 비중, 시간대별 유동인구.
   const simDayDominant = useMemo<boolean | null>(() => {
@@ -694,7 +725,12 @@ export default function DashboardPage() {
         <SectionTitle title="비용·리스크" subtitle="창업 전 반드시 확인할 비용과 신호" />
         <div className={styles.duoGrid}>
           <RentCard perSqm={rentAvgPerSqm != null ? rentAvgPerSqm * 1000 : null} />
-          <FloorRentCard bars={rentBars} />
+          <RentForecastCard
+            history={rentForecastHistory}
+            forecast={rentForecastSeries}
+            floorTypeLabel={`${RENT_FORECAST_FLOOR_TYPE} 상가`}
+            fallbackNote={rentForecastFallbackNote}
+          />
         </div>
       </section>
 
