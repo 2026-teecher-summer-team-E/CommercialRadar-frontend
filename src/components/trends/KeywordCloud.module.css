@@ -5,49 +5,112 @@
   width: 100%;
 }
 
-/* 떠다니는 키워드 영역 — 카드 배경은 상위 .card 하나로 충분해서 여기선 별도 배경 없이
-   버블만 떠 있게 둔다(카드 안에 카드가 겹치지 않도록). */
-.cloud {
+/* 키워드 클라우드 전용 블루 팔레트 — 앱 전역 남색 토큰(tokens.css)과는 별개로 이
+   컴포넌트 안에서만 쓰는 글래스모피즘 톤을 로컬 변수로 격리한다(다른 컴포넌트 영향 없음).
+
+   장식(blur 원)과 태그 목록을 두 겹으로 분리했다 — 장식은 카드 밖으로 삐져나가야 해서
+   overflow:hidden이 필요하고, 태그 목록은 좁은 화면에서 줄바꿈이 늘어나 420px보다
+   길어질 수 있어 overflow:hidden이면 뒤쪽 태그가 통째로 잘려 안 보이게 된다(실측 확인됨).
+   그래서 바깥 레이어만 hidden, 안쪽 태그 레이어는 넘치면 스크롤되게 뒀다. */
+.cloudOuter {
   position: relative;
   flex: 1 1 50%;
   min-width: 0;
   height: 420px;
+  border-radius: 20px;
   overflow: hidden;
+  background: linear-gradient(180deg, #fafcff, #f7f9fc);
 }
 
+/* 배경이 비어 보이지 않도록 낮은 불투명도의 흐릿한 원형 장식을 뒤에 깐다.
+   position:absolute라 레이아웃에 관여하지 않고, z-index로 태그 뒤에만 머문다. */
+.cloudOuter::before,
+.cloudOuter::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+}
+.cloudOuter::before {
+  width: 220px;
+  height: 220px;
+  top: -70px;
+  left: -50px;
+  background: radial-gradient(circle, rgba(79, 123, 255, 0.16), transparent 70%);
+}
+.cloudOuter::after {
+  width: 260px;
+  height: 260px;
+  bottom: -90px;
+  right: -60px;
+  background: radial-gradient(circle, rgba(79, 123, 255, 0.12), transparent 70%);
+}
+
+.cloud {
+  --kw-primary: #4f7bff;
+  --kw-light: #eef4ff;
+  --kw-border: #dce7ff;
+  --kw-text: #233b6e;
+
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  /* overflow-y:auto는 안전망이다 — 배치 알고리즘이 800번 시도해도 자리를 못 찾는
+     극단적인 경우(태그가 아주 많거나 컨테이너가 아주 좁을 때)에만 스크롤이 생긴다. */
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* 위치(left/top)는 JS의 packCentered()가 중심에서 나선형으로 펼치며 계산한다 —
+   중요도가 큰 태그일수록 먼저 놓여 중심에 가깝다. 크기/굵기/여백도 JS가 인라인으로 지정한다. */
 .keyword {
   position: absolute;
-  transform: translate(-50%, -50%) scale(var(--kw-scale, 1));
-  padding: 9px 18px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-pill);
-  background: var(--color-primary-light);
-  color: var(--color-primary);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--kw-border);
+  border-radius: 18px;
+  background: linear-gradient(135deg, #f8faff, var(--kw-light));
+  color: var(--kw-text);
   font-family: inherit;
-  font-size: 14px;
-  font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
-  animation-name: kw-float;
-  animation-timing-function: ease-in-out;
-  animation-iteration-count: infinite;
-  animation-direction: alternate;
-  transition: box-shadow 0.15s, border-color 0.15s;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.08);
+  animation: kw-enter 0.5s ease both;
+  transition:
+    left 0.3s ease,
+    top 0.3s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease;
 }
 .keyword:hover {
-  box-shadow: var(--shadow-pop);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 12px 28px rgba(59, 130, 246, 0.16);
 }
 .keyword.selected {
-  border-color: currentColor;
-  box-shadow: var(--shadow-pop);
+  border-color: var(--kw-primary);
+  background: var(--kw-primary);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(79, 123, 255, 0.35);
+}
+.keyword.selected:hover {
+  box-shadow: 0 14px 30px rgba(79, 123, 255, 0.42);
 }
 
-@keyframes kw-float {
-  0% {
-    transform: translate(-50%, -50%) scale(var(--kw-scale, 1)) translateY(0);
+@keyframes kw-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
-  100% {
-    transform: translate(-50%, -50%) scale(var(--kw-scale, 1)) translateY(-10px);
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -291,7 +354,7 @@
   .wrap {
     flex-direction: column;
   }
-  .cloud {
+  .cloudOuter {
     flex: none;
   }
   .panel {
