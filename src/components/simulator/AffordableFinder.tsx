@@ -1,8 +1,6 @@
 import { useMemo, useState } from "react";
 import { useAffordableDistricts } from "../../hooks/queries";
 import type { AffordableDistrict } from "../../types";
-import FilterDropdown from "../common/FilterDropdown";
-import InfoTip from "../common/InfoTip";
 import PageLoader from "../common/PageLoader";
 import { fmtWonShort, scoreColor, sqmToPyeong } from "./simulatorFormat";
 import styles from "./AffordableFinder.module.css";
@@ -12,19 +10,18 @@ interface Props {
   onPick: (d: { id: number; name: string }) => void;
 }
 
-const FLOOR_TYPES = ["소규모", "중대형", "집합"];
 const BUDGET_PRESETS = [2_000_000, 3_000_000, 5_000_000];
+// 상가유형은 필터하지 않고 '전체'로 고정(상권별 최신·대표 임대료).
+const FLOOR_TYPE = "전체";
 type SortKey = "rent" | "score";
 
 export default function AffordableFinder({ onPick }: Props) {
   // 입력값(폼) — "찾기" 눌러야 조회에 반영(타이핑마다 요청 방지).
   const [budgetInput, setBudgetInput] = useState("3000000");
   const [areaInput, setAreaInput] = useState("33");
-  const [floorType, setFloorType] = useState("소규모");
-  const [applied, setApplied] = useState<{ budget: number; area: number; floor: string } | null>({
+  const [applied, setApplied] = useState<{ budget: number; area: number } | null>({
     budget: 3_000_000,
     area: 33,
-    floor: "소규모",
   });
   const [sort, setSort] = useState<SortKey>("rent");
 
@@ -32,7 +29,7 @@ export default function AffordableFinder({ onPick }: Props) {
     {
       monthly_budget: applied?.budget ?? 0,
       area_sqm: applied?.area ?? 33,
-      floor_type: applied?.floor ?? "소규모",
+      floor_type: FLOOR_TYPE,
       limit: 40,
     },
     applied != null,
@@ -50,7 +47,7 @@ export default function AffordableFinder({ onPick }: Props) {
     const budget = Math.round(Number(budgetInput.replace(/[^0-9]/g, "")));
     const area = Number(areaInput);
     if (!budget || budget <= 0 || !area || area <= 0) return;
-    setApplied({ budget, area, floor: floorType });
+    setApplied({ budget, area });
   };
 
   return (
@@ -97,28 +94,6 @@ export default function AffordableFinder({ onPick }: Props) {
             <span className={styles.unit}>㎡</span>
           </div>
           <span className={styles.hint}>약 {sqmToPyeong(Number(areaInput) || 0)}평</span>
-        </div>
-
-        <div className={styles.field}>
-          <span className={styles.label}>
-            상가유형{" "}
-            <InfoTip label="상가유형 설명" align="right">
-              <strong>건물 규모·소유 형태 분류</strong> (한국부동산원 임대료 기준)
-              <br />• <b>소규모</b>: 2층 이하·연면적 330㎡ 이하 소형 상가 (골목 1~2층)
-              <br />• <b>중대형</b>: 3층 이상 또는 330㎡ 초과 (대로변 빌딩)
-              <br />• <b>집합</b>: 구분소유 분양상가 (몰·주상복합)
-              <br />유형에 따라 ㎡단가와 대상 상권이 달라집니다.
-            </InfoTip>
-          </span>
-          <div className={styles.dropdownCell}>
-            <FilterDropdown
-              label="상가유형"
-              value={floorType}
-              options={FLOOR_TYPES}
-              onChange={setFloorType}
-              ariaLabel="상가유형 선택"
-            />
-          </div>
         </div>
 
         <div className={styles.field}>
@@ -171,7 +146,9 @@ export default function AffordableFinder({ onPick }: Props) {
                   <span className={styles.rank}>{i + 1}</span>
                   <span className={styles.rowMain}>
                     <span className={styles.name}>{d.district_name}</span>
-                    <span className={styles.meta}>{[d.gu_name, d.type_name].filter(Boolean).join(" · ")}</span>
+                    <span className={styles.meta}>
+                      {[d.gu_name, d.type_name, d.floor_type].filter(Boolean).join(" · ")}
+                    </span>
                   </span>
                   <span className={styles.rowRight}>
                     <span className={styles.rent}>{fmtWonShort(d.est_monthly_rent)}/월</span>
