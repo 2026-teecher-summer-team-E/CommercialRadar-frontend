@@ -160,12 +160,30 @@
   color: var(--color-surface);
   font-family: var(--font-num);
 }
+/* 눈금 위치를 스파크라인 좌표(x%)에 맞춰 절대 배치한다 — 연도 경계 눈금이 양끝
+   사이 임의 지점에 올 수 있어 flex space-between(양끝 고정)으로는 표현이 안 된다. */
 .sparkTicks {
-  display: flex;
-  justify-content: space-between;
+  position: relative;
+  height: 14px;
   font-size: 10px;
   color: var(--color-muted);
   font-family: var(--font-num);
+}
+.sparkTickStart,
+.sparkTickMid,
+.sparkTickEnd {
+  position: absolute;
+  top: 0;
+  white-space: nowrap;
+}
+.sparkTickStart {
+  transform: translateX(0);
+}
+.sparkTickMid {
+  transform: translateX(-50%);
+}
+.sparkTickEnd {
+  transform: translateX(-100%);
 }
 .sparkEmpty {
   padding: 8px 0;
