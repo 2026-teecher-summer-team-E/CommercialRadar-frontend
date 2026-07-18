@@ -116,6 +116,7 @@ export const commercialApi = {
     monthly_budget: number;
     area_sqm?: number;
     floor_type?: string;
+    region?: string;
     limit?: number;
   }) => apiClient.get<AffordableResponse>("/api/simulate/affordable", { params: params as QP }),
 };
