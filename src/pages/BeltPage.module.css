@@ -37,7 +37,7 @@
   display: grid;
   grid-template-columns: 300px 1fr;
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
 }
 
 /* 벨트 목록 */
@@ -47,6 +47,7 @@
   gap: 10px;
 }
 .beltCard {
+  flex: 1;
   text-align: left;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -56,13 +57,27 @@
   cursor: pointer;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 8px;
-  transition: border-color 0.15s, transform 0.1s;
+  transition: border-color 0.15s, transform 0.1s, flex-grow 0.2s ease;
 }
 .beltCard:hover {
   border-color: var(--color-primary);
 }
+.addBeltCard {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  color: var(--color-muted);
+  font-size: 14px;
+  font-weight: 600;
+}
 .beltCardActive {
+  flex: 5;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 1px var(--color-primary) inset, var(--shadow-card);
 }

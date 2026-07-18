@@ -158,6 +158,7 @@ export default function BeltPage() {
                 onSelect={setSelectedSlug}
               />
             ))}
+            <div className={styles.addBeltCard}>+ 추가</div>
           </aside>
 
           {/* 우: 선택 벨트 상세 */}
