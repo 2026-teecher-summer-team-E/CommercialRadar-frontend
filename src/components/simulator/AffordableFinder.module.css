@@ -156,24 +156,6 @@
   text-align: right;
 }
 
-/* 선택값 길이와 메뉴 표시 여부가 바뀌어도 주변 필드가 움직이지 않도록 크기를 고정한다. */
-.dropdownCell {
-  flex: none;
-  width: 104px;
-}
-.dropdownCell > div {
-  width: 100%;
-}
-.dropdownCell > div > button {
-  width: 100%;
-  height: 40px;
-  box-sizing: border-box;
-  justify-content: space-between;
-}
-.dropdownCell > div > div {
-  right: 0;
-  left: auto;
-}
 .inputSm {
   width: 56px;
 }
@@ -203,6 +185,28 @@
   color: var(--color-faint);
   font-family: var(--font-num);
 }
+/* 결과 2단: 좌측 목록 + 우측 지도 */
+.resultsGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 18px;
+}
+.listCol {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.mapCol {
+  min-width: 0;
+  min-height: 480px;
+  display: flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
 /* 결과 헤더 */
 .resultHead {
   display: flex;
@@ -324,6 +328,34 @@
   font-weight: 700;
   font-size: 14px;
 }
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+.pagerBtn {
+  border: 1px solid var(--color-border);
+  background: transparent;
+  border-radius: var(--radius-pill);
+  padding: 5px 14px;
+  font-size: 12px;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+.pagerBtn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+}
+.pagerBtn:disabled {
+  color: var(--color-faint);
+  cursor: default;
+}
+.pagerInfo {
+  font-size: 12.5px;
+  font-family: var(--font-num);
+  color: var(--color-muted);
+}
 .footnote {
   margin: 4px 0 0;
   font-size: 11.5px;
@@ -341,6 +373,12 @@
 }
 
 @media (max-width: 1120px) {
+  .resultsGrid {
+    grid-template-columns: 1fr;
+  }
+  .mapCol {
+    min-height: 420px;
+  }
   .form {
     flex-wrap: wrap;
   }

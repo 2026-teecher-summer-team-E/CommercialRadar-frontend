@@ -1,36 +1,44 @@
-import { useEffect, useMemo, useState } from "react";
-import { useAffordableDistricts, useDistrictSearch } from "../../hooks/queries";
-import type { AffordableDistrict, CommercialDistrictSearchResult } from "../../types";
-import FilterDropdown from "../common/FilterDropdown";
-import InfoTip from "../common/InfoTip";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { commercialApi } from "../../services/commercialApi";
+import { queryKeys, useAffordableDistricts, useDistrictSearch } from "../../hooks/queries";
+import { toScore } from "../map/mapData";
+import type {
+  AffordableDistrict,
+  CommercialDistrictSearchResult,
+  DistrictGeo,
+} from "../../types";
 import PageLoader from "../common/PageLoader";
 import { fmtWonShort, scoreColor, sqmToPyeong } from "./simulatorFormat";
 import styles from "./AffordableFinder.module.css";
+
+const LeafletMap = lazy(() => import("../map/LeafletMap"));
 
 interface Props {
   /** 리스트에서 상권을 고르면 시뮬레이션으로 넘길 콜백. */
   onPick: (d: { id: number; name: string }) => void;
 }
 
-const FLOOR_TYPES = ["소규모", "중대형", "집합"];
 const BUDGET_PRESETS = [2_000_000, 3_000_000, 5_000_000];
+const PAGE_SIZE = 10;
+const EMPTY_GEO: DistrictGeo[] = [];
 type SortKey = "rent" | "score";
 
 export default function AffordableFinder({ onPick }: Props) {
   // 숫자를 입력하는 동안 과도한 요청이 생기지 않도록 잠깐 기다린 뒤 자동 반영한다.
   const [budgetInput, setBudgetInput] = useState("3000000");
   const [areaInput, setAreaInput] = useState("33");
-  const [floorType, setFloorType] = useState("소규모");
   const [regionQuery, setRegionQuery] = useState("");
   const [debouncedRegionQuery, setDebouncedRegionQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState("");
-  const [applied, setApplied] = useState<{ budget: number; area: number; floor: string } | null>({
+  const [applied, setApplied] = useState<{ budget: number; area: number } | null>({
     budget: 3_000_000,
     area: 33,
-    floor: "소규모",
   });
   const [sort, setSort] = useState<SortKey>("rent");
+  const [page, setPage] = useState(0);
+  const [mapSelectedId, setMapSelectedId] = useState(0);
 
   const regionKeyword = regionQuery.trim();
   useEffect(() => {
@@ -47,6 +55,7 @@ export default function AffordableFinder({ onPick }: Props) {
   const selectRegion = () => {
     if (!regionKeyword) return;
     setSelectedRegion(regionKeyword);
+    setPage(0);
     setSearchFocused(false);
   };
 
@@ -59,16 +68,17 @@ export default function AffordableFinder({ onPick }: Props) {
     }
 
     const timer = window.setTimeout(() => {
-      setApplied({ budget, area, floor: floorType });
+      setApplied({ budget, area });
+      setPage(0);
     }, 300);
     return () => window.clearTimeout(timer);
-  }, [budgetInput, areaInput, floorType]);
+  }, [budgetInput, areaInput]);
 
   const query = useAffordableDistricts(
     {
       monthly_budget: applied?.budget ?? 0,
       area_sqm: applied?.area ?? 33,
-      floor_type: applied?.floor ?? "소규모",
+      floor_type: "전체",
       region: selectedRegion || undefined,
       limit: 2_000,
     },
@@ -82,6 +92,27 @@ export default function AffordableFinder({ onPick }: Props) {
     }
     return list; // 서버가 이미 임대료 오름차순
   }, [query.data, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(districts.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const pageItems = useMemo(
+    () => districts.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE),
+    [districts, safePage],
+  );
+
+  const geoQuery = useQuery({
+    queryKey: queryKeys.geo,
+    queryFn: async () => (await commercialApi.geo()).data,
+  });
+  const geojsonQuery = useQuery({
+    queryKey: queryKeys.geojson,
+    queryFn: async () => (await commercialApi.geojson()).data,
+  });
+  const geo = geoQuery.data ?? EMPTY_GEO;
+  const selectedPoint = useMemo(
+    () => geo.find((point) => point.id === mapSelectedId) ?? null,
+    [geo, mapSelectedId],
+  );
 
   return (
     <div className={styles.wrap}>
@@ -102,7 +133,10 @@ export default function AffordableFinder({ onPick }: Props) {
               onChange={(e) => {
                 const value = e.target.value;
                 setRegionQuery(value);
-                if (!value.trim()) setSelectedRegion("");
+                if (!value.trim()) {
+                  setSelectedRegion("");
+                  setPage(0);
+                }
               }}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => window.setTimeout(() => setSearchFocused(false), 150)}
@@ -195,28 +229,6 @@ export default function AffordableFinder({ onPick }: Props) {
             <span className={styles.hint}>약 {sqmToPyeong(Number(areaInput) || 0)}평</span>
           </div>
 
-          <div className={styles.field}>
-            <span className={styles.label}>
-              상가유형{" "}
-              <InfoTip label="상가유형 설명" align="right">
-                <strong>건물 규모·소유 형태 분류</strong> (한국부동산원 임대료 기준)
-                <br />• <b>소규모</b>: 2층 이하·연면적 330㎡ 이하 소형 상가 (골목 1~2층)
-                <br />• <b>중대형</b>: 3층 이상 또는 330㎡ 초과 (대로변 빌딩)
-                <br />• <b>집합</b>: 구분소유 분양상가 (몰·주상복합)
-                <br />유형에 따라 ㎡단가와 대상 상권이 달라집니다.
-              </InfoTip>
-            </span>
-            <div className={styles.dropdownCell}>
-              <FilterDropdown
-                label="상가유형"
-                value={floorType}
-                options={FLOOR_TYPES}
-                onChange={setFloorType}
-                ariaLabel="상가유형 선택"
-              />
-            </div>
-          </div>
-
         </div>
       </div>
 
@@ -234,8 +246,9 @@ export default function AffordableFinder({ onPick }: Props) {
             : "이 예산으로 창업 가능한 상권이 없어요. 예산을 올려보세요."}
         </div>
       ) : (
-        <>
-          <div className={styles.resultHead}>
+        <div className={styles.resultsGrid}>
+          <div className={styles.listCol}>
+            <div className={styles.resultHead}>
             <span className={styles.resultCount}>
               {selectedRegion && <>{selectedRegion} 지역 · </>}
               예산 이하 <strong>{query.data.count.toLocaleString()}곳</strong>
@@ -245,24 +258,34 @@ export default function AffordableFinder({ onPick }: Props) {
               <button
                 type="button"
                 className={sort === "rent" ? styles.sortActive : styles.sortBtn}
-                onClick={() => setSort("rent")}
+                onClick={() => {
+                  setSort("rent");
+                  setPage(0);
+                }}
               >
                 저렴한 순
               </button>
               <button
                 type="button"
                 className={sort === "score" ? styles.sortActive : styles.sortBtn}
-                onClick={() => setSort("score")}
+                onClick={() => {
+                  setSort("score");
+                  setPage(0);
+                }}
               >
                 점수 높은 순
               </button>
             </div>
           </div>
           <ul className={styles.list}>
-            {districts.map((d: AffordableDistrict, i) => (
+            {pageItems.map((d: AffordableDistrict, i) => (
               <li key={d.district_id}>
-                <button type="button" className={styles.row} onClick={() => onPick({ id: d.district_id, name: d.district_name })}>
-                  <span className={styles.rank}>{i + 1}</span>
+                <button
+                  type="button"
+                  className={styles.row}
+                  onClick={() => setMapSelectedId(d.district_id)}
+                >
+                  <span className={styles.rank}>{safePage * PAGE_SIZE + i + 1}</span>
                   <span className={styles.rowMain}>
                     <span className={styles.name}>{d.district_name}</span>
                     <span className={styles.meta}>{[d.gu_name, d.type_name].filter(Boolean).join(" · ")}</span>
@@ -280,10 +303,54 @@ export default function AffordableFinder({ onPick }: Props) {
               </li>
             ))}
           </ul>
+          {totalPages > 1 && (
+            <div className={styles.pager}>
+              <button
+                type="button"
+                className={styles.pagerBtn}
+                disabled={safePage === 0}
+                onClick={() => setPage(safePage - 1)}
+              >
+                이전
+              </button>
+              <span className={styles.pagerInfo}>
+                {safePage + 1} / {totalPages}
+              </span>
+              <button
+                type="button"
+                className={styles.pagerBtn}
+                disabled={safePage === totalPages - 1}
+                onClick={() => setPage(safePage + 1)}
+              >
+                다음
+              </button>
+            </div>
+          )}
           <p className={styles.footnote}>
-            추정 월 임대료 = ㎡당 임대료 × 최대 점포 면적. 입력한 최대 월 임대료 이하의 모든 상권을 표시합니다. 임대료 데이터가 있는 상권(~14%)만 대상입니다. 상권을 누르면 상세 분석으로 이동합니다.
+            추정 월 임대료 = ㎡당 임대료 × 최대 점포 면적. 입력한 최대 월 임대료 이하의 모든 상권을 표시합니다. 임대료 데이터가 있는 상권(~14%)만 대상입니다. 상권을 누르면 지도에서 위치를 확인할 수 있습니다.
           </p>
-        </>
+          </div>
+
+          <div className={styles.mapCol}>
+            <Suspense fallback={<PageLoader fullScreen={false} />}>
+              <LeafletMap
+                points={geo}
+                geojson={geojsonQuery.data ?? null}
+                selectedId={mapSelectedId}
+                guFilter="전체"
+                activeName={selectedPoint?.district_name ?? null}
+                activeType={selectedPoint?.type_name ?? null}
+                activeScore={toScore(selectedPoint?.district_score)}
+                flyToSelectionOnMount={false}
+                onSelect={setMapSelectedId}
+                onOpenProfile={(id) => {
+                  const point = geo.find((item) => item.id === id);
+                  onPick({ id, name: point?.district_name ?? "" });
+                }}
+              />
+            </Suspense>
+          </div>
+        </div>
       )}
     </div>
   );
