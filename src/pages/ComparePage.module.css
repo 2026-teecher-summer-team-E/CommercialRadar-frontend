@@ -411,31 +411,28 @@
   align-items: center;
   gap: 8px;
   min-height: 40px;
-  padding: 0 16px 0 10px;
+  padding: 0 16px;
   border: 1px solid color-mix(in srgb, var(--color-primary) 45%, var(--color-border));
   border-radius: var(--radius-pill);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 12%, var(--color-surface)) 0%, var(--color-surface) 58%),
-    var(--color-surface);
+  background: var(--color-surface);
   color: var(--color-primary);
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 8px 18px color-mix(in srgb, var(--color-primary) 14%, transparent);
+  box-shadow: 0 2px 6px rgba(32, 21, 21, 0.14);
   transition:
     transform 0.16s ease,
     box-shadow 0.16s ease,
     border-color 0.16s ease,
-    background 0.16s ease;
+    background 0.16s ease,
+    color 0.16s ease;
 }
 
 .simulationBtn:hover {
   border-color: var(--color-primary);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 18%, var(--color-surface)) 0%, var(--color-surface) 54%),
-    var(--color-surface);
-  color: var(--color-primary);
-  box-shadow: 0 12px 24px color-mix(in srgb, var(--color-primary) 20%, transparent);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: var(--shadow-pop);
   transform: translateY(-1px);
 }
 
@@ -443,20 +440,7 @@
   outline: 0;
   box-shadow:
     0 0 0 3px var(--color-primary-light),
-    0 12px 24px color-mix(in srgb, var(--color-primary) 20%, transparent);
-}
-
-.simulationBadge {
-  display: inline-flex;
-  align-items: center;
-  height: 22px;
-  padding: 0 7px;
-  border-radius: var(--radius-pill);
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 0.04em;
+    var(--shadow-pop);
 }
 
 .compareSimulationOverlay {
