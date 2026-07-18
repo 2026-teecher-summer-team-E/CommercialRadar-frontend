@@ -8,6 +8,34 @@
   background: #eef1f6;
 }
 
+/* 순위 핑 마커(divIcon). leaflet 기본 div-icon 흰 박스 스타일 무효화 */
+.pinWrap {
+  background: transparent;
+  border: none;
+}
+.pinBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  box-sizing: border-box;
+  background: var(--color-primary);
+  border: 2px solid #fff;
+  /* 한쪽 모서리만 각지게 두고 -45도 회전 → 꼬리가 아래를 가리키는 물방울 핑 */
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.pinBadge > span {
+  transform: rotate(45deg);
+  color: #fff;
+  font-family: var(--font-num);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
+}
+
 /* Leaflet 팝업 내부 커스텀 콘텐츠 */
 .popupName {
   font-family: var(--font-sans);
