@@ -9,8 +9,7 @@ export default function SimulatorPage() {
       <header className={styles.header}>
         <h1 className={styles.title}>창업 시뮬레이터</h1>
         <p className={styles.subtitle}>
-          월 임대료 예산을 넣으면 그 예산으로 창업할 수 있는 상권을 저렴한 순으로 찾아줍니다. 상권을 누르면
-          상세 분석으로 이동합니다.
+          원하는 지역, 내 예산에 딱 맞는 최적의 상권 찾기
         </p>
       </header>
       <AffordableFinder onPick={(d) => navigate(`/dashboard/${d.id}`)} />

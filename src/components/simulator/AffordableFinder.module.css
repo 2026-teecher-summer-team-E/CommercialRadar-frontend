@@ -8,13 +8,117 @@
 .form {
   display: flex;
   align-items: flex-start;
+  justify-content: space-between;
   gap: 16px;
-  flex-wrap: wrap;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
   padding: 16px 18px;
+}
+.regionSearch {
+  position: relative;
+  flex: 1 1 300px;
+  min-width: 240px;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.regionSearchInputWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 10px);
+  background: var(--color-surface);
+}
+.regionSearchInputWrap:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+.searchIcon {
+  flex: none;
+  color: var(--color-muted);
+  font-size: 20px;
+  line-height: 1;
+}
+.regionSearchInput {
+  min-width: 0;
+  flex: 1;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 14px;
+}
+.regionSearchInput::placeholder {
+  color: var(--color-faint);
+}
+.regionSearchResults {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  z-index: 20;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 10px);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-pop);
+}
+.regionSearchResult {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  padding: 11px 13px;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+.regionSearchResult:last-child {
+  border-bottom: 0;
+}
+.regionSearchResult:hover {
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+}
+.regionSearchResult strong,
+.regionSearchResult small {
+  display: block;
+}
+.regionSearchResult strong {
+  font-size: 13.5px;
+}
+.regionSearchResult small {
+  margin-top: 3px;
+  color: var(--color-muted);
+  font-size: 11.5px;
+}
+.searchMessage {
+  margin: 0;
+  padding: 18px 12px;
+  color: var(--color-muted);
+  font-size: 12.5px;
+  text-align: center;
+}
+.controls {
+  flex: 0 1 auto;
+  margin-left: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 16px;
 }
 .field {
   display: flex;
@@ -52,10 +156,23 @@
   text-align: right;
 }
 
-/* 상가유형 드롭다운 트리거 높이를 다른 컨트롤(40px)과 통일 */
+/* 선택값 길이와 메뉴 표시 여부가 바뀌어도 주변 필드가 움직이지 않도록 크기를 고정한다. */
+.dropdownCell {
+  flex: none;
+  width: 104px;
+}
+.dropdownCell > div {
+  width: 100%;
+}
 .dropdownCell > div > button {
+  width: 100%;
   height: 40px;
   box-sizing: border-box;
+  justify-content: space-between;
+}
+.dropdownCell > div > div {
+  right: 0;
+  left: auto;
 }
 .inputSm {
   width: 56px;
@@ -86,22 +203,6 @@
   color: var(--color-faint);
   font-family: var(--font-num);
 }
-.findBtn {
-  height: 40px;
-  box-sizing: border-box;
-  padding: 0 22px;
-  border: none;
-  border-radius: var(--radius-md, 10px);
-  background: var(--color-primary);
-  color: #fff;
-  font-size: 13.5px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.findBtn:hover {
-  background: var(--color-primary-dark);
-}
-
 /* 결과 헤더 */
 .resultHead {
   display: flex;
@@ -237,4 +338,39 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
+}
+
+@media (max-width: 1120px) {
+  .form {
+    flex-wrap: wrap;
+  }
+  .regionSearch {
+    max-width: none;
+  }
+  .controls {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 720px) {
+  .form,
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .regionSearch,
+  .controls,
+  .field {
+    width: 100%;
+  }
+  .controls {
+    margin-left: 0;
+  }
+  .budgetInputWrap {
+    width: 100%;
+  }
+  .input {
+    width: 100%;
+  }
 }
