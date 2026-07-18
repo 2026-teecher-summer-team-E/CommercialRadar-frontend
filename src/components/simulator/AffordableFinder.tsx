@@ -228,6 +228,15 @@ export default function AffordableFinder({ onPick }: Props) {
             <div className={styles.pager}>
               <button
                 type="button"
+                className={`${styles.pagerBtn} ${styles.pagerJump}`}
+                disabled={safePage === 0}
+                onClick={() => setPage(Math.max(0, safePage - 10))}
+                aria-label="10페이지 이전"
+              >
+                «
+              </button>
+              <button
+                type="button"
                 className={styles.pagerBtn}
                 disabled={safePage === 0}
                 onClick={() => setPage(safePage - 1)}
@@ -244,6 +253,15 @@ export default function AffordableFinder({ onPick }: Props) {
                 onClick={() => setPage(safePage + 1)}
               >
                 다음
+              </button>
+              <button
+                type="button"
+                className={`${styles.pagerBtn} ${styles.pagerJump}`}
+                disabled={safePage === totalPages - 1}
+                onClick={() => setPage(Math.min(totalPages - 1, safePage + 10))}
+                aria-label="10페이지 다음"
+              >
+                »
               </button>
             </div>
           )}

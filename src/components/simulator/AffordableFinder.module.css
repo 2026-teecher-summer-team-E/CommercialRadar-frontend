@@ -263,10 +263,16 @@
   margin-top: 4px;
 }
 .pagerBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 28px;
+  min-width: 48px;
   border: 1px solid var(--color-border);
   background: transparent;
   border-radius: var(--radius-pill);
-  padding: 5px 14px;
+  padding: 0 12px;
   font-size: 12px;
   color: var(--color-primary);
   cursor: pointer;
@@ -277,6 +283,14 @@
 .pagerBtn:disabled {
   color: var(--color-faint);
   cursor: default;
+}
+/* «/» 10페이지 점프 버튼: 버튼 박스(높이·최소 너비)는 이전/다음과 동일하게 두고 기호만 키운다 */
+.pagerJump {
+  font-size: 16px;
+  line-height: 1;
+  /* 글리프가 폰트 특성상 살짝 아래로 붙어 보여 3px 시각 보정
+     (아래 패딩 N px → flex 중앙 기준이 N/2 px 위로 이동) */
+  padding-bottom: 6px;
 }
 .pagerInfo {
   font-size: 12.5px;
