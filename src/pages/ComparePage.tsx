@@ -650,8 +650,7 @@ export default function ComparePage() {
         <div className={styles.sectionTitleRow}>
           <SectionTitle title="핵심 지표 비교" subtitle={`${filterSummary} 기준`} />
           <button type="button" className={styles.simulationBtn} onClick={openCompareSimulation}>
-            <span className={styles.simulationBadge}>NEW</span>
-            <span>1:1 비교 시뮬레이션 해보기</span>
+            <span>1:1 비교 시뮬레이션</span>
           </button>
         </div>
         <div className={styles.card}>
