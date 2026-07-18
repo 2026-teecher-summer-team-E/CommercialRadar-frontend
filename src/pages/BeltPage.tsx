@@ -51,6 +51,20 @@ function BeltCard({
         <span className={styles.dot}>·</span>
         <span>상권 {belt.member_count}개</span>
       </div>
+      {active && (
+        <div className={styles.beltCardDetail}>
+          <p className={styles.quarterRange}>
+            {quarterRange(belt.base_quarter, belt.latest_quarter)} · 같은 분기 대비
+          </p>
+          <div className={styles.hero}>
+            <span className={styles.heroBase}>{fmtSales(belt.belt_sales_base)}</span>
+            <span className={styles.heroArrow} aria-hidden>
+              →
+            </span>
+            <span className={styles.heroLatest}>{fmtSales(belt.belt_sales_latest)}</span>
+          </div>
+        </div>
+      )}
     </button>
   );
 }
@@ -168,27 +182,6 @@ export default function BeltPage() {
             ) : (
               <>
                 <div className={styles.mapWrap}>
-                  {/* 지도 위 플로팅 정보 카드(지역분석 페이지 .panel 패턴 재사용). */}
-                  <div className={styles.mapOverlayCard}>
-                    <div className={styles.overlayTitleRow}>
-                      <h2 className={styles.detailName}>{momentum.name}</h2>
-                      <span className={`${styles.badge} ${growthClass(momentum.belt_growth_pct)}`}>
-                        {fmtGrowth(momentum.belt_growth_pct)}
-                      </span>
-                    </div>
-                    {/* 프리셋 상세 해설(자동 생성 인사이트 문구)은 기획 변경으로 비노출 처리. 필요 시 momentum.insight 로 복원. */}
-                    <p className={styles.quarterRange}>
-                      {quarterRange(momentum.base_quarter, momentum.latest_quarter)} · 같은 분기 대비
-                    </p>
-                    <div className={styles.hero}>
-                      <span className={styles.heroBase}>{fmtSales(momentum.belt_sales_base)}</span>
-                      <span className={styles.heroArrow} aria-hidden>
-                        →
-                      </span>
-                      <span className={styles.heroLatest}>{fmtSales(momentum.belt_sales_latest)}</span>
-                    </div>
-                  </div>
-
                   <Suspense fallback={<PageLoader fullScreen={false} />}>
                     <BeltMap
                       members={momentum.members}

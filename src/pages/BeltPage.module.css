@@ -81,6 +81,20 @@
   border-color: var(--color-primary);
   box-shadow: 0 0 0 1px var(--color-primary) inset, var(--shadow-card);
 }
+.beltCardDetail {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+  animation: fadeIn 0.25s ease;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 .beltCardTop {
   display: flex;
   align-items: center;
@@ -134,47 +148,13 @@
   min-width: 0;
 }
 
-/* 지도 — 좌측 상단에 정보 카드가 떠 있는 컨테이너(MapPage .body/.panel 패턴 재사용). */
+/* 지도 */
 .mapWrap {
-  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-/* 지도 위 플로팅 정보 카드 */
-.mapOverlayCard {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  z-index: 10;
-  width: 360px;
-  max-width: calc(100% - 32px);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 16px 18px;
-  background: color-mix(in srgb, var(--color-surface) 95%, transparent);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-modal);
-}
-.overlayTitleRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.detailName {
-  margin: 0;
-  min-width: 0;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--color-text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .quarterRange {
   margin: 0;
   font-size: 13px;
