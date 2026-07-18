@@ -1,5 +1,5 @@
 .page {
-  padding: 26px 32px 44px;
+  padding: 26px 32px 28px;
   display: flex;
   flex-direction: column;
   gap: 22px;
@@ -51,13 +51,13 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-pop);
   padding: 14px 16px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  transition: border-color 0.15s, transform 0.1s;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
 }
 .beltCard:hover {
   border-color: var(--color-primary);
@@ -88,14 +88,15 @@
   color: var(--color-faint);
 }
 
-/* 성장률 뱃지 */
+/* 성장률 뱃지 — 파스텔 배경 + 알약(pill) 모양 */
 .badge {
   font-family: var(--font-num);
-  font-weight: 700;
-  font-size: 12.5px;
-  padding: 2px 8px;
-  border-radius: 999px;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
   white-space: nowrap;
+  letter-spacing: 0.1px;
 }
 .badgeUp {
   color: #c1333f;
@@ -114,81 +115,86 @@
 .detail {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
   min-width: 0;
 }
 
-.insightBanner {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  padding: 20px 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.insightHead {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-.detailName {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--color-text);
-}
-.quarterRange {
-  margin: 4px 0 0;
-  font-size: 12.5px;
-  color: var(--color-faint);
-  font-family: var(--font-num);
-}
-.bigGrowth {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-}
-.bigGrowthNum {
-  font-family: var(--font-num);
-  font-weight: 800;
-  font-size: 30px;
-  line-height: 1;
-  padding: 4px 12px;
-  border-radius: 12px;
-}
-.bigGrowthLabel {
-  font-size: 12px;
-  color: var(--color-muted);
-}
-.insightText {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--color-text);
-}
-.salesRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-family: var(--font-num);
-  font-size: 13.5px;
-  color: var(--color-muted);
-}
-.arrow {
-  color: var(--color-faint);
-}
-
-/* 지도 */
+/* 지도 — 좌측 상단에 정보 카드가 떠 있는 컨테이너(MapPage .body/.panel 패턴 재사용). */
 .mapWrap {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
+
+/* 지도 위 플로팅 정보 카드 */
+.mapOverlayCard {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  width: 360px;
+  max-width: calc(100% - 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  background: color-mix(in srgb, var(--color-surface) 95%, transparent);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-modal);
+}
+.overlayTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.detailName {
+  margin: 0;
+  min-width: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.quarterRange {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-faint);
+  font-family: var(--font-num);
+}
+
+/* 기준 매출 → 최신 매출 히어로 스탯(대시보드 매출 예측 카드 톤 재사용). 카드의 가장 무게감 있는 마무리 줄. */
+.hero {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.heroBase {
+  font-family: var(--font-num);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+.heroArrow {
+  font-size: 16px;
+  color: var(--color-primary-soft);
+}
+.heroLatest {
+  font-family: var(--font-num);
+  font-weight: 800;
+  font-size: 30px;
+  line-height: 1;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
 .mapLegend {
   margin: 0;
   font-size: 12px;
@@ -221,48 +227,77 @@
 .rankGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 20px;
 }
 .rankPanel {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  padding: 16px 18px;
+  box-shadow: var(--shadow-pop);
+  padding: 20px 22px 10px;
+  overflow: hidden;
 }
+/* 섹션 타이틀 — 팀 공통 규칙: 네이비 세로 포인트 바 + 굵은 타이틀(DashboardPage .accentBar 톤). */
 .rankTitle {
-  margin: 0 0 12px;
-  font-size: 15px;
+  margin: 0 0 14px;
+  padding-left: 10px;
+  border-left: 4px solid var(--color-primary-dark);
+  font-size: 18px;
   font-weight: 700;
   color: var(--color-text);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  line-height: 1.2;
 }
+
+/* 표 헤더 행 — 배경 없이 얇은 구분선만. 데이터 로우와 동일한 grid 폭으로 열을 맞춘다. */
+.rankTableHead {
+  display: grid;
+  grid-template-columns: 26px 1fr 70px 84px;
+  align-items: center;
+  gap: 8px;
+  margin: 0 -22px;
+  padding: 0 22px 8px;
+  background: transparent;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-faint);
+}
+.rankHeadGrowth,
+.rankHeadSales {
+  text-align: right;
+}
+
 .rankList {
   list-style: none;
-  margin: 0;
+  margin: 0 -22px;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  counter-reset: rank;
 }
 .rankItem {
   width: 100%;
+  display: grid;
+  grid-template-columns: 26px 1fr 70px 84px;
+  align-items: center;
+  gap: 8px;
   text-align: left;
   background: transparent;
   border: none;
-  border-radius: var(--radius-sm);
-  padding: 8px 10px;
+  border-bottom: 1px solid var(--color-line);
+  padding: 13px 22px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  transition: background 0.12s ease;
+}
+.rankList li:last-child .rankItem {
+  border-bottom: none;
 }
 .rankItem:hover {
-  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  background: var(--color-chip);
+}
+.rankNum {
+  font-family: var(--font-num);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-faint);
+  text-align: center;
 }
 .rankName {
   font-size: 13.5px;
@@ -271,29 +306,22 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.anchorTag {
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-  padding: 1px 5px;
-  border-radius: 5px;
-}
-.rankRight {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.rankItem .badge {
+  justify-self: end;
 }
 .rankSales {
   font-family: var(--font-num);
-  font-size: 12.5px;
-  color: var(--color-muted);
-  min-width: 54px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-text);
   text-align: right;
 }
 .empty {
-  margin: 0;
+  margin: 0 0 16px;
   font-size: 13px;
   color: var(--color-faint);
 }
