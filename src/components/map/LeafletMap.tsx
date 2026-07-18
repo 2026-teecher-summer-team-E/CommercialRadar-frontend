@@ -5,10 +5,23 @@ import type { DistrictGeo } from "../../types";
 import { scoreColor } from "./mapData";
 import styles from "./LeafletMap.module.css";
 
+/** 지도에 순위 라벨로 찍을 핑 1개. */
+export interface MapPin {
+  id: number;
+  lat: number;
+  lng: number;
+  /** 핑 안에 표시할 짧은 텍스트(순위 번호 등). */
+  label: string;
+  /** 호버 툴팁에 보여줄 상권명. */
+  name: string;
+}
+
 interface LeafletMapProps {
   points: DistrictGeo[];
   geojson: GeoJSON.FeatureCollection | null;
   selectedId: number;
+  /** 순위 핑 마커(창업 시뮬레이터 결과 등). 값이 바뀌면 핑 전체가 보이도록 카메라를 맞춘다. */
+  pins?: MapPin[];
   guFilter: string;
   activeName: string | null;
   activeType: string | null;
@@ -67,6 +80,7 @@ export default function LeafletMap({
   points,
   geojson,
   selectedId,
+  pins,
   guFilter,
   activeName,
   activeType,
@@ -84,6 +98,7 @@ export default function LeafletMap({
 
   const geoLayerRef = useRef<L.GeoJSON | null>(null);
   const polysRef = useRef<Map<number, L.Path>>(new Map());
+  const pinsLayerRef = useRef<L.LayerGroup | null>(null);
 
   const onSelectRef = useRef(onSelect);
   const onOpenRef = useRef(onOpenProfile);
@@ -294,6 +309,39 @@ export default function LeafletMap({
     markProgrammaticMove(map);
     map.flyToBounds(bounds, { padding: [64, 64], maxZoom: 16, duration: 0.8 });
   }, [guFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 5) 순위 핑 마커: pins 변경 시 전부 다시 그리고, 핑 전체가 보이도록 카메라를 맞춘다.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    pinsLayerRef.current?.remove();
+    pinsLayerRef.current = null;
+    if (!pins || pins.length === 0) return;
+
+    const markers = pins.map((p) =>
+      L.marker([p.lat, p.lng], {
+        icon: L.divIcon({
+          className: styles.pinWrap,
+          html: `<span class="${styles.pinBadge}"><span>${p.label}</span></span>`,
+          iconSize: [28, 28],
+          // 물방울 꼬리(회전된 모서리)가 좌표를 가리키도록 앵커를 아이콘 박스 아래로 둔다.
+          iconAnchor: [14, 34],
+        }),
+        zIndexOffset: 1000,
+      })
+        .on("click", () => onSelectRef.current(p.id))
+        .bindTooltip(p.name, { direction: "top", offset: [0, -34] }),
+    );
+    const group = L.layerGroup(markers);
+    pinsLayerRef.current = group;
+    group.addTo(map);
+
+    const bounds = L.latLngBounds(pins.map((p) => [p.lat, p.lng] as [number, number]));
+    if (bounds.isValid()) {
+      markProgrammaticMove(map);
+      map.flyToBounds(bounds, { padding: [60, 60], maxZoom: 15, duration: 0.8 });
+    }
+  }, [pins]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div ref={containerRef} className={styles.map} aria-label="상권 지도" />;
 }
