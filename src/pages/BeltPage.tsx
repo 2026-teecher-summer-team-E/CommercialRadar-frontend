@@ -55,42 +55,42 @@ function BeltCard({
   );
 }
 
-/** 성장/역성장 랭킹 리스트(뜨는 곳 / 지는 곳). */
+/** 성장/침체 랭킹 리스트(뜨는 곳 / 지는 곳). */
 function MemberList({
   title,
-  emoji,
   members,
   onSelect,
 }: {
   title: string;
-  emoji: string;
   members: BeltMember[];
   onSelect: (id: number) => void;
 }) {
   return (
     <div className={styles.rankPanel}>
-      <h3 className={styles.rankTitle}>
-        <span aria-hidden>{emoji}</span> {title}
-      </h3>
+      <h3 className={styles.rankTitle}>{title}</h3>
       {members.length === 0 ? (
         <p className={styles.empty}>데이터 없음</p>
       ) : (
-        <ol className={styles.rankList}>
-          {members.map((m) => (
-            <li key={m.district_id}>
-              <button type="button" className={styles.rankItem} onClick={() => onSelect(m.district_id)}>
-                <span className={styles.rankName}>
-                  {m.district_name}
-                  {m.is_anchor && <span className={styles.anchorTag}>중심</span>}
-                </span>
-                <span className={styles.rankRight}>
-                  <span className={`${styles.badge} ${growthClass(m.growth_pct)}`}>{fmtGrowth(m.growth_pct)}</span>
+        <>
+          <div className={styles.rankTableHead}>
+            <span aria-hidden />
+            <span>상권</span>
+            <span className={styles.rankHeadSales}>당기 매출</span>
+            <span className={styles.rankHeadGrowth}>매출 변동률</span>
+          </div>
+          <ol className={styles.rankList}>
+            {members.map((m, i) => (
+              <li key={m.district_id}>
+                <button type="button" className={styles.rankItem} onClick={() => onSelect(m.district_id)}>
+                  <span className={styles.rankNum}>{i + 1}</span>
+                  <span className={styles.rankName}>{m.district_name}</span>
                   <span className={styles.rankSales}>{fmtSales(m.sales_latest)}</span>
-                </span>
-              </button>
-            </li>
-          ))}
-        </ol>
+                  <span className={`${styles.badge} ${growthClass(m.growth_pct)}`}>{fmtGrowth(m.growth_pct)}</span>
+                </button>
+              </li>
+            ))}
+          </ol>
+        </>
       )}
     </div>
   );
@@ -136,7 +136,7 @@ export default function BeltPage() {
       <header className={styles.header}>
         <h1 className={styles.title}>상권 벨트</h1>
         <p className={styles.subtitle}>
-          인접한 유명 상권을 하나의 축(벨트)으로 묶어, 어디가 뜨고 지는지·성장기와 성숙기를 비교합니다.
+          인접한 유명 상권을 하나의 축(벨트)으로 묶어, 어디가 뜨고 지는지를 비교합니다.
         </p>
       </header>
 
@@ -167,30 +167,28 @@ export default function BeltPage() {
               <PageLoader fullScreen={false} />
             ) : (
               <>
-                <div className={styles.insightBanner}>
-                  <div className={styles.insightHead}>
-                    <div>
+                <div className={styles.mapWrap}>
+                  {/* 지도 위 플로팅 정보 카드(지역분석 페이지 .panel 패턴 재사용). */}
+                  <div className={styles.mapOverlayCard}>
+                    <div className={styles.overlayTitleRow}>
                       <h2 className={styles.detailName}>{momentum.name}</h2>
-                      <p className={styles.quarterRange}>
-                        {quarterRange(momentum.base_quarter, momentum.latest_quarter)} · 같은 분기 대비
-                      </p>
-                    </div>
-                    <div className={styles.bigGrowth}>
-                      <span className={`${styles.bigGrowthNum} ${growthClass(momentum.belt_growth_pct)}`}>
+                      <span className={`${styles.badge} ${growthClass(momentum.belt_growth_pct)}`}>
                         {fmtGrowth(momentum.belt_growth_pct)}
                       </span>
-                      <span className={styles.bigGrowthLabel}>벨트 총매출 변화</span>
+                    </div>
+                    {/* 프리셋 상세 해설(자동 생성 인사이트 문구)은 기획 변경으로 비노출 처리. 필요 시 momentum.insight 로 복원. */}
+                    <p className={styles.quarterRange}>
+                      {quarterRange(momentum.base_quarter, momentum.latest_quarter)} · 같은 분기 대비
+                    </p>
+                    <div className={styles.hero}>
+                      <span className={styles.heroBase}>{fmtSales(momentum.belt_sales_base)}</span>
+                      <span className={styles.heroArrow} aria-hidden>
+                        →
+                      </span>
+                      <span className={styles.heroLatest}>{fmtSales(momentum.belt_sales_latest)}</span>
                     </div>
                   </div>
-                  <p className={styles.insightText}>{momentum.insight}</p>
-                  <div className={styles.salesRow}>
-                    <span>기준 {fmtSales(momentum.belt_sales_base)}</span>
-                    <span className={styles.arrow}>→</span>
-                    <span>최신 {fmtSales(momentum.belt_sales_latest)}</span>
-                  </div>
-                </div>
 
-                <div className={styles.mapWrap}>
                   <Suspense fallback={<PageLoader fullScreen={false} />}>
                     <BeltMap
                       members={momentum.members}
@@ -200,14 +198,14 @@ export default function BeltPage() {
                   </Suspense>
                   <p className={styles.mapLegend}>
                     <span className={styles.legendDotUp} /> 성장&nbsp;&nbsp;
-                    <span className={styles.legendDotDown} /> 역성장&nbsp;&nbsp;
-                    <span className={styles.legendDotFlat} /> 변화 적음 · 외곽선 = 벨트 범위
+                    <span className={styles.legendDotDown} /> 침체&nbsp;&nbsp;
+                    <span className={styles.legendDotFlat} /> 정체
                   </p>
                 </div>
 
                 <div className={styles.rankGrid}>
-                  <MemberList title="뜨는 곳" emoji="🔥" members={momentum.rising} onSelect={goToDistrict} />
-                  <MemberList title="지는 곳" emoji="🧊" members={momentum.falling} onSelect={goToDistrict} />
+                  <MemberList title="뜨는 곳" members={momentum.rising} onSelect={goToDistrict} />
+                  <MemberList title="지는 곳" members={momentum.falling} onSelect={goToDistrict} />
                 </div>
               </>
             )}
