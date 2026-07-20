@@ -447,16 +447,19 @@ export default function MapPage() {
       </div>
 
       <div className={styles.body}>
-        <SangkwonPanel
-          summary={summary}
-          loading={loading}
-          error={error}
-          onOpenProfile={openProfile}
-          availableCategories={availableCategories}
-          categoryFilter={categoryFilter}
-          onCategoryFilterChange={setCategoryFilter}
-          onClose={handleClose}
-        />
+        {/* 상권이 선택됐을 때만 좌측 정보 패널을 표시한다. 닫기(×)를 누르면 selectedId가 null이 되어 패널이 사라진다. */}
+        {selectedId != null && (
+          <SangkwonPanel
+            summary={summary}
+            loading={loading}
+            error={error}
+            onOpenProfile={openProfile}
+            availableCategories={availableCategories}
+            categoryFilter={categoryFilter}
+            onCategoryFilterChange={setCategoryFilter}
+            onClose={handleClose}
+          />
+        )}
         <div style={{ position: "absolute", inset: 0, display: "flex", minWidth: 0 }}>
           <Suspense fallback={<PageLoader fullScreen={false} />}>
             <LeafletMap
