@@ -193,7 +193,21 @@ export function ForeignCard({
   // 도넛 arc: r=40인 원 둘레(2πr)를 외국인 비중만큼 채우고 나머지는 트랙 색으로 남긴다.
   const r = 40;
   const circumference = 2 * Math.PI * r;
+  // 도넛은 실제 비중(0~100%)을 그대로 채운다 — 확대하면 4.2% 위치가 실제와 달라지므로 하지 않는다.
   const filled = hasPct ? (pct / 100) * circumference : 0;
+
+  // 인당 소비 게이지처럼 "전체 상권 평균(FOREIGN_AVG_PCT)" 위치에 눈금 마커를 얹는다(실제 % 위치).
+  // 도넛과 같은 로컬 좌표계(3시 시작·시계방향)로 각도를 잡으면 svg의 -90° 회전(CSS)이
+  // 채움 호와 마커에 똑같이 적용돼 자동 정렬된다. 라벨은 HTML이라 회전을 직접 반영해 배치.
+  const avgTheta = 2 * Math.PI * Math.min(1, FOREIGN_AVG_PCT / 100);
+  const avgPointAt = (radius: number) => ({
+    x: 50 + radius * Math.cos(avgTheta),
+    y: 50 + radius * Math.sin(avgTheta),
+  });
+  const avgInner = avgPointAt(r - 6);
+  const avgOuter = avgPointAt(r + 6);
+  const avgLabelTheta = avgTheta - Math.PI / 2; // svg -90° 회전 반영(화면 좌표)
+  const avgLabel = { x: 50 + 56 * Math.cos(avgLabelTheta), y: 50 + 56 * Math.sin(avgLabelTheta) };
 
   return (
     <div className={styles.card}>
@@ -235,10 +249,16 @@ export function ForeignCard({
               <title>{countLabel ? `${countLabel} (${pct}%)` : `외국인 ${pct}%`}</title>
             </circle>
           )}
+          {/* 전체 상권 평균 위치 눈금(흰 선 + 진한 테두리) — 인당 소비 게이지와 동일 스타일 */}
+          <line x1={avgInner.x} y1={avgInner.y} x2={avgOuter.x} y2={avgOuter.y} className={styles.gaugeAvgLineBorder} />
+          <line x1={avgInner.x} y1={avgInner.y} x2={avgOuter.x} y2={avgOuter.y} className={styles.gaugeAvgLine} />
         </svg>
         <div className={styles.donutCenter}>
           <span className={styles.bigNum}>{hasPct ? `${pct}%` : "—"}</span>
         </div>
+        <span className={styles.gaugeAvgLabel} style={{ left: `${avgLabel.x}%`, top: `${avgLabel.y}%` }}>
+          평균
+        </span>
       </div>
       <div className={`${styles.foreignNote} ${styles.foreignNoteRow}`}>
         <span className={styles.note} title="최근 14일 평균 표본을 분기 누적 기준으로 환산한 추정치">
@@ -290,18 +310,11 @@ export function PerCapitaCard({ wonValue = null, onExpand }: { wonValue?: number
           <h3 className={styles.title}>인당 소비</h3>
           <p className={styles.sub}>총매출 ÷ 유동인구</p>
         </div>
-        <div className={styles.weekendHeadRightNum}>
-          {wonValue != null && (
-            <span className={`${styles.deltaTagBlue} ${styles.weekendTagInline}`}>
-              {wonValue >= PER_CAPITA_AVG_WON ? "평균 이상" : "평균 이하"}
-            </span>
-          )}
-          {onExpand && (
-            <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="인당 소비 확대">
-              ⤢
-            </button>
-          )}
-        </div>
+        {onExpand && (
+          <button type="button" className={styles.expandBtn} onClick={onExpand} aria-label="인당 소비 확대">
+            ⤢
+          </button>
+        )}
       </div>
       <div className={styles.perCapitaRow}>
         <div className={styles.perCapitaBigWrap}>
