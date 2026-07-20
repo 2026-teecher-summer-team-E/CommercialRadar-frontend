@@ -585,7 +585,7 @@ export default function ComparePage() {
               {!searchQuery.trim() &&
                 (favorites.length > 0 ? (
                   <>
-                    <p className={styles.searchMessage}>★ 즐겨찾기한 상권</p>
+                    <p className={styles.favHeader}>즐겨찾기한 상권</p>
                     {favorites.map((fav) => {
                       const favId = fav.commercial_district_id;
                       const alreadySelected = selectedIds.includes(favId);
