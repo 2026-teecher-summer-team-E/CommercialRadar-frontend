@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { InterestDistrict } from "../../types";
+import FavoriteStar from "../common/FavoriteStar";
 import { DistrictTypeIcon, districtTypeLabel, districtTypeStyle } from "./districtIcons";
 import styles from "./mypage.module.css";
 
@@ -10,6 +11,8 @@ interface InterestCardProps {
   info?: { name: string | null; type: string | null };
   /** 메모 저장 콜백. 빈 메모는 null 로 전달. */
   onSaveMemo: (id: number, memo: string | null) => void;
+  /** 즐겨찾기(관심 상권) 해제 콜백. */
+  onRemove: (id: number) => void;
   busy: boolean;
 }
 
@@ -20,6 +23,7 @@ export default function InterestCard({
   item,
   info,
   onSaveMemo,
+  onRemove,
   busy,
 }: InterestCardProps) {
   const navigate = useNavigate();
@@ -134,6 +138,13 @@ export default function InterestCard({
           >
             {item.memo ? "메모 수정" : "메모 추가"}
           </button>
+          {/* 채워진 별을 다시 누르면 즐겨찾기 해제. 카드 클릭(이동)으로 전파되지 않게 차단. */}
+          <span
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            <FavoriteStar active disabled={busy} onToggle={() => onRemove(item.id)} />
+          </span>
         </div>
       )}
     </li>

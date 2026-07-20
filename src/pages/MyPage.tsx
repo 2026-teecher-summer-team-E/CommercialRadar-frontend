@@ -154,6 +154,32 @@ export default function MyPage() {
       .finally(() => setBusyInterestId(null));
   };
 
+  // 관심 상권(즐겨찾기) 해제. 낙관적으로 목록에서 제거하고, 실패 시 롤백.
+  const handleRemoveInterest = (id: number) => {
+    setBusyInterestId(id);
+    const prev = queryClient.getQueryData<InterestDistrict[]>(queryKeys.interests);
+    queryClient.setQueryData<InterestDistrict[]>(queryKeys.interests, (list) =>
+      list?.filter((it) => it.id !== id),
+    );
+    interestApi
+      .remove(id)
+      .then(() => {
+        // 지도·대시보드 별표 상태(favorites)와 요약 카운트(myStats)도 동기화.
+        queryClient.setQueryData<InterestDistrict[]>(queryKeys.favorites, (list) =>
+          list?.filter((it) => it.id !== id),
+        );
+        queryClient.setQueryData<UserStats>(queryKeys.myStats, (s) =>
+          s ? { ...s, interest_districts: Math.max(0, s.interest_districts - 1) } : s,
+        );
+        showToast("즐겨찾기에서 해제했어요.");
+      })
+      .catch(() => {
+        queryClient.setQueryData(queryKeys.interests, prev); // 롤백
+        showToast("해제에 실패했어요. 잠시 후 다시 시도해 주세요.");
+      })
+      .finally(() => setBusyInterestId(null));
+  };
+
   const handleRemove = (id: number) => {
     setBusyId(id);
     const reportsKey = queryKeys.myReports(REPORTS_PARAMS);
@@ -320,6 +346,7 @@ export default function MyPage() {
                   item={item}
                   info={districtInfo.get(item.commercial_district_id)}
                   onSaveMemo={handleMemoSave}
+                  onRemove={handleRemoveInterest}
                   busy={busyInterestId === item.id}
                 />
               ))}
