@@ -8,6 +8,7 @@ import type {
   DistrictTimeSeriesResponse,
   CategoryRankingResponse,
   CommercialDistrictSearchResult,
+  AgeSlice,
 } from "../types";
 import RadarChartSvg from "../components/compare/RadarChartSvg";
 import type { RadarSeries } from "../components/compare/RadarChartSvg";
@@ -397,6 +398,45 @@ export default function ComparePage() {
     }
     return map;
   }, [simulationDayNightQuery.data, simulationDistricts]);
+
+  // 1:1 시뮬레이션 패널의 "유동인구 예상 연령 분포"용 실데이터.
+  // DashboardPage 와 동일하게 time-series(dimension="age") 최신 분기 구성비를 사용한다.
+  // 미조회 시 AtmosphereSimulation 이 예시(폴백) 구성비로 대체한다.
+  const simulationAgeQuery = useQuery({
+    queryKey: queryKeys.simAge(simulationPairIds),
+    enabled: compareSim !== null && simulationDayNightIds.length >= MIN_DISTRICTS,
+    queryFn: async () => {
+      const results = await Promise.all(
+        simulationDayNightIds.map(async (id) => {
+          const res = await commercialApi.timeSeries(id, { metrics: "population", breakdown: "age" });
+          return [id, res.data] as const;
+        }),
+      );
+      return new Map(results);
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const simulationAgeSlices = useMemo(() => {
+    const map = new Map<number, AgeSlice[]>();
+    const source = simulationAgeQuery.data;
+    if (!source) return map;
+
+    for (const district of simulationDistricts) {
+      const rows = source.get(district.id)?.data ?? [];
+      const bd = rows.length > 0 ? rows[rows.length - 1].population?.breakdown?.age ?? null : null;
+      if (!bd) continue;
+
+      const total = Object.values(bd).reduce((sum, v) => sum + v, 0);
+      if (total <= 0) continue;
+
+      map.set(
+        district.id,
+        Object.entries(bd).map(([name, v]) => ({ name, pct: Math.round((v / total) * 100) })),
+      );
+    }
+    return map;
+  }, [simulationAgeQuery.data, simulationDistricts]);
 
   useEffect(() => {
     if (districts.length < MIN_DISTRICTS) {
@@ -878,6 +918,7 @@ export default function ComparePage() {
                       <AtmosphereSimulation
                         key={district.id}
                         scenario={compareSim}
+                        ageDistribution={simulationAgeSlices.get(district.id)}
                         survivalPct={district.survival_rate}
                         footTraffic={dayNight?.footTraffic ?? district.avg_population}
                         crowdBaseCount={simulationCrowdCounts.get(district.id) ?? null}
