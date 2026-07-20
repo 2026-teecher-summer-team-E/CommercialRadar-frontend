@@ -23,6 +23,7 @@ export const queryKeys = {
     ["compare-page", ids, quarter, category, rankingDistrictId ?? null] as const,
   timeSeries: (id: number | string, params?: QP) => ["time-series", id, params ?? null] as const,
   simDayNight: (ids: Array<number | null>) => ["compare-sim-daynight", ids] as const,
+  simAge: (ids: Array<number | null>) => ["compare-sim-age", ids] as const,
   belts: ["belts"] as const,
   beltMomentum: (slug: string) => ["belt-momentum", slug] as const,
   beltGeojson: (guNames: string[]) => ["belt-geojson", guNames] as const,
