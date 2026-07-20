@@ -247,14 +247,14 @@ export default function DashboardPage() {
     () => (id != null ? (rankingQuery.data?.ranking ?? []) : []),
     [id, rankingQuery.data],
   );
-  // total_business 순 상위 30개 업종명(예측/폴백 조회 대상).
+  // total_business 순 상위 30개 업종을 선정하되, 드롭다운 표시는 가나다 순으로 정렬한다.
   const categoryOptions = useMemo(() => {
     const names = rankingItems
       .filter((it) => it.category_name != null)
       .sort((a, b) => (b.total_business ?? 0) - (a.total_business ?? 0))
       .slice(0, 30)
       .map((it) => it.category_name as string);
-    return [...new Set(names)];
+    return [...new Set(names)].sort((a, b) => a.localeCompare(b, "ko"));
   }, [rankingItems]);
   // 업종명 → 현재 생존율(0~100). 예측이 비었을 때 폴백값으로 사용.
   const rankingSurvivalMap = useMemo(() => {
