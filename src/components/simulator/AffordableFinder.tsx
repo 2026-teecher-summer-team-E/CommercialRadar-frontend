@@ -17,24 +17,32 @@ const LeafletMap = lazy(() => import("../map/LeafletMap"));
 interface Props {
   /** 리스트에서 상권을 고르면 시뮬레이션으로 넘길 콜백. */
   onPick: (d: { id: number; name: string }) => void;
+  /** 랜딩 검색 등에서 넘어온 초기 월 임대료 예산(원). 없으면 기본값. */
+  initialBudget?: number;
+  /** 랜딩 검색 등에서 넘어온 초기 점포 면적(㎡). 없으면 기본값. */
+  initialArea?: number;
 }
 
+const DEFAULT_BUDGET = 3_000_000;
+const DEFAULT_AREA = 33;
 const BUDGET_PRESETS = [2_000_000, 3_000_000, 5_000_000];
 const PAGE_SIZE = 10;
 const EMPTY_GEO: DistrictGeo[] = [];
 type SortKey = "rent" | "score";
 
-export default function AffordableFinder({ onPick }: Props) {
+export default function AffordableFinder({ onPick, initialBudget, initialArea }: Props) {
+  const startBudget = initialBudget ?? DEFAULT_BUDGET;
+  const startArea = initialArea ?? DEFAULT_AREA;
   // 숫자를 입력하는 동안 과도한 요청이 생기지 않도록 잠깐 기다린 뒤 자동 반영한다.
-  const [budgetInput, setBudgetInput] = useState("3000000");
-  const [areaInput, setAreaInput] = useState("33");
+  const [budgetInput, setBudgetInput] = useState(String(startBudget));
+  const [areaInput, setAreaInput] = useState(String(startArea));
   const [regionQuery, setRegionQuery] = useState("");
   const [debouncedRegionQuery, setDebouncedRegionQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState("");
   const [applied, setApplied] = useState<{ budget: number; area: number } | null>({
-    budget: 3_000_000,
-    area: 33,
+    budget: startBudget,
+    area: startArea,
   });
   const [sort, setSort] = useState<SortKey>("rent");
   const [page, setPage] = useState(0);
