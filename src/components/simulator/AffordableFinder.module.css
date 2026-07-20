@@ -130,6 +130,17 @@
   font-weight: 700;
   color: var(--color-muted);
 }
+.categoryRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 14px 0 2px;
+}
+.categoryHint {
+  font-size: 12px;
+  color: var(--color-muted);
+}
 .budgetInputWrap {
   display: flex;
   align-items: center;
