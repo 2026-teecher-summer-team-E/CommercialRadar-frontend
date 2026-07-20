@@ -34,11 +34,18 @@ export default function RentForecastCard({ history = [], forecast, floorTypeLabe
   const deltaUp = (delta ?? 0) >= 0;
 
   // Y축을 데이터 범위로 좁혀 곡선이 눌리지 않게(신뢰구간 하한~상한 여유). 앵커(실적)값도 포함해 시작점이 잘리지 않게.
+  // 여백은 '절대값 비율'(min×0.9 등)이 아니라 '데이터 폭 비율'로 잡는다 — 임대료는 값이 커서(13만대)
+  // 절대값 기준이면 위/아래가 과하게 비어 보였다. 폭의 12%(평평하면 값의 2%)만 위아래로 둔다.
   const vals = [...history, ...forecast]
     .flatMap((p) => [p.value, p.low ?? null, p.high ?? null])
     .filter((v): v is number => v != null);
-  const yDomain: [number, number] | undefined =
-    vals.length > 0 ? [Math.min(...vals) * 0.9, Math.max(...vals) * 1.05] : undefined;
+  const yDomain: [number, number] | undefined = (() => {
+    if (vals.length === 0) return undefined;
+    const lo = Math.min(...vals);
+    const hi = Math.max(...vals);
+    const pad = Math.max((hi - lo) * 0.12, hi * 0.02);
+    return [lo - pad, hi + pad];
+  })();
 
   return (
     <div className={styles.card}>

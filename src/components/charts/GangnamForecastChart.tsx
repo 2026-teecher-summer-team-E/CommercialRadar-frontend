@@ -226,16 +226,20 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
     const m = /^(\d{4})-Q([1-4])$/.exec(q);
     return m ? `${m[1].slice(2)} ${m[2]}분기` : q;
   };
+  // 시나리오 선 끝 라벨(컴팩트) — 세 선(Best/Normal/Worst)을 값으로 구분되게. 축과 같은 단위.
+  const formatEndLabel = (v: number) =>
+    unit === "won" ? `${(v / 1e8).toFixed(1)}억`
+    : unit === "won_sqm" ? `${(v / 10000).toFixed(1)}만`
+    : `${Math.round(v * 100)}%`;
 
   const makeEndLabel =
     (scenario: "high" | "mid" | "low", color: string, dy: number) =>
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (props: any) => {
       const { x, y, index, value } = props;
-      if (!endLabels || unit !== "ratio") return null;
+      if (!endLabels) return null;
       if (index !== rows.length - 1) return null;
       if (value == null) return null;
-      const pct = Math.round(value * 100);
       return (
         <text
           key={`end-label-${scenario}`}
@@ -247,7 +251,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           fontWeight={700}
           textAnchor="start"
         >
-          {pct}%
+          {formatEndLabel(value)}
         </text>
       );
     };
@@ -306,7 +310,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           name="예측 범위"
           stroke="none"
           fill={FORECAST_COLORS.band}
-          fillOpacity={0.12}
+          fillOpacity={0.18}
           connectNulls
           legendType="none"
           {...drawForecast}
@@ -318,7 +322,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           dataKey="high"
           name="Best"
           stroke={FORECAST_COLORS.high}
-          strokeWidth={clickable ? 2.5 : 1.5}
+          strokeWidth={clickable ? 2.5 : 2.25}
           strokeDasharray="5 5"
           dot={clickable ? makeDot("high", FORECAST_COLORS.high) : false}
           label={makeEndLabel("high", FORECAST_COLORS.high, -6)}
@@ -330,9 +334,9 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           dataKey="mid"
           name="Normal"
           stroke={FORECAST_COLORS.mid}
-          strokeWidth={clickable ? 3 : 2}
+          strokeWidth={clickable ? 3 : 2.75}
           strokeDasharray="5 5"
-          dot={clickable ? makeDot("mid", FORECAST_COLORS.mid) : { r: 2 }}
+          dot={clickable ? makeDot("mid", FORECAST_COLORS.mid) : { r: 2.5 }}
           label={makeEndLabel("mid", FORECAST_COLORS.mid, 4)}
           connectNulls
           {...drawForecast}
@@ -342,7 +346,7 @@ export default function ForecastChart({ history, forecast, unit, onScenarioClick
           dataKey="low"
           name="Worst"
           stroke={FORECAST_COLORS.low}
-          strokeWidth={clickable ? 2.5 : 1.5}
+          strokeWidth={clickable ? 2.5 : 2.25}
           strokeDasharray="5 5"
           dot={clickable ? makeDot("low", FORECAST_COLORS.low) : false}
           label={makeEndLabel("low", FORECAST_COLORS.low, 14)}
