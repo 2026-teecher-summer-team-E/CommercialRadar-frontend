@@ -30,23 +30,77 @@ const PAGE_SIZE = 10;
 const EMPTY_GEO: DistrictGeo[] = [];
 type SortKey = "rent" | "score";
 
+// 다른 페이지에 다녀와도 검색 조건이 남도록 sessionStorage 에 저장한다(탭 세션 동안 유지).
+const PERSIST_KEY = "simulator-affordable-search";
+interface PersistedSearch {
+  budget: number;
+  area: number;
+  region: string;
+  sort: SortKey;
+}
+
+function loadPersistedSearch(): PersistedSearch | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(PERSIST_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw) as Partial<PersistedSearch>;
+    if (typeof p.budget !== "number" || p.budget <= 0) return null;
+    if (typeof p.area !== "number" || p.area <= 0) return null;
+    return {
+      budget: p.budget,
+      area: p.area,
+      region: typeof p.region === "string" ? p.region : "",
+      sort: p.sort === "score" ? "score" : "rent",
+    };
+  } catch {
+    return null;
+  }
+}
+
+function savePersistedSearch(value: PersistedSearch): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(PERSIST_KEY, JSON.stringify(value));
+  } catch {
+    // 저장 실패(용량/프라이빗 모드 등)는 무시 — 영속화는 부가 기능일 뿐이다.
+  }
+}
+
 export default function AffordableFinder({ onPick, initialBudget, initialArea }: Props) {
-  const startBudget = initialBudget ?? DEFAULT_BUDGET;
-  const startArea = initialArea ?? DEFAULT_AREA;
+  // 초기값 우선순위: URL 파라미터(랜딩의 새 검색) > 저장값(재방문) > 기본값.
+  // URL 파라미터가 있으면 "새 검색"이므로 저장된 지역/정렬은 무시하고 초기화한다.
+  const [initial] = useState(() => {
+    const hasUrlPrefill = initialBudget != null || initialArea != null;
+    const persisted = hasUrlPrefill ? null : loadPersistedSearch();
+    return {
+      budget: initialBudget ?? persisted?.budget ?? DEFAULT_BUDGET,
+      area: initialArea ?? persisted?.area ?? DEFAULT_AREA,
+      region: persisted?.region ?? "",
+      sort: (persisted?.sort ?? "rent") as SortKey,
+    };
+  });
+
   // 숫자를 입력하는 동안 과도한 요청이 생기지 않도록 잠깐 기다린 뒤 자동 반영한다.
-  const [budgetInput, setBudgetInput] = useState(String(startBudget));
-  const [areaInput, setAreaInput] = useState(String(startArea));
-  const [regionQuery, setRegionQuery] = useState("");
+  const [budgetInput, setBudgetInput] = useState(String(initial.budget));
+  const [areaInput, setAreaInput] = useState(String(initial.area));
+  const [regionQuery, setRegionQuery] = useState(initial.region);
   const [debouncedRegionQuery, setDebouncedRegionQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
-  const [selectedRegion, setSelectedRegion] = useState("");
+  const [selectedRegion, setSelectedRegion] = useState(initial.region);
   const [applied, setApplied] = useState<{ budget: number; area: number } | null>({
-    budget: startBudget,
-    area: startArea,
+    budget: initial.budget,
+    area: initial.area,
   });
-  const [sort, setSort] = useState<SortKey>("rent");
+  const [sort, setSort] = useState<SortKey>(initial.sort);
   const [page, setPage] = useState(0);
   const [mapSelectedId, setMapSelectedId] = useState(0);
+
+  // 검색 조건이 바뀔 때마다 저장 → /dashboard 등 다녀와도 복원된다. applied 가 null(입력 무효)이면 저장하지 않는다.
+  useEffect(() => {
+    if (!applied) return;
+    savePersistedSearch({ budget: applied.budget, area: applied.area, region: selectedRegion, sort });
+  }, [applied, selectedRegion, sort]);
 
   const regionKeyword = regionQuery.trim();
   useEffect(() => {
