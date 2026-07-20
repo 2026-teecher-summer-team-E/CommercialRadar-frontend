@@ -29,6 +29,8 @@ interface SangkwonPanelProps {
   /** 선택된 업종. null이면 전체 업종. */
   categoryFilter: string | null;
   onCategoryFilterChange: (v: string | null) => void;
+  /** 정보 패널 닫기(X) → 선택 해제. */
+  onClose: () => void;
 }
 
 /** 지도 페이지 좌측 콘텐츠 패널: 현재 위치 표시 + 업종 필터 + 점수 + 지표 2x2 + 시간대별 혼잡도. */
@@ -40,6 +42,7 @@ export default function SangkwonPanel({
   availableCategories,
   categoryFilter,
   onCategoryFilterChange,
+  onClose,
 }: SangkwonPanelProps) {
   const detail = summary?.detail ?? null;
   const stats = detail?.latest_stats ?? null;
@@ -101,6 +104,16 @@ export default function SangkwonPanel({
                 onToggle={() => toggleFavorite(detail.id)}
               />
             )}
+            {detail && (
+              <button
+                type="button"
+                className={styles.closeBtn}
+                onClick={onClose}
+                aria-label="선택 해제"
+              >
+                ×
+              </button>
+            )}
           </div>
           {detail && (
             <span className={styles.locationSub}>
@@ -127,6 +140,9 @@ export default function SangkwonPanel({
       {loading && <div className={styles.panelState}>지도 데이터를 불러오는 중…</div>}
       {error && !loading && (
         <div className={styles.panelState}>상권 정보를 불러오지 못했습니다.</div>
+      )}
+      {!loading && !error && !detail && (
+        <div className={styles.panelState}>지도를 클릭하거나 검색해 상권을 선택하세요.</div>
       )}
 
       {!loading && !error && detail && (

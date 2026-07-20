@@ -26,7 +26,7 @@ const EMPTY_GEO: DistrictGeo[] = [];
 const MAP_PAGE_STORAGE_KEY = "commercialRadar.mapPageState.v1";
 
 interface PersistedMapPageState {
-  selectedId: number;
+  selectedId: number | null;
   query: string;
   typeFilter: string;
   guFilter: string;
@@ -51,9 +51,11 @@ function readMapPageState(): PersistedMapPageState {
     const parsed = JSON.parse(raw) as Partial<PersistedMapPageState>;
     return {
       selectedId:
-        typeof parsed.selectedId === "number" && Number.isFinite(parsed.selectedId) && parsed.selectedId > 0
-          ? parsed.selectedId
-          : DEFAULT_MAP_PAGE_STATE.selectedId,
+        parsed.selectedId === null
+          ? null
+          : typeof parsed.selectedId === "number" && Number.isFinite(parsed.selectedId) && parsed.selectedId > 0
+            ? parsed.selectedId
+            : DEFAULT_MAP_PAGE_STATE.selectedId,
       query: typeof parsed.query === "string" ? parsed.query : DEFAULT_MAP_PAGE_STATE.query,
       typeFilter: typeof parsed.typeFilter === "string" ? parsed.typeFilter : DEFAULT_MAP_PAGE_STATE.typeFilter,
       guFilter: typeof parsed.guFilter === "string" ? parsed.guFilter : DEFAULT_MAP_PAGE_STATE.guFilter,
@@ -103,13 +105,13 @@ export default function MapPage() {
   // 다른 페이지(랭킹 등)에서 ?district=<id> 로 진입하면 그 상권을 선택된 상태로 연다.
   const [searchParams, setSearchParams] = useSearchParams();
   const districtParam = Number(searchParams.get("district"));
-  const initialDistrictId =
+  const initialDistrictId: number | null =
     Number.isFinite(districtParam) && districtParam > 0 ? districtParam : initialState.selectedId;
 
-  const [selectedId, setSelectedId] = useState<number>(initialDistrictId);
+  const [selectedId, setSelectedId] = useState<number | null>(initialDistrictId);
   // 마운트 시점 값을 기억해 두고, 실제로 그 값에서 벗어날 때만 URL에 반영한다.
   // (boolean 플래그로 "최초 1회"를 가리면 StrictMode의 effect 이중 실행에서 깨지므로 값 비교로 판단)
-  const lastSyncedIdRef = useRef(initialDistrictId);
+  const lastSyncedIdRef = useRef<number | null>(initialDistrictId);
 
   // 랭킹 등 다른 페이지에서 "이 상권으로 포커스 이동" 의도를 갖고 들어왔는지(navigate state로 전달).
   // 새로고침 시에는 이 의도가 재현되면 안 되므로 마운트 시점 값만 한 번 읽어 기억해두고 즉시 state를 비운다.
@@ -132,7 +134,11 @@ export default function MapPage() {
     lastSyncedIdRef.current = selectedId;
     setSearchParams(
       (prev) => {
-        prev.set("district", String(selectedId));
+        if (selectedId == null) {
+          prev.delete("district");
+        } else {
+          prev.set("district", String(selectedId));
+        }
         return prev;
       },
       { replace: true },
@@ -166,14 +172,17 @@ export default function MapPage() {
   const geojson = geojsonQuery.data ?? null;
 
   // 선택 상권 상세(좌측 패널). 상권 상세 로드 시 실재 업종 목록도 함께 받아둔다.
+  // selectedId가 null(패널 닫힘)이면 요청하지 않는다 — queryKey는 disabled 상태에서도
+  // number 타입을 유지해야 하므로 미사용 placeholder(-1)를 넣어둔다.
   const summaryQuery = useQuery({
-    queryKey: queryKeys.mapSummary(selectedId),
-    queryFn: () => fetchMapSummary(selectedId),
+    queryKey: queryKeys.mapSummary(selectedId ?? -1),
+    queryFn: () => fetchMapSummary(selectedId as number),
+    enabled: selectedId != null,
   });
-  const summary = summaryQuery.data?.summary ?? null;
-  const availableCategories: CategoryStat[] = summaryQuery.data?.categories ?? [];
-  const loading = summaryQuery.isPending;
-  const error = summaryQuery.isError;
+  const summary = selectedId != null ? (summaryQuery.data?.summary ?? null) : null;
+  const availableCategories: CategoryStat[] = selectedId != null ? (summaryQuery.data?.categories ?? []) : [];
+  const loading = selectedId != null && summaryQuery.isPending;
+  const error = selectedId != null && summaryQuery.isError;
 
   useEffect(() => {
     const state: PersistedMapPageState = {
@@ -249,6 +258,9 @@ export default function MapPage() {
     setQuery("");
     setSearchFocused(false);
   };
+
+  // 정보 패널 닫기 → 선택 해제(지도는 서울 전역 뷰로 줌아웃).
+  const handleClose = useCallback(() => setSelectedId(null), []);
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && options.length > 0) handlePickSearch(options[0]);
@@ -443,6 +455,7 @@ export default function MapPage() {
           availableCategories={availableCategories}
           categoryFilter={categoryFilter}
           onCategoryFilterChange={setCategoryFilter}
+          onClose={handleClose}
         />
         <div style={{ position: "absolute", inset: 0, display: "flex", minWidth: 0 }}>
           <Suspense fallback={<PageLoader fullScreen={false} />}>
