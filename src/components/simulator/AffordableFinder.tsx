@@ -24,6 +24,8 @@ interface Props {
   initialBudget?: number;
   /** 랜딩 검색 등에서 넘어온 초기 점포 면적(㎡). 없으면 기본값. */
   initialArea?: number;
+  /** 랜딩 검색 등에서 넘어온 초기 업종(예: "카페" 검색 → "커피-음료"). 없으면 저장값/전체. */
+  initialCategory?: string;
 }
 
 const DEFAULT_BUDGET = 3_000_000;
@@ -72,7 +74,7 @@ function savePersistedSearch(value: PersistedSearch): void {
   }
 }
 
-export default function AffordableFinder({ onPick, initialBudget, initialArea }: Props) {
+export default function AffordableFinder({ onPick, initialBudget, initialArea, initialCategory }: Props) {
   // 초기값 우선순위: URL 파라미터(랜딩의 새 검색) > 저장값(재방문) > 기본값.
   // URL 파라미터가 있으면 "새 검색"이므로 저장된 지역/정렬은 무시하고 초기화한다.
   const [initial] = useState(() => {
@@ -84,7 +86,7 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea }:
       region: persisted?.region ?? "",
       // 기본 정렬은 점수 높은 순(저장된 선택이 있으면 그것을 우선).
       sort: (persisted?.sort ?? "score") as SortKey,
-      category: persisted?.category ?? null,
+      category: initialCategory ?? persisted?.category ?? null,
     };
   });
 
