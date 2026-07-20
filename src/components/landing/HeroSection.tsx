@@ -5,6 +5,7 @@ import { buildSignInPath, clerkEnabled, useAuth } from "../../lib/auth";
 import type { DistrictSearchResult } from "../map/mapData";
 import styles from "../../pages/LandingPage.module.css";
 import { POPULAR_SEARCHES } from "./data";
+import { buildSimulatorPathFromQuery } from "./heroSearch";
 import { SearchIcon } from "./icons";
 
 /** 히어로: 지도 배경 + 헤드라인 + 검색바 + 인기 검색어. */
@@ -12,6 +13,21 @@ export default function HeroSection() {
   const navigate = useNavigate();
   const { isLoaded, isSignedIn } = useAuth();
   const [query, setQuery] = useState("");
+
+  // 검색어에 창업 예산(만원/억)이 담겨 있으면 창업 시뮬레이터로, 아니면 상권검색으로 분기.
+  // 예: "임대료 1000만원짜리 카페를 차리고싶어" → /simulator?budget=10000000&area=66(20평).
+  const handleSearch = (keyword: string) => {
+    const simulatorPath = buildSimulatorPathFromQuery(keyword);
+    if (simulatorPath) {
+      if (clerkEnabled && isLoaded && !isSignedIn) {
+        navigate(buildSignInPath(simulatorPath));
+        return;
+      }
+      navigate(simulatorPath);
+      return;
+    }
+    void goToDistrict(keyword);
+  };
 
   // 검색어로 상권을 찾아 그 상권의 지도 화면으로 이동. 결과 없으면 기본 지도로만 이동.
   const goToDistrict = async (keyword: string) => {
@@ -55,18 +71,18 @@ export default function HeroSection() {
           <input
             className={styles.searchInput}
             type="text"
-            placeholder="예: 성수동, 홍대, 연남동"
+            placeholder="예: 성수동 · 임대료 1000만원 카페"
             aria-label="상권 검색"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") goToDistrict(query);
+              if (e.key === "Enter") handleSearch(query);
             }}
           />
           <button
             type="button"
             className={`${styles.btnPrimary} ${styles.searchBtn}`}
-            onClick={() => goToDistrict(query)}
+            onClick={() => handleSearch(query)}
           >
             <SearchIcon size={15} />
             상권 분석하기
