@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { commercialApi } from "../services/commercialApi";
-import { queryKeys, useDistrictSearch } from "../hooks/queries";
+import { queryKeys, useDistrictSearch, useInterestDistricts } from "../hooks/queries";
 import type {
   DistrictCompareResponse,
   RadarResponse,
@@ -160,6 +160,9 @@ export default function ComparePage() {
   }, [keyword]);
 
   const search = useDistrictSearch(debouncedQuery, isAdding);
+  // 즐겨찾기(관심) 상권 — 추가 패널을 열었을 때만 조회해, 검색 없이도 바로 선택할 수 있게 노출한다.
+  const favoritesQuery = useInterestDistricts(isAdding);
+  const favorites = favoritesQuery.data ?? [];
   const searchResults: CommercialDistrictSearchResult[] =
     (isAdding && keyword && debouncedQuery ? search.data : undefined) ?? [];
   // 디바운스 대기 중에도 로딩으로 표시해 기존 UX(타이핑 즉시 "찾고 있습니다") 유지.
@@ -446,10 +449,14 @@ export default function ComparePage() {
     setSelectedIds((current) => current.filter((selectedId) => selectedId !== id));
   };
 
+  const addDistrictById = (id: number, name: string) => {
+    if (selectedIds.includes(id) || selectedIds.length >= MAX_DISTRICTS) return;
+    setSelectedDistrictNames((current) => ({ ...current, [id]: name }));
+    setSelectedIds((current) => [...current, id]);
+  };
+
   const addDistrict = (district: CommercialDistrictSearchResult) => {
-    if (selectedIds.includes(district.id) || selectedIds.length >= MAX_DISTRICTS) return;
-    setSelectedDistrictNames((current) => ({ ...current, [district.id]: district.district_name }));
-    setSelectedIds((current) => [...current, district.id]);
+    addDistrictById(district.id, district.district_name);
     setSearchQuery("");
     setIsAdding(false);
   };
@@ -575,9 +582,36 @@ export default function ComparePage() {
             </div>
 
             <div className={styles.searchResults} role="listbox" aria-label="상권 검색 결과">
-              {!searchQuery.trim() && (
-                <p className={styles.searchMessage}>비교할 상권을 검색해 선택하세요.</p>
-              )}
+              {!searchQuery.trim() &&
+                (favorites.length > 0 ? (
+                  <>
+                    <p className={styles.favHeader}>즐겨찾기한 상권</p>
+                    {favorites.map((fav) => {
+                      const favId = fav.commercial_district_id;
+                      const alreadySelected = selectedIds.includes(favId);
+                      const name = fav.district_name ?? `상권 #${favId}`;
+                      return (
+                        <button
+                          type="button"
+                          className={styles.searchResult}
+                          key={favId}
+                          onClick={() => addDistrictById(favId, name)}
+                          disabled={alreadySelected || selectedIds.length >= MAX_DISTRICTS}
+                          role="option"
+                          aria-selected={alreadySelected}
+                        >
+                          <span>
+                            <strong>{name}</strong>
+                            <small>즐겨찾기</small>
+                          </span>
+                          {alreadySelected && <span className={styles.resultAction}>선택됨</span>}
+                        </button>
+                      );
+                    })}
+                  </>
+                ) : (
+                  <p className={styles.searchMessage}>비교할 상권을 검색해 선택하세요.</p>
+                ))}
               {searchQuery.trim() && searchLoading && (
                 <p className={styles.searchMessage}>상권을 찾고 있습니다…</p>
               )}
