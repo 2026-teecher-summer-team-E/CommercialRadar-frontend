@@ -294,7 +294,7 @@ export default function TrendsPage() {
           <div className={styles.sectionTitle}>
             <span className={styles.accentBar} />
             <div>
-              <h2 className={styles.sectionHeading}>침몰중인 업종</h2>
+              <h2 className={styles.sectionHeading}>지는중인 업종</h2>
             </div>
           </div>
 
