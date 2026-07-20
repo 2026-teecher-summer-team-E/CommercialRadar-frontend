@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { commercialApi } from "../../services/commercialApi";
 import { queryKeys, useAffordableDistricts, useDistrictSearch } from "../../hooks/queries";
 import { toScore } from "../map/mapData";
+import type { MapPin } from "../map/LeafletMap";
 import type {
   AffordableDistrict,
   CommercialDistrictSearchResult,
@@ -166,15 +167,33 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea }:
     queryKey: queryKeys.geo,
     queryFn: async () => (await commercialApi.geo()).data,
   });
-  const geojsonQuery = useQuery({
-    queryKey: queryKeys.geojson,
-    queryFn: async () => (await commercialApi.geojson()).data,
-  });
   const geo = geoQuery.data ?? EMPTY_GEO;
   const selectedPoint = useMemo(
     () => geo.find((point) => point.id === mapSelectedId) ?? null,
     [geo, mapSelectedId],
   );
+
+  // 검색 결과(현재 페이지)를 지도에 핀으로 표시한다. 결과에는 좌표가 없어 geo(중심좌표)와 id로 조인한다.
+  const geoById = useMemo(() => {
+    const m = new Map<number, DistrictGeo>();
+    geo.forEach((g) => m.set(g.id, g));
+    return m;
+  }, [geo]);
+  const resultPins = useMemo<MapPin[]>(() => {
+    const pins: MapPin[] = [];
+    pageItems.forEach((d, i) => {
+      const g = geoById.get(d.district_id);
+      if (!g) return;
+      pins.push({
+        id: d.district_id,
+        lat: g.lat,
+        lng: g.lng,
+        label: String(safePage * PAGE_SIZE + i + 1),
+        name: d.district_name,
+      });
+    });
+    return pins;
+  }, [pageItems, geoById, safePage]);
 
   return (
     <div className={styles.wrap}>
@@ -313,7 +332,7 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea }:
             <div className={styles.resultHead}>
             <span className={styles.resultCount}>
               {selectedRegion && <>{selectedRegion} 지역 · </>}
-              예산 이하 <strong>{query.data.count.toLocaleString()}곳</strong>
+              검색결과 <strong>{query.data.count.toLocaleString()}곳</strong>
               {query.data.count > districts.length && ` · 상위 ${districts.length}곳`}
             </span>
             <div className={styles.sortToggle}>
@@ -415,7 +434,8 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea }:
             <Suspense fallback={<PageLoader fullScreen={false} />}>
               <LeafletMap
                 points={geo}
-                geojson={geojsonQuery.data ?? null}
+                geojson={null}
+                pins={resultPins}
                 selectedId={mapSelectedId}
                 guFilter="전체"
                 activeName={selectedPoint?.district_name ?? null}

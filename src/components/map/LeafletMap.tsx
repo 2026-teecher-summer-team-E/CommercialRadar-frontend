@@ -99,6 +99,8 @@ export default function LeafletMap({
   const geoLayerRef = useRef<L.GeoJSON | null>(null);
   const polysRef = useRef<Map<number, L.Path>>(new Map());
   const pinsLayerRef = useRef<L.LayerGroup | null>(null);
+  // 핀(순위 마커)을 id로 참조해 선택 시 해당 핀으로 이동·팝업할 수 있게 한다(폴리곤이 없을 때 폴백).
+  const pinMarkersRef = useRef<Map<number, L.Marker>>(new Map());
 
   const onSelectRef = useRef(onSelect);
   const onOpenRef = useRef(onOpenProfile);
@@ -267,6 +269,7 @@ export default function LeafletMap({
         lyr.setStyle({ weight: 1, opacity: 0.65, fillColor: c, fillOpacity: 0.22, color: c });
         lyr.closePopup();
       });
+      pinMarkersRef.current.forEach((m) => m.closePopup());
       flownRef.current = null;
       markProgrammaticMove(map);
       map.flyTo(SEOUL_CENTER, 12, { duration: 0.8 });
@@ -297,9 +300,22 @@ export default function LeafletMap({
       // 유지하는 경우(흔들림 방지)에도 선택된 상권의 팝업만큼은 처음 한 번은 자동으로 띄운다.
       if (isNewSelection || wasOpen || !initialPopupShownRef.current) sel.openPopup();
       initialPopupShownRef.current = true;
+    } else {
+      // 폴리곤이 없을 때(핀 모드): 선택된 핀으로 이동하고 팝업을 연다.
+      const pin = pinMarkersRef.current.get(selectedId);
+      if (pin) {
+        const wasOpen = pin.isPopupOpen();
+        if (isNewSelection) {
+          flownRef.current = selectedId;
+          markProgrammaticMove(map);
+          map.flyTo(pin.getLatLng(), 15, { duration: 0.8 });
+        }
+        if (isNewSelection || wasOpen || !initialPopupShownRef.current) pin.openPopup();
+        initialPopupShownRef.current = true;
+      }
     }
-    // geojson도 의존성에 포함: 데이터가 늦게 도착해 selectedId의 구역이 뒤늦게 생기는 경우를 다시 시도한다.
-  }, [selectedId, activeName, activeType, activeScore, geojson]); // eslint-disable-line react-hooks/exhaustive-deps
+    // geojson/pins도 의존성에 포함: 데이터가 늦게 도착해 selectedId의 구역·핀이 뒤늦게 생기는 경우를 다시 시도한다.
+  }, [selectedId, activeName, activeType, activeScore, geojson, pins]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 4) 자치구 필터 변경 시 해당 자치구 범위로 카메라 이동
   useEffect(() => {
@@ -330,10 +346,11 @@ export default function LeafletMap({
     if (!map) return;
     pinsLayerRef.current?.remove();
     pinsLayerRef.current = null;
+    pinMarkersRef.current.clear();
     if (!pins || pins.length === 0) return;
 
-    const markers = pins.map((p) =>
-      L.marker([p.lat, p.lng], {
+    const markers = pins.map((p) => {
+      const marker = L.marker([p.lat, p.lng], {
         icon: L.divIcon({
           className: styles.pinWrap,
           html: `<span class="${styles.pinBadge}"><span>${p.label}</span></span>`,
@@ -344,8 +361,12 @@ export default function LeafletMap({
         zIndexOffset: 1000,
       })
         .on("click", () => onSelectRef.current(p.id))
-        .bindTooltip(p.name, { direction: "top", offset: [0, -34] }),
-    );
+        .bindTooltip(p.name, { direction: "top", offset: [0, -34] })
+        // 폴리곤과 동일하게 "상세 분석 보기" 팝업을 달아 핀에서도 프로필로 이동할 수 있게 한다.
+        .bindPopup(buildPopup(p.id), { closeButton: true, minWidth: 170 });
+      pinMarkersRef.current.set(p.id, marker);
+      return marker;
+    });
     const group = L.layerGroup(markers);
     pinsLayerRef.current = group;
     group.addTo(map);
