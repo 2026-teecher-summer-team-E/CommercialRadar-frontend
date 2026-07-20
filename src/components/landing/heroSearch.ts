@@ -57,13 +57,31 @@ export function parseAreaSqm(raw: string): number | null {
   return null;
 }
 
+/** 검색어 키워드 → 시뮬레이터 업종 매핑. 필요에 따라 키워드를 추가한다. */
+const CATEGORY_KEYWORDS: Record<string, string> = {
+  카페: "커피-음료",
+};
+
+/**
+ * 검색어에서 업종을 추정한다. 매칭되는 키워드가 없으면 null.
+ */
+export function parseCategoryFromQuery(raw: string): string | null {
+  for (const [keyword, category] of Object.entries(CATEGORY_KEYWORDS)) {
+    if (raw.includes(keyword)) return category;
+  }
+  return null;
+}
+
 /**
  * 검색어가 창업 예산 의도이면 시뮬레이터 경로를, 아니면 null 을 반환.
  * 면적 미입력 시 기본 20평(DEFAULT_AREA_SQM)을 채운다.
+ * 업종 키워드(예: "카페")가 있으면 해당 업종을 기본 선택되게 전달한다.
  */
 export function buildSimulatorPathFromQuery(raw: string): string | null {
   const budgetWon = parseBudgetWon(raw);
   if (!budgetWon) return null;
   const areaSqm = parseAreaSqm(raw) ?? DEFAULT_AREA_SQM;
-  return `/simulator?budget=${budgetWon}&area=${areaSqm}`;
+  const category = parseCategoryFromQuery(raw);
+  const categoryParam = category ? `&category=${encodeURIComponent(category)}` : "";
+  return `/simulator?budget=${budgetWon}&area=${areaSqm}${categoryParam}`;
 }

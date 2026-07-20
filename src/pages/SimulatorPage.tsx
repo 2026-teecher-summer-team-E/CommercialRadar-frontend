@@ -12,9 +12,10 @@ function parsePositiveParam(value: string | null): number | undefined {
 export default function SimulatorPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  // 랜딩 히어로 검색("임대료 1000만원 카페")에서 넘어온 예산(원)·면적(㎡) prefill.
+  // 랜딩 히어로 검색("임대료 1000만원 카페")에서 넘어온 예산(원)·면적(㎡)·업종 prefill.
   const initialBudget = parsePositiveParam(searchParams.get("budget"));
   const initialArea = parsePositiveParam(searchParams.get("area"));
+  const initialCategory = searchParams.get("category") || undefined;
 
   return (
     <div className={styles.page}>
@@ -33,6 +34,7 @@ export default function SimulatorPage() {
         }
         initialBudget={initialBudget}
         initialArea={initialArea}
+        initialCategory={initialCategory}
       />
     </div>
   );
