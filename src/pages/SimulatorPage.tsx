@@ -25,7 +25,12 @@ export default function SimulatorPage() {
         </p>
       </header>
       <AffordableFinder
-        onPick={(d) => navigate(`/dashboard/${d.id}`)}
+        onPick={(d) =>
+          navigate(`/dashboard/${d.id}`, {
+            // 상세분석에서 "뒤로가기" 시 시뮬레이터로 복귀시키기 위해 진입 경로를 전달.
+            state: { from: "/simulator", fromLabel: "창업 시뮬레이터" },
+          })
+        }
         initialBudget={initialBudget}
         initialArea={initialArea}
       />

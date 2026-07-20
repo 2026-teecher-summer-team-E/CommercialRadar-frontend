@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "../lib/apiClient";
 import { commercialApi } from "../services/commercialApi";
@@ -190,6 +190,12 @@ async function fetchDashboard(id: number): Promise<DashboardData> {
 export default function DashboardPage() {
   const { districtCode } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  // 진입 경로에 따라 "뒤로가기" 목적지/문구를 결정한다.
+  // (창업 시뮬레이터에서 넘어온 경우 시뮬레이터로 복귀, 그 외에는 기본값인 지역 분석으로.)
+  const navState = location.state as { from?: string; fromLabel?: string } | null;
+  const backTo = navState?.from ?? "/";
+  const backLabel = navState?.fromLabel ? `${navState.fromLabel}로 돌아가기` : "지역 분석으로 돌아가기";
   const id = useMemo<number | null>(() => {
     const n = Number(districtCode);
     return districtCode && Number.isFinite(n) && n > 0 ? n : null;
@@ -576,6 +582,8 @@ export default function DashboardPage() {
           searchBarRef={searchBarRef}
           searchOptions={searchOptions}
           onPickSearch={handlePickSearch}
+          backTo={backTo}
+          backLabel={backLabel}
         />
         <Header name={null} region={null} typeName={null} />
         <div className={styles.skeletonWrap}>
@@ -599,6 +607,8 @@ export default function DashboardPage() {
           searchBarRef={searchBarRef}
           searchOptions={searchOptions}
           onPickSearch={handlePickSearch}
+          backTo={backTo}
+          backLabel={backLabel}
         />
         <Header name={null} region={null} typeName={null} />
         <div className={styles.empty}>상권 데이터를 불러오는 데 실패했어요. 새로고침하거나 다른 상권을 선택해보세요.</div>
@@ -617,6 +627,8 @@ export default function DashboardPage() {
         searchBarRef={searchBarRef}
         searchOptions={searchOptions}
         onPickSearch={handlePickSearch}
+        backTo={backTo}
+        backLabel={backLabel}
       />
       <Header name={d.district_name} region={region} typeName={d.type_name} districtId={d.id} />
 
@@ -775,6 +787,8 @@ function TopSearchBar({
   searchBarRef,
   searchOptions,
   onPickSearch,
+  backTo,
+  backLabel,
 }: {
   query: string;
   onQueryChange: (v: string) => void;
@@ -784,11 +798,13 @@ function TopSearchBar({
   searchBarRef: React.RefObject<HTMLDivElement | null>;
   searchOptions: DistrictSearchResult[];
   onPickSearch: (result: DistrictSearchResult) => void;
+  backTo: string;
+  backLabel: string;
 }) {
   return (
     <div className={styles.topRow}>
-      <Link to="/" className={styles.backToMapBtn} aria-label="지역 분석으로 돌아가기">
-        ← 지역 분석으로 돌아가기
+      <Link to={backTo} className={styles.backToMapBtn} aria-label={backLabel}>
+        ← {backLabel}
       </Link>
       <div className={styles.searchBar} style={{ position: "relative" }} ref={searchBarRef}>
         <span className={styles.searchIcon} aria-hidden>
