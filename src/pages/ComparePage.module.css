@@ -599,6 +599,12 @@
   font-size: 13px;
 }
 
+/* 핵심지표/레이더 값 비교표: 상권 열 너비가 상권명 길이에 좌우되지 않도록 고정 레이아웃 사용
+   (지표 열은 .metricCol 고정폭, 나머지 상권 열은 남는 폭을 균등 분할). */
+.compareTable {
+  table-layout: fixed;
+}
+
 .table th {
   padding: 10px 12px;
   font-weight: 600;
@@ -618,6 +624,7 @@
 }
 
 .metricCol {
+  width: 100px;
   text-align: left !important;
   font-weight: 600;
   color: var(--color-text);

@@ -1117,7 +1117,7 @@ function MetricsTable({ districts }: { districts: DistrictCompareResponse["distr
   ];
 
   return (
-    <table className={styles.table}>
+    <table className={`${styles.table} ${styles.compareTable}`}>
       <thead>
         <tr>
           <th className={styles.metricCol}>지표</th>
@@ -1149,7 +1149,7 @@ function MetricsTable({ districts }: { districts: DistrictCompareResponse["distr
 function RadarValueTable({ axes, series }: { axes: string[]; series: RadarSeries[] }) {
   return (
     <>
-      <table className={styles.table}>
+      <table className={`${styles.table} ${styles.compareTable}`}>
         <thead>
           <tr>
             <th className={styles.metricCol}>지표</th>
