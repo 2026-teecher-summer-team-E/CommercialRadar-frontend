@@ -310,6 +310,8 @@ export default function LeafletMap({
           markProgrammaticMove(map);
           map.flyTo(pin.getLatLng(), 15, { duration: 0.8 });
         }
+        // 최신 상권 정보(activeName/type/score)로 팝업을 새로 바인딩한다.
+        pin.bindPopup(buildPopup(selectedId), { closeButton: true, minWidth: 170 });
         if (isNewSelection || wasOpen || !initialPopupShownRef.current) pin.openPopup();
         initialPopupShownRef.current = true;
       }
@@ -361,9 +363,9 @@ export default function LeafletMap({
         zIndexOffset: 1000,
       })
         .on("click", () => onSelectRef.current(p.id))
-        .bindTooltip(p.name, { direction: "top", offset: [0, -34] })
-        // 폴리곤과 동일하게 "상세 분석 보기" 팝업을 달아 핀에서도 프로필로 이동할 수 있게 한다.
-        .bindPopup(buildPopup(p.id), { closeButton: true, minWidth: 170 });
+        .bindTooltip(p.name, { direction: "top", offset: [0, -34] });
+      // 팝업은 폴리곤과 동일하게 선택 시(effect 3)에 최신 상권 정보로 바인딩한다.
+      // (여기서 미리 바인딩하면 activeName 등이 아직 null이라 빈 팝업이 뜬다.)
       pinMarkersRef.current.set(p.id, marker);
       return marker;
     });
