@@ -78,7 +78,8 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea }:
       budget: initialBudget ?? persisted?.budget ?? DEFAULT_BUDGET,
       area: initialArea ?? persisted?.area ?? DEFAULT_AREA,
       region: persisted?.region ?? "",
-      sort: (persisted?.sort ?? "rent") as SortKey,
+      // 기본 정렬은 점수 높은 순(저장된 선택이 있으면 그것을 우선).
+      sort: (persisted?.sort ?? "score") as SortKey,
     };
   });
 
