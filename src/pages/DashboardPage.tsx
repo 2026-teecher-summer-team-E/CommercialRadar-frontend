@@ -191,11 +191,11 @@ export default function DashboardPage() {
   const { districtCode } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  // 진입 경로에 따라 "뒤로가기" 목적지/문구를 결정한다.
+  // 뒤로가기 문구는 "이전 페이지로"로 통일하고, 목적지만 진입 경로에 따라 정한다.
   // (창업 시뮬레이터에서 넘어온 경우 시뮬레이터로 복귀, 그 외에는 기본값인 지역 분석으로.)
-  const navState = location.state as { from?: string; fromLabel?: string } | null;
+  const navState = location.state as { from?: string } | null;
   const backTo = navState?.from ?? "/";
-  const backLabel = navState?.fromLabel ? `${navState.fromLabel}로 돌아가기` : "지역 분석으로 돌아가기";
+  const backLabel = "이전 페이지로";
   const id = useMemo<number | null>(() => {
     const n = Number(districtCode);
     return districtCode && Number.isFinite(n) && n > 0 ? n : null;

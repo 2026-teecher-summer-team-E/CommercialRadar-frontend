@@ -62,7 +62,7 @@ export default function ReportDetailPage() {
   return (
     <div className={styles.page}>
       <Link to="/mypage" className={styles.back}>
-        ← 저장된 리포트
+        ← 이전 페이지로
       </Link>
       <div className={styles.card}>
         <div className={styles.head}>
