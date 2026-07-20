@@ -193,7 +193,7 @@ export default function DashboardPage() {
   const location = useLocation();
   // 뒤로가기 문구는 "이전 페이지로"로 통일하고, 목적지만 진입 경로에 따라 정한다.
   // (창업 시뮬레이터에서 넘어온 경우 시뮬레이터로 복귀, 그 외에는 기본값인 지역 분석으로.)
-  const navState = location.state as { from?: string } | null;
+  const navState = location.state as { from?: string; category?: string | null } | null;
   const backTo = navState?.from ?? "/";
   const backLabel = "이전 페이지로";
   const id = useMemo<number | null>(() => {
@@ -203,8 +203,8 @@ export default function DashboardPage() {
 
   const [modal, setModal] = useState<"heatmap" | null>(null);
   const [sim, setSim] = useState<"low" | "mid" | "high" | null>(null);
-  // 생존율 예측 업종 필터. null = 전체 상권(기존 기본 동작).
-  const [selCategory, setSelCategory] = useState<string | null>(null);
+  // 생존율 예측 업종 필터. null = 전체 상권. 시뮬레이터에서 업종을 고르고 넘어온 경우 그 업종으로 시작한다.
+  const [selCategory, setSelCategory] = useState<string | null>(navState?.category ?? null);
 
   // 상단 검색 바(지역 분석 페이지와 동일한 스타일) — 검색해서 다른 상권 상세로 바로 이동.
   const [query, setQuery] = useState("");
