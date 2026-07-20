@@ -409,6 +409,7 @@ export interface AffordableResponse {
   monthly_budget: number; // 원
   area_sqm: number;
   floor_type: string;
+  category_name?: string | null; // 업종 선택 시 점수 기준 업종(없으면 전 업종 평균)
   count: number; // 예산 이하 상권 총 개수(limit 적용 전)
   districts: AffordableDistrict[]; // 추정 월 임대료 오름차순
 }

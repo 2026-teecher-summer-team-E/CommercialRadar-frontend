@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { commercialApi } from "../../services/commercialApi";
 import { queryKeys, useAffordableDistricts, useDistrictSearch } from "../../hooks/queries";
 import { toScore } from "../map/mapData";
+import CategoryPicker from "../map/CategoryPicker";
+import { CATEGORY_GROUPS } from "../map/categoryList";
 import type { MapPin } from "../map/LeafletMap";
 import type {
   AffordableDistrict,
@@ -38,6 +40,7 @@ interface PersistedSearch {
   area: number;
   region: string;
   sort: SortKey;
+  category: string | null;
 }
 
 function loadPersistedSearch(): PersistedSearch | null {
@@ -53,6 +56,7 @@ function loadPersistedSearch(): PersistedSearch | null {
       area: p.area,
       region: typeof p.region === "string" ? p.region : "",
       sort: p.sort === "score" ? "score" : "rent",
+      category: typeof p.category === "string" ? p.category : null,
     };
   } catch {
     return null;
@@ -80,6 +84,7 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea }:
       region: persisted?.region ?? "",
       // 기본 정렬은 점수 높은 순(저장된 선택이 있으면 그것을 우선).
       sort: (persisted?.sort ?? "score") as SortKey,
+      category: persisted?.category ?? null,
     };
   });
 
@@ -95,14 +100,16 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea }:
     area: initial.area,
   });
   const [sort, setSort] = useState<SortKey>(initial.sort);
+  // 업종 선택: null이면 전 업종 평균 점수, 특정 업종이면 그 업종 점수로 정렬·필터.
+  const [category, setCategory] = useState<string | null>(initial.category);
   const [page, setPage] = useState(0);
   const [mapSelectedId, setMapSelectedId] = useState(0);
 
   // 검색 조건이 바뀔 때마다 저장 → /dashboard 등 다녀와도 복원된다. applied 가 null(입력 무효)이면 저장하지 않는다.
   useEffect(() => {
     if (!applied) return;
-    savePersistedSearch({ budget: applied.budget, area: applied.area, region: selectedRegion, sort });
-  }, [applied, selectedRegion, sort]);
+    savePersistedSearch({ budget: applied.budget, area: applied.area, region: selectedRegion, sort, category });
+  }, [applied, selectedRegion, sort, category]);
 
   const regionKeyword = regionQuery.trim();
   useEffect(() => {
@@ -144,6 +151,7 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea }:
       area_sqm: applied?.area ?? 33,
       floor_type: "전체",
       region: selectedRegion || undefined,
+      category_name: category || undefined,
       limit: 2_000,
     },
     applied != null,
@@ -314,6 +322,25 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea }:
         </div>
       </div>
 
+      {/* 업종 선택: 상권 점수는 업종마다 다르므로, 업종을 고르면 그 업종 점수 기준으로 정렬하고 해당 업종이 있는 상권만 보여준다. */}
+      <div className={styles.categoryRow}>
+        <CategoryPicker
+          groups={CATEGORY_GROUPS}
+          value={category}
+          onChange={(v) => {
+            setCategory(v);
+            setPage(0);
+          }}
+          label="업종"
+          placeholder="전체 업종"
+        />
+        <span className={styles.categoryHint}>
+          {category
+            ? `‘${category}’ 업종 점수 기준 · 해당 업종이 있는 상권만 표시`
+            : "업종을 고르면 그 업종 점수 기준으로 상권을 정렬합니다"}
+        </span>
+      </div>
+
       {/* 결과 */}
       {query.isLoading ? (
         <PageLoader fullScreen={false} />
@@ -323,9 +350,11 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea }:
         <div className={styles.empty}>월 임대료 예산과 점포 면적을 입력해 주세요.</div>
       ) : districts.length === 0 ? (
         <div className={styles.empty}>
-          {selectedRegion
-            ? `‘${selectedRegion}’ 지역에는 이 예산으로 창업 가능한 상권이 없어요.`
-            : "이 예산으로 창업 가능한 상권이 없어요. 예산을 올려보세요."}
+          {category
+            ? `이 예산${selectedRegion ? ` · ‘${selectedRegion}’ 지역` : ""}으로 ‘${category}’ 업종을 낼 수 있는 상권이 없어요. 예산을 올리거나 업종을 바꿔보세요.`
+            : selectedRegion
+              ? `‘${selectedRegion}’ 지역에는 이 예산으로 창업 가능한 상권이 없어요.`
+              : "이 예산으로 창업 가능한 상권이 없어요. 예산을 올려보세요."}
         </div>
       ) : (
         <div className={styles.resultsGrid}>
