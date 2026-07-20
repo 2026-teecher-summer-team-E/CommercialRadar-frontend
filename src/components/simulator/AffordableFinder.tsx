@@ -18,8 +18,8 @@ import styles from "./AffordableFinder.module.css";
 const LeafletMap = lazy(() => import("../map/LeafletMap"));
 
 interface Props {
-  /** 리스트에서 상권을 고르면 시뮬레이션으로 넘길 콜백. */
-  onPick: (d: { id: number; name: string }) => void;
+  /** 리스트에서 상권을 고르면 시뮬레이션으로 넘길 콜백. 선택 중인 업종도 함께 넘겨 상세 분석이 같은 업종으로 열리게 한다. */
+  onPick: (d: { id: number; name: string; category: string | null }) => void;
   /** 랜딩 검색 등에서 넘어온 초기 월 임대료 예산(원). 없으면 기본값. */
   initialBudget?: number;
   /** 랜딩 검색 등에서 넘어온 초기 점포 면적(㎡). 없으면 기본값. */
@@ -180,6 +180,11 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea }:
   const selectedPoint = useMemo(
     () => geo.find((point) => point.id === mapSelectedId) ?? null,
     [geo, mapSelectedId],
+  );
+  // 지도 패널 점수는 geo(전 업종 평균)가 아니라, 목록과 같은 업종별 점수를 써야 한다.
+  const selectedDistrict = useMemo(
+    () => districts.find((d) => d.district_id === mapSelectedId) ?? null,
+    [districts, mapSelectedId],
   );
 
   // 검색 결과(현재 페이지)를 지도에 핀으로 표시한다. 결과에는 좌표가 없어 geo(중심좌표)와 id로 조인한다.
@@ -465,14 +470,14 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea }:
                 pins={resultPins}
                 selectedId={mapSelectedId}
                 guFilter="전체"
-                activeName={selectedPoint?.district_name ?? null}
-                activeType={selectedPoint?.type_name ?? null}
-                activeScore={toScore(selectedPoint?.district_score)}
+                activeName={selectedDistrict?.district_name ?? selectedPoint?.district_name ?? null}
+                activeType={selectedDistrict?.type_name ?? selectedPoint?.type_name ?? null}
+                activeScore={toScore(selectedDistrict?.district_score ?? selectedPoint?.district_score)}
                 flyToSelectionOnMount={false}
                 onSelect={setMapSelectedId}
                 onOpenProfile={(id) => {
                   const point = geo.find((item) => item.id === id);
-                  onPick({ id, name: point?.district_name ?? "" });
+                  onPick({ id, name: point?.district_name ?? "", category });
                 }}
               />
             </Suspense>

@@ -28,7 +28,8 @@ export default function SimulatorPage() {
         onPick={(d) =>
           navigate(`/dashboard/${d.id}`, {
             // 상세분석에서 "이전 페이지로" 시 시뮬레이터로 복귀시키기 위해 진입 경로를 전달.
-            state: { from: "/simulator" },
+            // category도 함께 넘겨 시뮬레이터에서 보던 업종 점수와 상세 분석의 업종 점수가 일치하게 한다.
+            state: { from: "/simulator", category: d.category },
           })
         }
         initialBudget={initialBudget}
