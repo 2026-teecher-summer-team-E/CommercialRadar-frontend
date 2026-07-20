@@ -54,7 +54,7 @@ export default function FilterDropdown({ label, value, options, onChange, ariaLa
       >
         {isDefault ? label : value}
         <span className={styles.caret} aria-hidden>
-          {open ? "▴" : "▾"}
+          {open ? "▲" : "▼"}
         </span>
       </button>
       {open && (

@@ -1,7 +1,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 14px;
   /* 열 너비를 내용(정렬로 바뀌는 상권명)에 의존하지 않게 고정 → 정렬 토글 시 열이 흔들리지 않음. */
   table-layout: fixed;
 }
@@ -60,7 +60,7 @@
   display: inline-block;
   width: 12px;
   text-align: center;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-faint);
 }
 /* 활성 정렬 열 헤더: 굵기·크기 변화 없이(리플로우 방지) 진한 텍스트색으로만 강조. */
@@ -82,17 +82,28 @@
   cursor: pointer;
   transition: background 0.12s ease;
 }
+/* 4위 이하 기본 hover: 순위색과 무관한 중립 회색, 2위(rowSilver) hover와 비슷한 옅기로. */
 .row:hover {
-  background: var(--color-primary-light);
+  background: var(--color-bg);
 }
 .rowGold {
-  background: #fff6da;
+  background: #fffaea;
+}
+/* 메달 행은 기본 hover(회색)와 배경색이 어긋나 각자 톤을 옅게 짙게 만든 전용 hover를 준다. */
+.rowGold:hover {
+  background: #fdf3d6;
 }
 .rowSilver {
-  background: #eef1f4;
+  background: #f5f7f9;
+}
+.rowSilver:hover {
+  background: #e7ebee;
 }
 .rowBronze {
-  background: #fbe9dd;
+  background: #fdf1e8;
+}
+.rowBronze:hover {
+  background: #fbe9da;
 }
 .table td {
   padding: 14px;
@@ -129,7 +140,7 @@
   padding: 0 8px;
   border-radius: var(--radius-pill);
   font-family: var(--font-num);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   background: var(--color-chip);
   color: var(--color-muted);
@@ -139,12 +150,14 @@
   color: var(--color-gold);
 }
 .badgeSilver {
-  background: var(--color-silver-bg);
-  color: var(--color-silver);
+  /* 은메달다운 파란 계열 + 기존(--color-silver) 대비 부족 문제를 함께 해결. */
+  background: #e7ecf3;
+  color: #46586e;
 }
 .badgeBronze {
-  background: var(--color-orange-bg);
-  color: var(--color-orange);
+  /* 동메달은 주황(--color-orange, 폐업위험 '중'과 동일 톤)이 아니라 붉은 구리 계열로 구분. */
+  background: #f7e2d6;
+  color: #b3502a;
 }
 
 /* 폐업 위험 필 */
@@ -153,7 +166,7 @@
   align-items: center;
   padding: 3px 12px;
   border-radius: var(--radius-pill);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
 }
 .riskLow {
