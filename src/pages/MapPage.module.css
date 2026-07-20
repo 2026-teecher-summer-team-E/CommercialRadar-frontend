@@ -107,6 +107,26 @@
   gap: 4px;
   min-width: 0;
 }
+.closeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  margin-left: auto;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-faint);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.closeBtn:hover {
+  background: var(--color-chip);
+  color: var(--color-text);
+}
 .locationTitle {
   display: block;
   overflow: hidden;

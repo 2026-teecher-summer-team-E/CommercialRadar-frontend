@@ -19,7 +19,7 @@ export interface MapPin {
 interface LeafletMapProps {
   points: DistrictGeo[];
   geojson: GeoJSON.FeatureCollection | null;
-  selectedId: number;
+  selectedId: number | null;
   /** 순위 핑 마커(창업 시뮬레이터 결과 등). 값이 바뀌면 핑 전체가 보이도록 카메라를 맞춘다. */
   pins?: MapPin[];
   guFilter: string;
@@ -133,7 +133,7 @@ export default function LeafletMap({
   const guFilterMountedRef = useRef(false);
 
   // 선택 상권 팝업 DOM(이름/유형/점수 + 프로필 버튼).
-  const buildPopup = () => {
+  const buildPopup = (id: number) => {
     const el = document.createElement("div");
     const name = document.createElement("div");
     name.className = styles.popupName;
@@ -149,7 +149,7 @@ export default function LeafletMap({
     btn.type = "button";
     btn.className = styles.popupBtn;
     btn.textContent = "상세 분석 보기";
-    btn.addEventListener("click", () => onOpenRef.current(selectedId));
+    btn.addEventListener("click", () => onOpenRef.current(id));
     el.appendChild(btn);
     return el;
   };
@@ -254,10 +254,24 @@ export default function LeafletMap({
     layer.addTo(map);
   }, [geojson]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 3) 선택 강조 + 이동 + 팝업
+  // 3) 선택 강조 + 이동 + 팝업 (selectedId가 null이면 선택 해제 → 서울 전역 뷰로 줌아웃)
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
+
+    if (selectedId == null) {
+      polysRef.current.forEach((lyr) => {
+        const c = scoreColor(
+          (lyr as L.Path & { feature?: GeoJSON.Feature }).feature?.properties?.district_score as number | null,
+        );
+        lyr.setStyle({ weight: 1, opacity: 0.65, fillColor: c, fillOpacity: 0.22, color: c });
+        lyr.closePopup();
+      });
+      flownRef.current = null;
+      markProgrammaticMove(map);
+      map.flyTo(SEOUL_CENTER, 12, { duration: 0.8 });
+      return;
+    }
 
     const isNewSelection = flownRef.current !== selectedId;
 
@@ -278,7 +292,7 @@ export default function LeafletMap({
         markProgrammaticMove(map);
         map.flyToBounds(bounds, { padding: [80, 80], maxZoom: 17, duration: 0.8 });
       }
-      sel.bindPopup(buildPopup(), { closeButton: true, minWidth: 170 });
+      sel.bindPopup(buildPopup(selectedId), { closeButton: true, minWidth: 170 });
       // 팝업 자동 오픈은 카메라 이동(isNewSelection) 여부와 별개다: 마운트 시 카메라를 조용히
       // 유지하는 경우(흔들림 방지)에도 선택된 상권의 팝업만큼은 처음 한 번은 자동으로 띄운다.
       if (isNewSelection || wasOpen || !initialPopupShownRef.current) sel.openPopup();
