@@ -339,16 +339,6 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea }:
             <div className={styles.sortToggle}>
               <button
                 type="button"
-                className={sort === "rent" ? styles.sortActive : styles.sortBtn}
-                onClick={() => {
-                  setSort("rent");
-                  setPage(0);
-                }}
-              >
-                저렴한 순
-              </button>
-              <button
-                type="button"
                 className={sort === "score" ? styles.sortActive : styles.sortBtn}
                 onClick={() => {
                   setSort("score");
@@ -356,6 +346,16 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea }:
                 }}
               >
                 점수 높은 순
+              </button>
+              <button
+                type="button"
+                className={sort === "rent" ? styles.sortActive : styles.sortBtn}
+                onClick={() => {
+                  setSort("rent");
+                  setPage(0);
+                }}
+              >
+                저렴한 순
               </button>
             </div>
           </div>
