@@ -278,6 +278,22 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea }:
         </div>
 
         <div className={styles.controls}>
+          <div className={`${styles.field} ${styles.categoryField}`}>
+            <span className={styles.label}>업종</span>
+            <CategoryPicker
+              groups={CATEGORY_GROUPS}
+              value={category}
+              onChange={(v) => {
+                setCategory(v);
+                setPage(0);
+              }}
+              label="업종"
+              placeholder="전체 업종"
+              hideLabel
+            />
+            {category && <span className={styles.hint}>{`'${category}' 업종 점수 기준`}</span>}
+          </div>
+
           <div className={styles.field}>
             <span className={styles.label}>최대 월 임대료</span>
             <div className={styles.budgetInputWrap}>
@@ -320,25 +336,6 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea }:
           </div>
 
         </div>
-      </div>
-
-      {/* 업종 선택: 상권 점수는 업종마다 다르므로, 업종을 고르면 그 업종 점수 기준으로 정렬하고 해당 업종이 있는 상권만 보여준다. */}
-      <div className={styles.categoryRow}>
-        <CategoryPicker
-          groups={CATEGORY_GROUPS}
-          value={category}
-          onChange={(v) => {
-            setCategory(v);
-            setPage(0);
-          }}
-          label="업종"
-          placeholder="전체 업종"
-        />
-        <span className={styles.categoryHint}>
-          {category
-            ? `‘${category}’ 업종 점수 기준 · 해당 업종이 있는 상권만 표시`
-            : "업종을 고르면 그 업종 점수 기준으로 상권을 정렬합니다"}
-        </span>
       </div>
 
       {/* 결과 */}

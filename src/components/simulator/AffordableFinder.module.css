@@ -125,20 +125,14 @@
   flex-direction: column;
   gap: 6px;
 }
+/* 업종 선택 바: 임대료/면적 필드보다 작게, 같은 줄 맨 왼쪽에 배치. */
+.categoryField {
+  flex: none;
+  width: 168px;
+}
 .label {
   font-size: 12px;
   font-weight: 700;
-  color: var(--color-muted);
-}
-.categoryRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin: 14px 0 2px;
-}
-.categoryHint {
-  font-size: 12px;
   color: var(--color-muted);
 }
 .budgetInputWrap {

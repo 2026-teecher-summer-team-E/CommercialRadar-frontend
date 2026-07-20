@@ -118,6 +118,12 @@
 .categoryTrigger:hover {
   background: var(--color-chip);
 }
+/* hideLabel 모드: 라벨/구분선 없이 트리거만 단독 필드로 쓸 때, 다른 폼 필드 입력창과 높이·모서리를 맞춘다. */
+.categoryTriggerBoxed {
+  height: 40px;
+  box-sizing: border-box;
+  border-radius: var(--radius-md, 10px);
+}
 /* 선택값이 '전체'가 아닐 때만 트리거 버튼에 브랜드 컬러 강조(라벨 영역은 절대 물들지 않음). */
 .categoryTriggerActive {
   background: var(--color-primary-light);
@@ -156,11 +162,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 700;
   color: var(--color-text);
 }
 .categoryTriggerActive .categoryValueMain {
   color: var(--color-primary);
+  font-weight: 700;
 }
 .categoryCaret {
   flex: none;

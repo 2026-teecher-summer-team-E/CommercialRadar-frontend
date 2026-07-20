@@ -9,6 +9,8 @@ interface CategoryPickerProps {
   placeholder?: string;
   /** 트리거 버튼 왼쪽에 고정 표시할 정적 라벨("업종" + 구분선은 버튼 바깥에 위치). */
   label: string;
+  /** true면 내부 라벨/구분선을 숨기고 트리거 버튼만 꽉 채워 표시한다(외부에서 별도 라벨을 두는 폼 필드용). */
+  hideLabel?: boolean;
 }
 
 /** 대분류 → 소분류 드릴다운 업종 선택기. 라벨/구분선은 정적 영역, 선택값 버튼만 활성 강조·드롭다운 트리거. */
@@ -18,6 +20,7 @@ export default function CategoryPicker({
   onChange,
   placeholder = "전체",
   label,
+  hideLabel = false,
 }: CategoryPickerProps) {
   const [open, setOpen] = useState(false);
   const [activeGroupName, setActiveGroupName] = useState<string | null>(null);
@@ -44,12 +47,16 @@ export default function CategoryPicker({
 
   return (
     <div className={styles.categoryPicker}>
-      <span className={styles.categoryPickerLabel}>{label}</span>
-      <span className={styles.categoryPickerDivider} aria-hidden />
+      {!hideLabel && (
+        <>
+          <span className={styles.categoryPickerLabel}>{label}</span>
+          <span className={styles.categoryPickerDivider} aria-hidden />
+        </>
+      )}
       <div className={styles.categoryTriggerWrap} ref={rootRef}>
         <button
           type="button"
-          className={`${styles.categoryTrigger} ${isDefault ? "" : styles.categoryTriggerActive} ${open ? styles.categoryTriggerOpen : ""}`}
+          className={`${styles.categoryTrigger} ${hideLabel ? styles.categoryTriggerBoxed : ""} ${isDefault ? "" : styles.categoryTriggerActive} ${open ? styles.categoryTriggerOpen : ""}`}
           onClick={toggle}
         >
           <span className={styles.categoryValue}>
