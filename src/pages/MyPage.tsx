@@ -5,6 +5,7 @@ import type {
   UserStats,
   ReportListResponse,
   InterestDistrict,
+  ReportCreateBody,
 } from "../types";
 import { reportsApi } from "../services/reportsApi";
 import { interestApi } from "../services/interestApi";
@@ -46,6 +47,9 @@ export default function MyPage() {
   const [tab, setTab] = useState<TabKey>("interests");
   const [busyId, setBusyId] = useState<number | null>(null);
   const [busyInterestId, setBusyInterestId] = useState<number | null>(null);
+  // 관심 상권 탭에서 "리포트로 저장"할 대상 선택 상태.
+  const [selectedInterestIds, setSelectedInterestIds] = useState<Set<number>>(new Set());
+  const [savingReports, setSavingReports] = useState(false);
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const cancelBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -74,9 +78,18 @@ export default function MyPage() {
     { enabled: tab === "interests" },
   );
   const districtInfo = useMemo(() => {
-    const map = new Map<number, { name: string | null; type: string | null }>();
+    const map = new Map<
+      number,
+      { name: string | null; type: string | null; district_score: number | null; survival_rate: number | null; avg_population: number | null }
+    >();
     for (const it of rankingQuery.data ?? []) {
-      map.set(it.id, { name: it.district_name, type: it.type_name });
+      map.set(it.id, {
+        name: it.district_name,
+        type: it.type_name,
+        district_score: it.district_score,
+        survival_rate: it.survival_rate,
+        avg_population: it.avg_population,
+      });
     }
     return map;
   }, [rankingQuery.data]);
@@ -172,12 +185,85 @@ export default function MyPage() {
           s ? { ...s, interest_districts: Math.max(0, s.interest_districts - 1) } : s,
         );
         showToast("즐겨찾기에서 해제했어요.");
+        setSelectedInterestIds((prev) => {
+          if (!prev.has(id)) return prev;
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
       })
       .catch(() => {
         queryClient.setQueryData(queryKeys.interests, prev); // 롤백
         showToast("해제에 실패했어요. 잠시 후 다시 시도해 주세요.");
       })
       .finally(() => setBusyInterestId(null));
+  };
+
+  const toggleSelectInterest = (id: number) => {
+    setSelectedInterestIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const allInterestsSelected = interests.length > 0 && interests.every((it) => selectedInterestIds.has(it.id));
+  const toggleSelectAllInterests = () => {
+    setSelectedInterestIds(allInterestsSelected ? new Set() : new Set(interests.map((it) => it.id)));
+  };
+
+  // 선택한 관심 상권들을 리포트로 저장. 상권별 스코어/생존율/유동인구는 랭킹 캐시(districtInfo)로 채운다.
+  const handleSaveAsReports = () => {
+    const targets = interests.filter((it) => selectedInterestIds.has(it.id));
+    if (targets.length === 0) return;
+
+    setSavingReports(true);
+    Promise.allSettled(
+      targets.map((it) => {
+        const info = districtInfo.get(it.commercial_district_id);
+        const districtName = it.district_name ?? info?.name ?? `상권 #${it.commercial_district_id}`;
+        const body: ReportCreateBody = {
+          title: districtName,
+          district_name: districtName,
+          category_name: it.category_name ?? info?.type ?? "전체",
+          memo: it.memo ?? null,
+          content: {
+            district_score: info?.district_score ?? null,
+            survival_rate: info?.survival_rate ?? null,
+            avg_population: info?.avg_population ?? null,
+          },
+        };
+        return reportsApi.create(body);
+      }),
+    ).then((results) => {
+      const succeededIds = targets
+        .filter((_, i) => results[i].status === "fulfilled")
+        .map((it) => it.id);
+      const failed = results.length - succeededIds.length;
+
+      if (succeededIds.length > 0) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.myReports(REPORTS_PARAMS) });
+        queryClient.setQueryData<UserStats>(queryKeys.myStats, (s) =>
+          s ? { ...s, saved_reports: s.saved_reports + succeededIds.length } : s,
+        );
+        // 성공한 항목만 선택 해제. 실패한 항목은 재시도할 수 있도록 선택 유지.
+        setSelectedInterestIds((prev) => {
+          const next = new Set(prev);
+          for (const id of succeededIds) next.delete(id);
+          return next;
+        });
+      }
+
+      if (failed === 0) {
+        showToast(`${succeededIds.length}개 상권을 리포트로 저장했어요.`);
+      } else if (succeededIds.length === 0) {
+        showToast("리포트 저장에 실패했어요. 잠시 후 다시 시도해 주세요.");
+      } else {
+        showToast(`${succeededIds.length}개 저장, ${failed}개 실패했어요.`);
+      }
+      setSavingReports(false);
+    });
   };
 
   const handleRemove = (id: number) => {
@@ -339,18 +425,40 @@ export default function MyPage() {
           (!interestsLoaded ? (
             <div className={styles.state}>관심 상권 목록을 가져오는 중…</div>
           ) : interests.length > 0 ? (
-            <ul className={listStyles.list}>
-              {interests.map((item) => (
-                <InterestCard
-                  key={item.id}
-                  item={item}
-                  info={districtInfo.get(item.commercial_district_id)}
-                  onSaveMemo={handleMemoSave}
-                  onRemove={handleRemoveInterest}
-                  busy={busyInterestId === item.id}
-                />
-              ))}
-            </ul>
+            <>
+              <div className={styles.selectToolbar}>
+                <div className={styles.selectToolbarLeft}>
+                  <button type="button" className={styles.selectAllBtn} onClick={toggleSelectAllInterests}>
+                    {allInterestsSelected ? "전체 해제" : "전체 선택"}
+                  </button>
+                  <span className={styles.selectCount}>
+                    {selectedInterestIds.size > 0 ? `${selectedInterestIds.size}개 선택됨` : "저장할 상권을 선택하세요"}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className={listStyles.primaryBtn}
+                  disabled={selectedInterestIds.size === 0 || savingReports}
+                  onClick={handleSaveAsReports}
+                >
+                  {savingReports ? "저장 중…" : "리포트로 저장"}
+                </button>
+              </div>
+              <ul className={listStyles.list}>
+                {interests.map((item) => (
+                  <InterestCard
+                    key={item.id}
+                    item={item}
+                    info={districtInfo.get(item.commercial_district_id)}
+                    onSaveMemo={handleMemoSave}
+                    onRemove={handleRemoveInterest}
+                    busy={busyInterestId === item.id}
+                    selected={selectedInterestIds.has(item.id)}
+                    onToggleSelect={toggleSelectInterest}
+                  />
+                ))}
+              </ul>
+            </>
           ) : (
             <EmptyState
               title="아직 찜한 상권이 없어요"

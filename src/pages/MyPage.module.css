@@ -290,3 +290,37 @@
 .tabContent {
   min-height: 120px;
 }
+
+/* 관심 상권 탭: 리포트로 저장할 상권 선택 툴바 */
+.selectToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.selectToolbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.selectAllBtn {
+  border: none;
+  background: none;
+  padding: 4px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-body);
+  cursor: pointer;
+}
+.selectAllBtn:hover {
+  color: var(--color-primary);
+}
+.selectCount {
+  font-size: 13px;
+  color: var(--color-muted);
+}
