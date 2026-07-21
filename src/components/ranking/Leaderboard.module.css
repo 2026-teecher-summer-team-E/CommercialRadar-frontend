@@ -186,17 +186,21 @@
   color: var(--color-muted);
 }
 
-.survival {
-  font-weight: 700;
-  color: var(--color-text);
+/* 기본 상태: 정렬 기준이 아닌 지표는 볼드 없이, 옅은 회갈색(--color-text-body) 대신
+   기본 텍스트색(--color-text)보다 살짝 더 어둡게(검정 쪽으로 20%) 통일한다.
+   .numCell과 묶은 복합 선택자로 써야 한다 — 홑 클래스 선택자는 특이도가 `.table td`
+   (클래스+태그 결합, 특이도가 더 높음)보다 낮아 color가 항상 묻혀버렸다(실제로 이전
+   .survival/.score도 같은 이유로 font-weight만 먹고 color는 한 번도 안 먹었었다). */
+.numCell.metricValue {
+  font-weight: 400;
+  color: color-mix(in srgb, var(--color-text) 80%, black);
 }
-.population {
-  font-weight: 700;
-}
-.score {
+/* 현재 정렬 기준 열만 볼드 + 브랜드 컬러로 강조한다. */
+.numCell.metricActive {
   font-weight: 700;
   color: var(--color-primary);
 }
-.scoreEmpty {
+.numCell.scoreEmpty {
+  font-weight: 400;
   color: var(--color-faint);
 }

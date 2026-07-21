@@ -78,6 +78,7 @@ export function useDistrictRanking(
     scope?: "seoul" | "gu" | "type";
     gu_name?: string;
     type_name?: string;
+    category_name?: string;
     sort?: "score" | "survival" | "population";
     limit?: number;
     offset?: number;

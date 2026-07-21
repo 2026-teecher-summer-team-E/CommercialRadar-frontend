@@ -130,6 +130,35 @@
   border-color: var(--color-primary-soft);
   color: var(--color-primary);
 }
+/* pill 모드: FilterDropdown(랭킹 페이지 자치구/상권유형 버튼)과 나란히 쓸 때 같은 알약
+   스타일·여백으로 통일한다. width:100%로 늘어나던 것도 내용 크기로 되돌린다.
+   전부 원본 클래스와 묶은 복합 선택자(.categoryPicker.categoryPickerPill 등)로 써서,
+   파일 내 선언 순서와 무관하게(= 나중에 base 규칙이 뒤에 추가돼도) 항상 이긴다. */
+.categoryPicker.categoryPickerPill {
+  width: auto;
+  flex: none;
+}
+.categoryTrigger.categoryTriggerPill {
+  width: auto;
+  padding: 10px 16px;
+  border-radius: var(--radius-pill);
+  font-size: 15px;
+}
+.categoryTrigger.categoryTriggerPill:hover {
+  background: var(--color-chip);
+  border-color: var(--color-border-strong);
+}
+.categoryTriggerPill.categoryTriggerActive {
+  border-color: var(--color-primary-light);
+}
+.categoryTriggerPill.categoryTriggerOpen {
+  background: transparent;
+  border-color: var(--color-border-strong);
+}
+.categoryCaret.categoryCaretPill {
+  width: 10px;
+  font-size: 9px;
+}
 .categoryTriggerOpen {
   background: var(--color-chip);
 }

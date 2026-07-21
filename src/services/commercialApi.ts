@@ -65,11 +65,13 @@ export const commercialApi = {
       { params },
     ),
 
-  /** 상권 종합 랭킹. scope=seoul|gu|type, sort=score|survival|population. 랭킹 페이지용. */
+  /** 상권 종합 랭킹. scope=seoul|gu|type, sort=score|survival|population. 랭킹 페이지용.
+   * category_name을 주면 전 업종 평균 대신 그 업종 점수로 재정렬(해당 업종 없는 상권은 제외). */
   ranking: (params?: {
     scope?: "seoul" | "gu" | "type";
     gu_name?: string;
     type_name?: string;
+    category_name?: string;
     sort?: "score" | "survival" | "population";
     limit?: number;
     offset?: number;

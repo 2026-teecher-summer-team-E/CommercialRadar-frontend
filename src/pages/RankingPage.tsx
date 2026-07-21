@@ -3,12 +3,14 @@ import { useDistrictRanking } from "../hooks/queries";
 import type { DistrictCompareItem, DistrictRankingItem } from "../types";
 import Leaderboard, { type SortableKey, type SortState } from "../components/ranking/Leaderboard";
 import FilterDropdown from "../components/common/FilterDropdown";
+import CategoryPicker from "../components/map/CategoryPicker";
+import { CATEGORY_GROUPS } from "../components/map/categoryList";
 import styles from "./RankingPage.module.css";
 
 /** 필터 적용을 위해 전 상권을 받아온다(약 1650개). 렌더는 '더보기'로 점진 노출. */
 const FETCH_LIMIT = 2000;
 /** '더보기' 한 번에 추가로 노출할 상권 수. */
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 15;
 
 /**
  * 랭킹 API 항목을 리더보드(DistrictCompareItem) 형태로 변환.
@@ -56,12 +58,14 @@ export default function RankingPage() {
   const [sort, setSort] = useState<SortState>({ key: "score", direction: "desc" });
   const [gu, setGu] = useState("");
   const [type, setType] = useState("");
+  // 업종 선택: null이면 전 업종 평균 점수, 특정 업종이면 그 업종 점수로 랭킹 자체가 재정렬된다.
+  const [category, setCategory] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   // 필터가 바뀌면 다시 처음 PAGE_SIZE개부터 보여준다.
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [gu, type]);
+  }, [gu, type, category]);
 
   const handleSort = (key: SortableKey) => {
     setSort((prev) =>
@@ -69,11 +73,12 @@ export default function RankingPage() {
     );
   };
 
-  // 서울 전 상권을 종합점수 순으로 받아 클라이언트에서 자치구·상권유형 필터를 적용한다.
+  // 서울 전 상권을 종합점수(또는 선택한 업종 점수) 순으로 받아 클라이언트에서 자치구·상권유형 필터를 적용한다.
   const { data: rankingItems = [], isPending: loading, isError: error } = useDistrictRanking({
     scope: "seoul",
     sort: "score",
     limit: FETCH_LIMIT,
+    category_name: category ?? undefined,
   });
 
   const guOptions = useMemo(() => distinctSorted(rankingItems.map((it) => it.gu_name)), [rankingItems]);
@@ -105,6 +110,15 @@ export default function RankingPage() {
           <div className={styles.filters}>
             <FilterDropdown label="자치구" value={gu} options={guOptions} onChange={setGu} ariaLabel="자치구 필터" />
             <FilterDropdown label="상권유형" value={type} options={typeOptions} onChange={setType} ariaLabel="상권유형 필터" />
+            <CategoryPicker
+              groups={CATEGORY_GROUPS}
+              value={category}
+              onChange={setCategory}
+              label="업종"
+              placeholder="업종"
+              hideLabel
+              pill
+            />
           </div>
           <span className={styles.count}>
             {visible.length}/{sorted.length}개 표시
@@ -125,7 +139,12 @@ export default function RankingPage() {
       ) : (
         <>
           <div className={styles.card}>
-            <Leaderboard districts={visible} sort={sort} onSort={handleSort} />
+            <Leaderboard
+              districts={visible}
+              sort={sort}
+              onSort={handleSort}
+              scoreLabel={category ? `'${category}' 점수` : "종합 점수"}
+            />
           </div>
           {remaining > 0 && (
             <button
