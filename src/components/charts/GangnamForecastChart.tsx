@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   Area,
   CartesianGrid,
@@ -15,7 +15,8 @@ import type { TimeseriesPoint } from "../../types";
 import { fmtEok } from "../dashboard/format";
 import styles from "./GangnamForecastChart.module.css";
 
-/** 툴팁 카드의 대략적인 폭(px) 추정치. 우측 경계 근접 판정에만 쓰이므로 정확할 필요는 없다. */
+/** 실제 폭 측정 전(첫 프레임)에만 쓰는 대략적인 폭(px) 추정치. 실제보다 넉넉해 첫 프레임에
+ * 살짝 왼쪽으로 치우칠 수 있지만, useLayoutEffect가 페인트 전에 실측값으로 보정한다. */
 const TOOLTIP_WIDTH_ESTIMATE = 230;
 
 const FORECAST_COLORS = {
@@ -80,6 +81,16 @@ function ForecastTooltip({
   formatValue: (v: number) => string;
   chartWidth: number;
 }) {
+  const nodeRef = useRef<HTMLDivElement>(null);
+  const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
+  // 페인트 전에 실제 렌더링 폭을 측정해 추정치(TOOLTIP_WIDTH_ESTIMATE)를 보정한다.
+  // 짧은 툴팁(예: 매출/임대료, 2~3줄)은 추정치(230)보다 훨씬 좁아서, 추정치로만 계산하면
+  // 우측 경계(4분기 근처) 클램프가 과하게 걸려 커서에서 멀리 떨어져 보였다.
+  useLayoutEffect(() => {
+    const w = nodeRef.current?.getBoundingClientRect().width;
+    if (w && Math.abs(w - (measuredWidth ?? 0)) > 0.5) setMeasuredWidth(w);
+  });
+
   if (!active || !payload || payload.length === 0) return null;
   const byKey: Record<string, unknown> = {};
   for (const p of payload) byKey[p.dataKey] = p.value;
@@ -96,15 +107,17 @@ function ForecastTooltip({
 
   // 툴팁 좌상단은 기본적으로 coordinate 지점(offset=0)에 놓인다. 가로 중앙을 커서에
   // 맞추려면 -폭/2 만큼 밀되, 차트 좌우 경계를 벗어나지 않도록 clamp한다.
+  const tooltipWidth = measuredWidth ?? TOOLTIP_WIDTH_ESTIMATE;
   const cursorX = coordinate?.x ?? 0;
-  const centerShift = -TOOLTIP_WIDTH_ESTIMATE / 2;
+  const centerShift = -tooltipWidth / 2;
   const shiftX =
     chartWidth > 0
-      ? Math.min(Math.max(centerShift, -cursorX), chartWidth - TOOLTIP_WIDTH_ESTIMATE - cursorX)
+      ? Math.min(Math.max(centerShift, -cursorX), chartWidth - tooltipWidth - cursorX)
       : centerShift;
 
   return (
     <div
+      ref={nodeRef}
       style={{
         background: FORECAST_COLORS.surface,
         border: `1px solid ${FORECAST_COLORS.border}`,
