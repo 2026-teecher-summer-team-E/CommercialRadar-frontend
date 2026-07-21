@@ -278,8 +278,11 @@
 .resultCount strong {
   color: var(--color-text);
 }
+/* 페이지 배경(--color-bg)과 구분되도록 트랙 자체에 칩 색을 준다(마이페이지 세그먼트 탭과 같은 톤).
+   선택 안 된 버튼도 이 트랙 위에 놓여 배경과 섞이지 않고 "버튼 묶음"으로 보인다. */
 .sortToggle {
   display: inline-flex;
+  background: var(--color-chip);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
   overflow: hidden;
@@ -292,6 +295,9 @@
   font-size: 12px;
   cursor: pointer;
   color: var(--color-muted);
+}
+.sortBtn:hover {
+  background: var(--color-border);
 }
 .sortActive {
   background: var(--color-primary);
