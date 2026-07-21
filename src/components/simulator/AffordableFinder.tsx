@@ -31,6 +31,8 @@ interface Props {
 const DEFAULT_BUDGET = 3_000_000;
 const DEFAULT_AREA = 33;
 const BUDGET_PRESETS = [2_000_000, 3_000_000, 5_000_000];
+const SCORE_PRESETS = [40, 50, 60];
+const POPULATION_PRESETS = [500_000, 1_000_000, 2_000_000];
 const PAGE_SIZE = 10;
 const EMPTY_GEO: DistrictGeo[] = [];
 type SortKey = "rent" | "score";
@@ -104,6 +106,9 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea, i
   const [sort, setSort] = useState<SortKey>(initial.sort);
   // 업종 선택: null이면 전 업종 평균 점수, 특정 업종이면 그 업종 점수로 정렬·필터.
   const [category, setCategory] = useState<string | null>(initial.category);
+  // 품질 기준(선택): 비어 있으면 필터 없음. 서버 응답에 이미 있는 값만 쓰므로 클라이언트에서만 걸러낸다.
+  const [minScoreInput, setMinScoreInput] = useState("");
+  const [minPopulationInput, setMinPopulationInput] = useState("");
   const [page, setPage] = useState(0);
   const [mapSelectedId, setMapSelectedId] = useState(0);
 
@@ -159,13 +164,25 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea, i
     applied != null,
   );
 
+  const minScore = minScoreInput.trim() === "" ? null : Number(minScoreInput);
+  const minPopulation = minPopulationInput.trim() === "" ? null : Number(minPopulationInput);
+  const qualityFilterActive = minScore != null || minPopulation != null;
+
+  // 품질 기준(선택)이 바뀌면 페이지를 처음으로.
+  useEffect(() => {
+    setPage(0);
+  }, [minScore, minPopulation]);
+
   const districts = useMemo(() => {
-    const list = query.data?.districts ?? [];
+    let list = query.data?.districts ?? [];
+    // 기준을 만족하는지 알 수 없는(지표 없음) 상권은 최소 기준 적용 시 제외한다.
+    if (minScore != null) list = list.filter((d) => d.district_score != null && d.district_score >= minScore);
+    if (minPopulation != null) list = list.filter((d) => d.avg_population != null && d.avg_population >= minPopulation);
     if (sort === "score") {
       return [...list].sort((a, b) => (b.district_score ?? -1) - (a.district_score ?? -1));
     }
     return list; // 서버가 이미 임대료 오름차순
-  }, [query.data, sort]);
+  }, [query.data, sort, minScore, minPopulation]);
 
   const totalPages = Math.max(1, Math.ceil(districts.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
@@ -173,6 +190,19 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea, i
     () => districts.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE),
     [districts, safePage],
   );
+
+  // 검색 조건 전체를 기본값으로 되돌린다.
+  const handleReset = () => {
+    setBudgetInput(String(DEFAULT_BUDGET));
+    setAreaInput(String(DEFAULT_AREA));
+    setRegionQuery("");
+    setSelectedRegion("");
+    setCategory(null);
+    setSort("score");
+    setMinScoreInput("");
+    setMinPopulationInput("");
+    setPage(0);
+  };
 
   const geoQuery = useQuery({
     queryKey: queryKeys.geo,
@@ -285,6 +315,7 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea, i
         </div>
 
         <div className={styles.controls}>
+          <div className={styles.filtersGroup}>
           <div className={`${styles.field} ${styles.categoryField}`}>
             <span className={styles.label}>업종</span>
             <CategoryPicker
@@ -342,6 +373,68 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea, i
             <span className={`${styles.hint} ${styles.hintRight}`}>약 {sqmToPyeong(Number(areaInput) || 0)}평</span>
           </div>
 
+          <div className={styles.field}>
+            <span className={styles.label}>최소 상권점수</span>
+            <div className={`${styles.budgetInputWrap} ${styles.budgetInputWrapRight}`}>
+              <input
+                className={`${styles.input} ${styles.inputSm}`}
+                inputMode="numeric"
+                value={minScoreInput}
+                onChange={(e) => setMinScoreInput(e.target.value.replace(/[^0-9]/g, ""))}
+                placeholder="0"
+                aria-label="최소 상권점수"
+              />
+              <span className={styles.unit}>점</span>
+            </div>
+            <div className={`${styles.presets} ${styles.presetsRight}`}>
+              {SCORE_PRESETS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  className={styles.preset}
+                  onClick={() => setMinScoreInput(String(p))}
+                >
+                  {p}점+
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.field}>
+            <span className={styles.label}>최소 유동인구</span>
+            <div className={styles.budgetInputWrap}>
+              <input
+                className={styles.input}
+                inputMode="numeric"
+                value={minPopulationInput ? Number(minPopulationInput).toLocaleString() : ""}
+                onChange={(e) => setMinPopulationInput(e.target.value.replace(/[^0-9]/g, ""))}
+                placeholder="0"
+                aria-label="최소 유동인구(명)"
+              />
+              <span className={styles.unit}>명</span>
+            </div>
+            <div className={styles.presets}>
+              {POPULATION_PRESETS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  className={styles.preset}
+                  onClick={() => setMinPopulationInput(String(p))}
+                >
+                  {p / 1e4}만
+                </button>
+              ))}
+            </div>
+          </div>
+          </div>
+
+          <div className={`${styles.field} ${styles.resetField}`}>
+            <span className={styles.label} aria-hidden="true">&nbsp;</span>
+            <button type="button" className={styles.resetBtn} onClick={handleReset}>
+              초기화
+            </button>
+          </div>
+
         </div>
       </div>
 
@@ -354,11 +447,13 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea, i
         <div className={styles.empty}>월 임대료 예산과 점포 면적을 입력해 주세요.</div>
       ) : districts.length === 0 ? (
         <div className={styles.empty}>
-          {category
-            ? `이 예산${selectedRegion ? ` · ‘${selectedRegion}’ 지역` : ""}으로 ‘${category}’ 업종을 낼 수 있는 상권이 없어요. 예산을 올리거나 업종을 바꿔보세요.`
-            : selectedRegion
-              ? `‘${selectedRegion}’ 지역에는 이 예산으로 창업 가능한 상권이 없어요.`
-              : "이 예산으로 창업 가능한 상권이 없어요. 예산을 올려보세요."}
+          {qualityFilterActive
+            ? "설정한 최소 상권점수·유동인구 기준을 만족하는 상권이 없어요. 기준을 낮추거나 초기화해 보세요."
+            : category
+              ? `이 예산${selectedRegion ? ` · ‘${selectedRegion}’ 지역` : ""}으로 ‘${category}’ 업종을 낼 수 있는 상권이 없어요. 예산을 올리거나 업종을 바꿔보세요.`
+              : selectedRegion
+                ? `‘${selectedRegion}’ 지역에는 이 예산으로 창업 가능한 상권이 없어요.`
+                : "이 예산으로 창업 가능한 상권이 없어요. 예산을 올려보세요."}
         </div>
       ) : (
         <div className={styles.resultsGrid}>
@@ -367,7 +462,9 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea, i
             <span className={styles.resultCount}>
               {selectedRegion && <>{selectedRegion} 지역 · </>}
               검색결과 <strong>{query.data.count.toLocaleString()}곳</strong>
-              {query.data.count > districts.length && ` · 상위 ${districts.length}곳`}
+              {qualityFilterActive
+                ? ` · 기준 적용 ${districts.length.toLocaleString()}곳`
+                : query.data.count > districts.length && ` · 상위 ${districts.length}곳`}
             </span>
             <div className={styles.sortToggle}>
               <button
