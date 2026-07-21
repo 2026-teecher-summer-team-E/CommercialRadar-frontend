@@ -316,6 +316,20 @@ export interface ReportContent {
   avg_population?: number | null;
 }
 
+// ── 리포트 생성 (POST /api/reports) ──
+export interface ReportCreateBody {
+  title: string;
+  district_name: string;
+  category_name: string;
+  memo?: string | null;
+  content: ReportContent;
+}
+export interface ReportCreateOut {
+  id: number;
+  title: string;
+  created_at: string;
+}
+
 // ── 리포트 공유 (POST /api/reports/{id}/share) ──
 export interface ReportShareResponse {
   share_token: string;

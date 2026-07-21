@@ -8,12 +8,15 @@ import styles from "./mypage.module.css";
 interface InterestCardProps {
   item: InterestDistrict;
   /** 랭킹에서 보강한 상권 정보(유형·이름). 로딩 전/미포함이면 undefined. */
-  info?: { name: string | null; type: string | null };
+  info?: { name: string | null; type: string | null; district_score: number | null; survival_rate: number | null; avg_population: number | null };
   /** 메모 저장 콜백. 빈 메모는 null 로 전달. */
   onSaveMemo: (id: number, memo: string | null) => void;
   /** 즐겨찾기(관심 상권) 해제 콜백. */
   onRemove: (id: number) => void;
   busy: boolean;
+  /** 리포트로 저장할 상권 선택 여부. */
+  selected: boolean;
+  onToggleSelect: (id: number) => void;
 }
 
 const MEMO_MAX = 500;
@@ -25,6 +28,8 @@ export default function InterestCard({
   onSaveMemo,
   onRemove,
   busy,
+  selected,
+  onToggleSelect,
 }: InterestCardProps) {
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
@@ -63,6 +68,17 @@ export default function InterestCard({
         }
       }}
     >
+      {/* 리포트로 저장할 상권 선택 체크박스. 카드 클릭(이동)으로 전파되지 않게 차단. */}
+      <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+        <input
+          type="checkbox"
+          className={styles.selectCheckbox}
+          checked={selected}
+          disabled={busy}
+          aria-label={`${item.district_name ?? "상권"} 선택`}
+          onChange={() => onToggleSelect(item.id)}
+        />
+      </span>
       <span
         className={styles.cardMark}
         style={{ color: typeStyle.color, background: typeStyle.bg }}

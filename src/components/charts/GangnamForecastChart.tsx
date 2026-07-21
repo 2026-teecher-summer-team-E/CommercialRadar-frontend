@@ -89,7 +89,9 @@ function ForecastTooltip({
   useLayoutEffect(() => {
     const w = nodeRef.current?.getBoundingClientRect().width;
     if (w && Math.abs(w - (measuredWidth ?? 0)) > 0.5) setMeasuredWidth(w);
-  });
+    // 훅 안에서 매번 새 값이 오는 payload/label이 실질적인 의존성이라, 매 렌더 실행이 의도된 동작이다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [label, payload]);
 
   if (!active || !payload || payload.length === 0) return null;
   const byKey: Record<string, unknown> = {};
