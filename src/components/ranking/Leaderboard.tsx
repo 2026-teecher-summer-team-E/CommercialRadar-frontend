@@ -77,10 +77,13 @@ export default function Leaderboard({
   districts,
   sort,
   onSort,
+  scoreLabel = "종합 점수",
 }: {
   districts: DistrictCompareItem[];
   sort: SortState;
   onSort: (key: SortableKey) => void;
+  /** 점수 열 헤더 라벨. 업종 필터가 걸려 있으면 "'커피-음료' 점수"처럼 어떤 기준인지 표시. */
+  scoreLabel?: string;
 }) {
   const navigate = useNavigate();
 
@@ -101,7 +104,7 @@ export default function Leaderboard({
           <th>폐업 위험</th>
           <SortableTh label="생존율" columnKey="survival" sort={sort} onSort={onSort} />
           <SortableTh label="유동인구" columnKey="population" sort={sort} onSort={onSort} />
-          <SortableTh label="종합 점수" columnKey="score" sort={sort} onSort={onSort} />
+          <SortableTh label={scoreLabel} columnKey="score" sort={sort} onSort={onSort} />
         </tr>
       </thead>
       <tbody>
@@ -129,15 +132,27 @@ export default function Leaderboard({
               <td>
                 <span className={`${styles.risk} ${RISK_CLASS[risk]}`}>{closureRiskLabel(risk)}</span>
               </td>
-              <td className={`${styles.numCell} ${styles.survival}`}>
+              <td
+                className={`${styles.numCell} ${
+                  sort.key === "survival" ? styles.metricActive : styles.metricValue
+                }`}
+              >
                 {fmtPct(d.survival_rate)}
               </td>
-              <td className={`${styles.numCell} ${styles.population}`}>
+              <td
+                className={`${styles.numCell} ${
+                  sort.key === "population" ? styles.metricActive : styles.metricValue
+                }`}
+              >
                 {fmtPopulation(d.avg_population)}
               </td>
               <td
                 className={`${styles.numCell} ${
-                  d.district_score == null ? styles.scoreEmpty : styles.score
+                  d.district_score == null
+                    ? styles.scoreEmpty
+                    : sort.key === "score"
+                      ? styles.metricActive
+                      : styles.metricValue
                 }`}
               >
                 {fmtNum(d.district_score, 1)}

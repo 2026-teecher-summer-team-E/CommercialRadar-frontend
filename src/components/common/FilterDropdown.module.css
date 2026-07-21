@@ -35,11 +35,11 @@
   border-color: var(--color-border-strong);
 }
 .caret {
-  /* 리더보드 정렬 화살표(.sortArrow)와 크기·위치를 맞춤: 고정폭 + 동일 font-size. */
+  /* 랭킹 페이지 요청으로 리더보드 정렬 화살표(.sortArrow, 12px)보다 한 단계 작게. */
   display: inline-block;
-  width: 12px;
+  width: 10px;
   text-align: center;
-  font-size: 12px;
+  font-size: 9px;
   color: var(--color-faint);
 }
 .triggerActive .caret {

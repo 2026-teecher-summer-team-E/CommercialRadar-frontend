@@ -11,6 +11,8 @@ interface CategoryPickerProps {
   label: string;
   /** true면 내부 라벨/구분선을 숨기고 트리거 버튼만 꽉 채워 표시한다(외부에서 별도 라벨을 두는 폼 필드용). */
   hideLabel?: boolean;
+  /** true면 FilterDropdown(랭킹 페이지 자치구/상권유형 버튼)과 같은 알약 스타일·크기로 표시한다. */
+  pill?: boolean;
 }
 
 /** 대분류 → 소분류 드릴다운 업종 선택기. 라벨/구분선은 정적 영역, 선택값 버튼만 활성 강조·드롭다운 트리거. */
@@ -21,6 +23,7 @@ export default function CategoryPicker({
   placeholder = "전체",
   label,
   hideLabel = false,
+  pill = false,
 }: CategoryPickerProps) {
   const [open, setOpen] = useState(false);
   const [activeGroupName, setActiveGroupName] = useState<string | null>(null);
@@ -46,7 +49,7 @@ export default function CategoryPicker({
   const parentGroup = !isDefault ? groups.find((g) => g.items.includes(value))?.group ?? null : null;
 
   return (
-    <div className={styles.categoryPicker}>
+    <div className={`${styles.categoryPicker} ${pill ? styles.categoryPickerPill : ""}`}>
       {!hideLabel && (
         <>
           <span className={styles.categoryPickerLabel}>{label}</span>
@@ -56,7 +59,7 @@ export default function CategoryPicker({
       <div className={styles.categoryTriggerWrap} ref={rootRef}>
         <button
           type="button"
-          className={`${styles.categoryTrigger} ${hideLabel ? styles.categoryTriggerBoxed : ""} ${isDefault ? "" : styles.categoryTriggerActive} ${open ? styles.categoryTriggerOpen : ""}`}
+          className={`${styles.categoryTrigger} ${hideLabel ? styles.categoryTriggerBoxed : ""} ${pill ? styles.categoryTriggerPill : ""} ${isDefault ? "" : styles.categoryTriggerActive} ${open ? styles.categoryTriggerOpen : ""}`}
           onClick={toggle}
         >
           <span className={styles.categoryValue}>
@@ -76,8 +79,11 @@ export default function CategoryPicker({
               </>
             )}
           </span>
-          <span className={styles.categoryCaret} aria-hidden>
-            {open ? "▴" : "▾"}
+          <span className={`${styles.categoryCaret} ${pill ? styles.categoryCaretPill : ""}`} aria-hidden>
+            {/* pill 모드는 FilterDropdown과 완전히 같은 글리프(▲▼)를 써서, 같은 font-size라도
+                글리프 모양이 달라 미묘하게 다른 크기로 보이던 문제까지 없앤다(▴▾는 작은 삼각형
+                variant라 같은 px에서도 더 작게 그려짐). */}
+            {pill ? (open ? "▲" : "▼") : open ? "▴" : "▾"}
           </span>
         </button>
         {open && (
