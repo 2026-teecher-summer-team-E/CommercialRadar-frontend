@@ -190,6 +190,9 @@
   color: var(--color-faint);
   font-family: var(--font-num);
 }
+.hintRight {
+  align-self: flex-end;
+}
 /* 결과 2단: 좌측 목록 + 우측 지도 */
 .resultsGrid {
   display: grid;

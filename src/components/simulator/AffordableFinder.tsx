@@ -339,7 +339,7 @@ export default function AffordableFinder({ onPick, initialBudget, initialArea, i
               />
               <span className={styles.unit}>㎡</span>
             </div>
-            <span className={styles.hint}>약 {sqmToPyeong(Number(areaInput) || 0)}평</span>
+            <span className={`${styles.hint} ${styles.hintRight}`}>약 {sqmToPyeong(Number(areaInput) || 0)}평</span>
           </div>
 
         </div>
