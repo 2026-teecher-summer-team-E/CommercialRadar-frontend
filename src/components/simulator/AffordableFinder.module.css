@@ -4,23 +4,29 @@
   gap: 18px;
 }
 
-/* 폼 */
+/* 폼 — 아래 결과 영역(.resultsGrid)과 같은 2fr/3fr 컬럼·같은 gap을 써서, 업종 필드
+   시작 위치가 지도(mapCol) 시작 위치와 정확히 맞도록 한다. 좌우 여백은 컨테이너
+   padding이 아니라 자식(.regionSearch/.controls)의 padding으로 줘야 컬럼 경계가
+   .resultsGrid(패딩 없음)와 어긋나지 않는다. */
 .form {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  /* column-gap은 .resultsGrid와 반드시 동일해야 컬럼 경계(=지도 시작 위치)가 맞는다.
+     row-gap(줄 사이 세로 간격)은 정렬과 무관해 자유롭게 늘릴 수 있다. */
+  column-gap: 18px;
+  row-gap: 21px;
+  align-items: start;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
-  padding: 16px 18px;
+  padding: 16px 0;
 }
 .regionSearch {
   position: relative;
-  flex: 1 1 300px;
   min-width: 240px;
   max-width: 460px;
+  padding-left: 18px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -29,7 +35,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 40px;
+  height: 54px;
   box-sizing: border-box;
   padding: 0 12px;
   border: 1px solid var(--color-border);
@@ -112,13 +118,23 @@
   font-size: 12.5px;
   text-align: center;
 }
+/* controls = [필터들이 알아서 줄바꿈하는 그룹] + [초기화]. 초기화를 필터들과 같은
+   줄바꿈 그룹에 넣으면(이전 방식) 남은 공간이 자기 폭보다 살짝 모자랄 때마다
+   혼자 다음 줄로 밀려났다(실사용 폭 대부분에서 발생). 초기화를 별도 형제로 분리해
+   두면 필터 그룹이 몇 줄로 나뉘든 상관없이 항상 첫 줄 오른쪽 끝에 고정된다. */
 .controls {
-  flex: 0 1 auto;
-  margin-left: auto;
   display: flex;
   align-items: flex-start;
-  justify-content: flex-end;
-  gap: 16px;
+  gap: 21px;
+  padding: 0 18px 0 0;
+}
+.filtersGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 21px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 .field {
   display: flex;
@@ -149,6 +165,11 @@
 .budgetInputWrap:focus-within {
   border-color: var(--color-primary);
 }
+/* inputSm처럼 내용이 짧은 필드는 프리셋 줄(더 넓음)에 맞춰 박스가 늘어나면서
+   내용이 왼쪽으로 치우쳐 보인다. 내용을 박스 오른쪽 끝에 붙여 프리셋과 정렬을 맞춘다. */
+.budgetInputWrapRight {
+  justify-content: flex-end;
+}
 .input {
   border: none;
   outline: none;
@@ -172,6 +193,9 @@
   display: flex;
   gap: 6px;
 }
+.presetsRight {
+  justify-content: flex-end;
+}
 .preset {
   border: 1px solid var(--color-border);
   background: transparent;
@@ -192,6 +216,30 @@
 }
 .hintRight {
   align-self: flex-end;
+}
+/* 초기화는 항상 자기가 놓인 줄의 맨 끝(박스 오른쪽 끝)에 붙어야 한다. .controls가
+   왼쪽 정렬(업종을 지도 시작 위치에 맞추기 위해)이라 다른 필드처럼 두면 줄바꿈된
+   마지막 줄에서 가운데 어중간한 자리에 남는다. margin-left:auto로 자기 줄의 남은
+   공간을 전부 자신 앞으로 밀어 항상 오른쪽 끝에 붙게 한다. */
+.resetField {
+  margin-left: auto;
+}
+/* 초기화 버튼: 다른 필드와 세로 정렬 맞추려고 label 자리를 빈 라벨로 확보한다. */
+.resetBtn {
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 10px);
+  background: var(--color-surface);
+  color: var(--color-text-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.resetBtn:hover {
+  background: var(--color-bg);
+  border-color: var(--color-border-strong);
 }
 /* 결과 2단: 좌측 목록 + 우측 지도 */
 .resultsGrid {
@@ -401,20 +449,23 @@
   .mapCol {
     min-height: 420px;
   }
+  /* 결과 영역이 1단으로 쌓이는 폭에서는 폼도 같이 1단으로 쌓는다(정렬 맞출 대상인
+     mapCol이 이 폭 아래에서는 목록 아래로 내려가므로 더 이상 맞출 필요가 없다). */
   .form {
-    flex-wrap: wrap;
+    grid-template-columns: 1fr;
   }
   .regionSearch {
     max-width: none;
+    padding-left: 18px;
   }
   .controls {
     width: 100%;
     flex-wrap: wrap;
+    padding: 0 18px;
   }
 }
 
 @media (max-width: 720px) {
-  .form,
   .controls {
     flex-direction: column;
     align-items: stretch;
@@ -423,9 +474,6 @@
   .controls,
   .field {
     width: 100%;
-  }
-  .controls {
-    margin-left: 0;
   }
   .budgetInputWrap {
     width: 100%;
