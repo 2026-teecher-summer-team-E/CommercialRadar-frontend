@@ -17,6 +17,8 @@ import type { LineSeries } from "../components/compare/LineChartSvg";
 import Legend from "../components/compare/Legend";
 import ExpandModal from "../components/compare/ExpandModal";
 import PageLoader from "../components/common/PageLoader";
+import CategoryPicker from "../components/map/CategoryPicker";
+import { CATEGORY_GROUPS } from "../components/map/categoryList";
 import type { AtmoScenario } from "../components/charts/AtmosphereSimulation";
 import {
   seriesGradient,
@@ -29,7 +31,7 @@ import styles from "./ComparePage.module.css";
 const AtmosphereSimulation = lazy(() => import("../components/charts/AtmosphereSimulation"));
 
 type ModalKind = "radar" | "trend" | null;
-type SelectorKind = "quarter" | "category" | "ranking" | "simulationA" | "simulationB" | "simulationScenario" | null;
+type SelectorKind = "quarter" | "ranking" | "simulationA" | "simulationB" | "simulationScenario" | null;
 
 interface SelectorOption {
   value: string;
@@ -227,6 +229,14 @@ export default function ComparePage() {
     placeholderData: keepPreviousData,
   });
   const availableCategories = selectedIds.length > 0 ? (categoriesQuery.data ?? []) : [];
+
+  // 대분류 그룹 중 선택 상권들에 실재하는 업종만 남긴 목록(빈 그룹은 제거) — 다른 페이지의 업종 드릴다운과 동일한 방식.
+  const availableCategoryGroups = useMemo(() => {
+    const names = new Set(availableCategories);
+    return CATEGORY_GROUPS.map((g) => ({ group: g.group, items: g.items.filter((i) => names.has(i)) })).filter(
+      (g) => g.items.length > 0,
+    );
+  }, [availableCategories]);
 
   // 업종 목록 갱신 시 사라진 업종이 선택돼 있으면 "전체 업종"으로 보정.
   useEffect(() => {
@@ -542,10 +552,6 @@ export default function ComparePage() {
     value: quarter,
     label: formatQuarter(quarter),
   }));
-  const categoryOptions: SelectorOption[] = [
-    { value: "", label: "전체 업종" },
-    ...availableCategories.map((category) => ({ value: category, label: category })),
-  ];
 
   return (
     <div className={styles.page}>
@@ -591,16 +597,17 @@ export default function ComparePage() {
             onClose={() => setOpenSelector(null)}
             onChange={setSelectedQuarter}
           />
-          <FilterDropdown
-            label="비교 업종"
-            value={selectedCategory}
-            options={categoryOptions}
-            disabled={availableCategories.length === 0}
-            open={openSelector === "category"}
-            onToggle={() => setOpenSelector((current) => (current === "category" ? null : "category"))}
-            onClose={() => setOpenSelector(null)}
-            onChange={setSelectedCategory}
-          />
+          <div className={styles.selectorDropdown}>
+            <span className={styles.selectorCaption}>비교 업종</span>
+            <CategoryPicker
+              groups={availableCategoryGroups}
+              value={selectedCategory || null}
+              onChange={(next) => setSelectedCategory(next ?? "")}
+              label="비교 업종"
+              placeholder="전체 업종"
+              hideLabel
+            />
+          </div>
         </div>
 
         {isAdding && (
